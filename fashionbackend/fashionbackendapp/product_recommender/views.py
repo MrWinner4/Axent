@@ -9,6 +9,7 @@ from .serializer import ProductSerializer, ProductImageSerializer
 
 @api_view (['POST'])
 def postData(request):
+     print("lololo")
      serializer = ProductSerializer(data = request.data)
      if(serializer.is_valid):
           serializer.save()
@@ -17,7 +18,11 @@ def postData(request):
 # Function to run recommendation
 @api_view(['GET'])
 def recommend_product(request):
-    print("Recommending product...")
+    user_id = request.query_params.get('user_id')
+    print(f"Recommending product for user {user_id}...")
+
+    if not user_id:
+        return Response({"error": "Missing user_id"}, status=400)
     #Recommending random product for now
     products = Product.objects.all()
     if not products.exists():
