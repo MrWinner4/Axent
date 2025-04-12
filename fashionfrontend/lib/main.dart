@@ -1,8 +1,25 @@
+import 'package:fashionfrontend/views/pages/auth_wrapper.dart';
 import 'package:fashionfrontend/views/pages/welcome_page.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'models/card_queue_model.dart'; // Your provider model.
+
+import 'firebase_options.dart';
 
 
-void main() => runApp(const MainPage());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();  // Make sure Flutter is fully initialized
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,  // Use your firebase_options.dart
+  );
+  
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => CardQueueModel(),
+      child: const MainPage(),
+    ),);
+}
 
 class MainPage extends StatelessWidget {
   const MainPage({super.key});
@@ -38,8 +55,7 @@ class MainPage extends StatelessWidget {
         iconTheme: IconThemeData(
         ),
       ),
-      home: WelcomePage(),
+      home: AuthWrapper(),
     );
   }
 }
-

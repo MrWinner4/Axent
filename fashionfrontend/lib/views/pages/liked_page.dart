@@ -15,7 +15,6 @@ class LikedPageState extends State<LikedPage> {
     final CELLSIZE = .4 * screenWidth;
     final SPACINGSIZE = screenWidth / 20;
     final MAJORSPACINGSIZE = screenWidth / 10;
-    final BUTTONHEIGHT = 40.0;
     final BUTTONWIDTH = (CELLSIZE) - 5;
     final double FONTSIZE = screenWidth * 0.024; // tweak this ratio as needed
     final double ASPECTRATIO = (175 / 30);

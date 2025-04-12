@@ -1,4 +1,6 @@
+import 'package:fashionfrontend/views/pages/signup_page.dart';
 import 'package:fashionfrontend/views/widget_tree.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class WelcomePage extends StatelessWidget {
@@ -159,7 +161,7 @@ class WelcomePage extends StatelessWidget {
                       onPressed: () {
                         Navigator.push(context,
                             MaterialPageRoute(builder: (context) {
-                          return WidgetTree();
+                          return SignupPage();
                         }));
                       },
                       style: ElevatedButton.styleFrom(

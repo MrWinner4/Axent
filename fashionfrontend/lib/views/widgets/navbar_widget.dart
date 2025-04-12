@@ -10,7 +10,7 @@ class NavbarWidget extends StatelessWidget {
   final ColorScheme colorScheme = ColorScheme.fromSeed(
     brightness: Brightness.light,
     seedColor: const Color.fromARGB(255, 4, 62, 104), //Blue Color
-    primary: const Color.fromRGBO(255, 246, 237, 1.0), //Cream Color
+    primary: const Color.fromARGB(255, 255, 246, 237), //Cream Color
     onPrimary: Color.fromARGB(255, 167, 184, 196),
     secondary: const Color.fromARGB(255, 4, 62, 104), //Blue Color
     tertiary: const Color.fromARGB(255, 207, 36, 36), //Red Color

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "205621401825",
+    "project_id": "axent-579ca",
+    "storage_bucket": "axent-579ca.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:205621401825:android:e2709a33448395c9793fa0",
+        "android_client_info": {
+          "package_name": "com.example.fashionfrontend"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDGck3b5njuOnXgsnlEJ5c4hk2GgL8WJzQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
