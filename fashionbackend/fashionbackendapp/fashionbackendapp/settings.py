@@ -1,3 +1,5 @@
+import os
+import environ
 """
 Django settings for fashionbackendapp project.
 
@@ -10,7 +12,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+
 from pathlib import Path
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,20 +31,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1', '192.168.0.141', 'localhost']
 
-#Celery(redis cache) Settings
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Redis as broker
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  # Where Celery stores results (optional)
-CELERY_TIMEZONE = 'UTC'  # Or your preferred timezone
 
-# Celery Beat Configuration (for periodic tasks)
-CELERY_BEAT_SCHEDULE = {
-    'update_user_profiles_every_hour': {
-        'task': 'users.tasks.update_all_user_profiles',
-        'schedule': 3600.0,  # 3600 seconds = 1 hour
-    },
-}
 
 
 # Application definition
@@ -102,14 +93,20 @@ WSGI_APPLICATION = 'fashionbackendapp.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+
+
+
+
+# Initialize environ
+env = environ.Env()
+environ.Env.read_env()  # This reads the .env file
+print("Environment loaded:", env)
+
+
+
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',  # Switch to SQLite
-        'NAME': BASE_DIR / 'db.sqlite3',  # Location of the database file
-        'OPTIONS': {
-            'timeout': 20,  # Increase SQLite timeout
-        },
-    }
+    'default': env.db('DATABASE_URL',)
 }
 
 
@@ -149,6 +146,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
