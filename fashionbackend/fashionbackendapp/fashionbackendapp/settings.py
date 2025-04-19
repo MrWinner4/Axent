@@ -47,7 +47,21 @@ INSTALLED_APPS = [
     'user_preferences',
     'rest_framework',
     'corsheaders',
+    'django_q',
 ]
+
+Q_CLUSTER = {
+    'name': 'DjangoQ',
+    'workers': 4,
+    'recycle': 500,
+    'timeout': 60,
+    'retry': 120,
+    'queue_limit': 50,
+    'bulk': 10,
+    'orm': 'default',  # Use Django's ORM instead of Redis
+}
+
+
 #For rest framework pagination, not really sure what it does yet
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
@@ -97,17 +111,30 @@ WSGI_APPLICATION = 'fashionbackendapp.wsgi.application'
 
 
 
+
+
 # Initialize environ
 env = environ.Env()
 environ.Env.read_env()  # This reads the .env file
 print("Environment loaded:", env)
 
+from dotenv import load_dotenv
+import dj_database_url
 
-
+load_dotenv()  # loads .env locally; Render injects env vars automatically
 
 DATABASES = {
-    'default': env.db('DATABASE_URL',)
+    'default': dj_database_url.config(
+        default=os.getenv('DATABASE_URL'),
+        conn_max_age=600,
+        ssl_require=True,
+    )
 }
+
+# StockX API key
+STOCKX_API_KEY = os.getenv('STOCKX_API_KEY')
+if not STOCKX_API_KEY:
+    raise Exception("Missing STOCKX_API_KEY environment variable")
 
 
 

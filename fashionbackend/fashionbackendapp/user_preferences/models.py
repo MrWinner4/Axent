@@ -1,23 +1,15 @@
 from django.db import models
 from django.contrib.auth.models import User
-from product_recommender.models import Product
+from product_recommender.models import Product, ProductImage
 
-class UserPreference(models.Model):
-    """Stores individual user-product interactions"""
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    preference = models.IntegerField(choices=[(-1, "Dislike"), (0, "Neutral"), (1, "Like")])
-    timestamp = models.DateTimeField(auto_now=True)
-    class Meta:
-        unique_together = ('user', 'product')  # Ensures one preference per product per user
-
-    def __str__(self):
-        return f"{self.user.username} - {self.product.name}: {self.preference}"
 
 class UserProfile(models.Model):
     """Stores aggregated preferences for fast ML access"""
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    username = models.CharField(max_length=150, unique=True, default="")
+    email = models.EmailField(unique=True, default="")
+    firebase_uid = models.CharField(max_length=256, unique=True)
     preferences = models.JSONField(default=dict)  # Stores {product_id: preference}
+    liked_products = models.ManyToManyField(Product, related_name="liked_by", blank=True)
 
     def update_preferences(self):
         """Recalculates and stores user preferences from UserPreference"""
@@ -26,4 +18,24 @@ class UserProfile(models.Model):
         self.save()
 
     def __str__(self):
-        return f"Profile for {self.user.username}"
+        return f"Profile for {self.username}"
+
+    
+
+class UserPreference(models.Model):
+    """Stores individual user-product interactions"""
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    preference = models.IntegerField(choices=[(-1, "Dislike"), (0, "Neutral"), (1, "Like")])
+    timestamp = models.DateTimeField(auto_now=True)
+    class Meta:
+        unique_together = ('user', 'product')  # Ensures one preference per product per user
+
+    def __str__(self):
+        return f"{self.user.username} - {self.product.name}: {self.preference}"
+    
+    def update_preferences(self):
+        """Refreshes the preferences JSON field. Only needed if you're using this for ML."""
+        user_prefs = UserPreference.objects.filter(user=self).values("product_id", "preference")
+        self.preferences = {str(p["product_id"]): p["preference"] for p in user_prefs}
+        self.save()

@@ -6,14 +6,7 @@ import numpy as np
 import random
 from sklearn.cluster import SpectralBiclustering
 from .serializer import ProductSerializer, ProductImageSerializer
-
-@api_view (['POST'])
-def postData(request):
-     print("lololo")
-     serializer = ProductSerializer(data = request.data)
-     if(serializer.is_valid):
-          serializer.save()
-          return Response(serializer.data)
+from firebase_admin import auth as firebase_auth
 
 # Function to run recommendation
 @api_view(['GET'])
@@ -32,15 +25,3 @@ def recommend_product(request):
     serializer = ProductSerializer(recommended_product)
     print(serializer.data)
     return Response(serializer.data)
-    
-def update_response(self, product_index, response):
-        self.responses[product_index] = response
-
-# View to handle product recommendation
-def recommend_view(request):
-    user_id = request.GET.get('user_id', None)
-    if not user_id:
-        return render(request, 'error.html', {'message': 'User ID is required.'})
-
-    recommended_product = recommend_product(user_id)
-    return render(request, 'recommendation.html', {'recommended_product': recommended_product})

@@ -1,155 +1,259 @@
-import 'package:fashionfrontend/views/widgets/product_cell.dart';
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'product_detail.dart';
+
+const String apiBaseUrl = 'http://127.0.0.1:8000/api';
 
 class LikedPage extends StatefulWidget {
-  const LikedPage({super.key});
-
   @override
-  State<LikedPage> createState() => LikedPageState();
+  _LikedPageState createState() => _LikedPageState();
 }
 
-class LikedPageState extends State<LikedPage> {
+class _LikedPageState extends State<LikedPage> {
+  Future<List<dynamic>>? likedProducts;
+
+  @override
+  void initState() {
+    super.initState();
+    likedProducts = fetchLikedProducts();
+  }
+
+  Future<List<dynamic>> fetchLikedProducts() async {
+    try {
+      // Get the Firebase ID token
+      String idToken = (await FirebaseAuth.instance.currentUser!.getIdToken())!;
+
+      // Send the ID token in the Authorization header
+      final response = await Dio().get(
+        '$apiBaseUrl/liked_products/',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $idToken', // Pass the token in Authorization header
+          },
+        ),
+      );
+      return response.data;
+    } catch (e) {
+      print('Error fetching liked products: $e');
+      return [];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final CELLSIZE = .4 * screenWidth;
-    final SPACINGSIZE = screenWidth / 20;
-    final MAJORSPACINGSIZE = screenWidth / 10;
-    final BUTTONWIDTH = (CELLSIZE) - 5;
-    final double FONTSIZE = screenWidth * 0.024; // tweak this ratio as needed
-    final double ASPECTRATIO = (175 / 30);
-    print(CELLSIZE);
-    print("cell");
-    return SingleChildScrollView(
-        child: Padding(
-      padding: const EdgeInsets.all(25.0),
-      child: Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          spacing: MAJORSPACINGSIZE,
-          children: [
-            Text(
-              'Liked Items',
-              style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 32,
-                  fontWeight: FontWeight.w600,
-                  color: Color.fromARGB(255, 4, 62, 104)),
-            ),
-            Row(
-              spacing: SPACINGSIZE,
-              mainAxisAlignment: MainAxisAlignment.center,
+    return FutureBuilder<List<dynamic>>(
+      future: likedProducts,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text("Error loading products"));
+        }
+        List<dynamic> products = snapshot.data ?? [];
+        if (products.isEmpty) {
+          return Center(child: Text("No liked products."));
+        }
+        return SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  width: BUTTONWIDTH,
-                  child: AspectRatio(
-                    aspectRatio: ASPECTRATIO,
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFDF8F2),
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          side: const BorderSide(
-                            color: Color(0xFF043E68),
-                            width: 1.5,
-                          ),
+                SectionTitle(title: 'Liked Shoes'),
+                SizedBox(height: 20),
+                Stack(
+                  children: List.generate(
+                    products.length > 3 ? 3 : products.length,
+                        (index) {
+                      return Positioned(
+                        top: index * 10.0,
+                        left: index * 10.0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => LikedDetailPage(products: products),
+                              ),
+                            );
+                          },
+                          child: ShoeCard(item: products[index]),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Sort By',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: FONTSIZE,
-                              fontWeight: FontWeight.normal,
-                              color: const Color(0xFF043E68),
-                            ),
-                          ),
-                          Text(
-                            'Most Recent',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: FONTSIZE,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF043E68),
-                            ),
-                          ),
-                          Icon(Icons.arrow_drop_down,
-                              color: Colors.black, size: FONTSIZE + 4),
-                        ],
-                      ),
-                    ),
+                      );
+                    },
                   ),
                 ),
+                SizedBox(height: 40),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class SectionTitle extends StatelessWidget {
+  final String title;
+  const SectionTitle({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16.0),
+      child: Text(
+        title,
+        style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+}
+
+class ShoeCard extends StatelessWidget {
+  final Map<String, dynamic> item;
+  const ShoeCard({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 16),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            offset: Offset(3, 3),
+            blurRadius: 6,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Image.network(item['image'], height: 80),
+          SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(item['name'], style: TextStyle(fontSize: 20)),
+                Text('\$${item['price'].toStringAsFixed(2)}'),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+}
+
+class LikedDetailPage extends StatelessWidget {
+  final List<dynamic> products;
+  const LikedDetailPage({required this.products});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Liked Shoes'),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Colors.black),
+        elevation: 1,
+      ),
+      body: ListView.builder(
+        padding: EdgeInsets.all(16),
+        itemCount: products.length,
+        itemBuilder: (context, index) {
+          final product = products[index];
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProductDetailPage(productId: product['id']),
+                ),
+              );
+            },
+            child: ShoeCard(item: product),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class ProductDetailPage extends StatelessWidget {
+  final int productId;
+  const ProductDetailPage({required this.productId});
+
+  Future<Map<String, dynamic>> fetchProductDetails() async {
+    try {
+      final response = await Dio().get('$apiBaseUrl/liked_products/$productId/');
+      return response.data;
+    } catch (e) {
+      print('Error fetching product detail: $e');
+      return {};
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color(0xFFFDF9F6),
+      appBar: AppBar(
+        title: Text('Product Detail'),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Colors.black),
+        elevation: 1,
+      ),
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: fetchProductDetails(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(child: Text('Product not found'));
+          }
+          final product = snapshot.data!;
+          return Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Image.network(product['image'], height: 200),
+                ),
+                SizedBox(height: 20),
+                Text(product['name'], style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10),
+                Text('\$${product['price'].toStringAsFixed(2)}', style: TextStyle(fontSize: 20, color: Colors.grey[700])),
+                SizedBox(height: 20),
+                Text(product['description'] ?? 'No description available.', style: TextStyle(fontSize: 16)),
+                Spacer(),
                 SizedBox(
-                  width: BUTTONWIDTH,
-                  child: AspectRatio(
-                    aspectRatio: ASPECTRATIO,
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFDF8F2),
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          side: const BorderSide(
-                            color: Color(0xFF043E68),
-                            width: 1.5,
-                          ),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Filter by',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: FONTSIZE,
-                              fontWeight: FontWeight.normal,
-                              color: const Color(0xFF043E68),
-                            ),
-                          ),
-                          Text(
-                            'All Products',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: FONTSIZE,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF043E68),
-                            ),
-                          ),
-                          Icon(Icons.arrow_drop_down,
-                              color: Colors.black, size: FONTSIZE + 4),
-                        ],
-                      ),
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      padding: EdgeInsets.symmetric(vertical: 16),
                     ),
+                    onPressed: () {
+                      // Add to cart functionality or buy now logic
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added to cart!')));
+                    },
+                    child: Text('Buy Now', style: TextStyle(color: Colors.white, fontSize: 18)),
                   ),
                 )
               ],
             ),
-            Center(
-              child: Column(spacing: SPACINGSIZE, children: [
-                for (int i = 0; i < 10; i++)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    spacing: SPACINGSIZE,
-                    children: [
-                      ProductCell(size: CELLSIZE),
-                      ProductCell(size: CELLSIZE),
-                    ],
-                  ),
-              ]),
-            ),
-          ],
-        ),
+          );
+        },
       ),
-    ));
+    );
   }
 }

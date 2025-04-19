@@ -10,12 +10,15 @@ import 'package:provider/provider.dart';
 
 /*
   Biggest todos right now:
-  - Work on the card height on ios, seems like the system isnt returning correct heights for everything
-  ! Need CocoaPods for iOS, talk to admin about that "sudo gem install cocoapods"
+  ! Need CocoaPods for iOS, talk to admin about that "sudo gem install cocoapods" for firebase auth
+  - Currently working on backend and updating userpreferences every so often using djangoq
   - Back button
+  - Header fleshed out
+  - Settings done
+  - Finish swipe card stuff, make it look nice
   - Getting Images running
 */
-//TODO: working on cardHeight
+
 //TODOS: get favorites/saved/profile page working, Get back button to work
 //TODOS: Finish connecting front and backend, flesh out liked & settings page, make ios look like ios(material vs. ios) figure out account setup & authentication, monitization
 //! FIX: I need to have an "updateCardWidgets()" method along with some widgets for current and next card and only call that method to update the cards and instead call buildcard there
@@ -59,6 +62,7 @@ class _SwipeableCardState extends State<SwipeableCard>
   //Card dimensions
   late double cardWidth;
   late double cardHeight;
+  late double usableScreenHeight;
   //Threshold for swipe, need to go this far to trigger a swipe
   late double threshold;
   //Is the card Loaded?
@@ -112,20 +116,21 @@ class _SwipeableCardState extends State<SwipeableCard>
     double appBarHeight =
         Scaffold.of(context).appBarMaxHeight ?? kToolbarHeight;
     final padding = MediaQuery.of(context).padding;
-    cardWidth = screenWidth;
-    cardHeight = screenHeight -
+    usableScreenHeight = (screenHeight -
         navBarHeight -
         appBarHeight -
         padding.top -
-        padding.bottom;
+        padding.bottom);
+    cardWidth = screenWidth * .90;
+    cardHeight = usableScreenHeight * .90;
     threshold = MediaQuery.of(context).size.width * .35; // 35% of screen width
     final double screenCenter = MediaQuery.of(context).size.width / 2;
     double currentCardCenterX = _left + cardWidth / 2;
     return Consumer<CardQueueModel>(
       builder: (context, CardQueue, child) =>
           LayoutBuilder(builder: (context, constraints) {
-        centerLeft = 0;
-        centerTop = 0;
+        centerLeft = (screenWidth - cardWidth) / 2;
+        centerTop = (usableScreenHeight - cardHeight) / 2;
         if (!_isLoaded) {
           _left = centerLeft;
           _top = centerTop;
@@ -336,65 +341,73 @@ class _SwipeableCardState extends State<SwipeableCard>
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
                     stops: [0.0, .25]),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [BoxShadow(
+                  color: Colors.black.withAlpha(64), // about 25 % opacity
+                  blurRadius: 10,
+                  blurStyle: BlurStyle.outer,
+                )]
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top Icon
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: ColoredBox(
-                      color: Color.fromARGB(255, 255, 255, 255),
-                      child: SizedBox(
-                        width: cardWidth,
-                        height: cardHeight * (30 / 40),
-                        child: Image.asset(
-                            'assets/images/Shoes3.jpg'), //! NEEDS TO BE A CALL FOR AN IMAGE FROM THE DATABASE/JUST THE IMAGE PROVIDED FROM THE CALL FOR THE ITME
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Top Icon
+                    Align(
+                      alignment: Alignment.topLeft,
+                      child: ColoredBox(
+                        color: Color.fromARGB(255, 255, 255, 255),
+                        child: SizedBox(
+                          width: cardWidth,
+                          height: cardHeight * (30 / 40),
+                          child: Image.asset(
+                              'assets/images/Shoes3.jpg'), //! NEEDS TO BE A CALL FOR AN IMAGE FROM THE DATABASE/JUST THE IMAGE PROVIDED FROM THE CALL FOR THE ITME
+                        ),
                       ),
                     ),
-                  ),
-                  // Image, Defines bounds and stuff
-                  // Product Info
-                  Expanded(
-                    // or Flexible
-                    child: Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              data.title,
-                              style: TextStyle(
-                                fontSize: 40,
-                                fontWeight: FontWeight.w800,
-                                height: 1.1,
-                                overflow: TextOverflow.ellipsis,
+                    // Image, Defines bounds and stuff
+                    // Product Info
+                    Expanded(
+                      // or Flexible
+                      child: Padding(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                data.title,
+                                style: TextStyle(
+                                  fontSize: 40,
+                                  fontWeight: FontWeight.w800,
+                                  height: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                maxLines:
+                                    2, // limit so it doesn't take over the screen
                               ),
-                              maxLines:
-                                  2, // limit so it doesn't take over the screen
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            data.price,
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w600,
+                            const SizedBox(height: 10),
+                            Text(
+                              data.price,
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
     );
   }
-
   /// Called when the swipe passes the threshold.
   /// This version first animates the current card off-screen,
   /// then triggers the "pop-up" of the next card from its blurred position.
@@ -480,7 +493,7 @@ class _SwipeableCardState extends State<SwipeableCard>
 // Calls API
   Future<Map<String, dynamic>> getShoe() async {
     final userID = widget.user.uid;
-    final String baseURL = ('http://127.0.0.1:8000/products/recommend/');
+    final String baseURL = ('http://127.0.0.1:8000/products/recommend/');//https://axentbackend.onrender.com/products/recommend/
     final url = Uri.parse('$baseURL?user_id=$userID');
     final Dio dio = Dio();
     final response = await dio.getUri(url);
@@ -494,18 +507,35 @@ class _SwipeableCardState extends State<SwipeableCard>
   }
 
 //Posts to API
-  Future<void> sendInteraction(int ProductID, int liked) async {
-    final String baseURL = ('http://127.0.0.1:8000/interaction/');
-    final Dio dio = Dio();
-    final UserID = widget.user.uid;
+  Future<void> sendInteraction(int productID, int liked) async {
+  final String baseURL = 'http://127.0.0.1:8000/api/handle_swipe/';
+  final Dio dio = Dio();
+
+  // Get Firebase ID token
+  final user = FirebaseAuth.instance.currentUser;
+  final idToken = await user?.getIdToken();
+
+  if (idToken == null) {
+    print("Error: Could not get Firebase ID token.");
+    return;
+  }
+
+  try {
     await dio.post(
       baseURL,
       data: {
-        'user_id': UserID,
-        'product_id': ProductID,
-        'liked': liked,
-        'timestamp': DateTime.now().toIso8601String(),
+        'product_id': productID,
+        'preference': liked,
       },
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $idToken',
+        },
+      ),
     );
+  } catch (e) {
+    print('Error sending interaction: $e');
   }
+}
+
 }

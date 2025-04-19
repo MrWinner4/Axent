@@ -10,7 +10,9 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-          child: SwipeableCard(user: user),
+          child: Container(
+            color: const Color.fromARGB(255, 254, 251, 247),
+            child: SwipeableCard(user: user)),
       )
     );
   }

@@ -1,4 +1,3 @@
-import 'package:fashionfrontend/views/pages/signup_page.dart';
 import 'package:fashionfrontend/views/widget_tree.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
@@ -183,24 +182,8 @@ class _LogInPageState extends State<LogInPage> {
                     ),
                     recognizer: TapGestureRecognizer()
                       ..onTap = () {
-                        Navigator.pushReplacement(
+                        Navigator.pop(
                           context,
-                          PageRouteBuilder(
-                            pageBuilder:
-                                (context, animation, secondaryAnimation) =>
-                                    SignupPage(),
-                            transitionsBuilder: (context, animation,
-                                secondaryAnimation, child) {
-                              return FadeTransition(
-                                opacity: animation,
-                                child: child,
-                              );
-                            },
-                            transitionDuration: const Duration(
-                                milliseconds: 100), // Adjust duration as needed
-                            reverseTransitionDuration:
-                                const Duration(milliseconds: 100),
-                          ),
                         );
                       },
                   ),

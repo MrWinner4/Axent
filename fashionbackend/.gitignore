@@ -154,6 +154,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+#Firebase stuff
+firebase.py
+
 # pytype static type analyzer
 .pytype/
 

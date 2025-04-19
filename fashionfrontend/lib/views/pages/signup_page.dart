@@ -3,6 +3,7 @@ import 'package:fashionfrontend/views/widget_tree.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -19,6 +20,7 @@ class _SignupPageState extends State<SignupPage> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  final user = FirebaseAuth.instance.currentUser;
   Future<void> _signUp() async {
     setState(() {
       _isLoading = true;
@@ -35,10 +37,28 @@ class _SignupPageState extends State<SignupPage> {
       // Set display name
       await credential.user?.updateDisplayName(_nameController.text);
 
-      Navigator.pushReplacement(context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => WidgetTree()
+      final newUser = FirebaseAuth.instance.currentUser;
+      await newUser?.reload(); // Force refresh
+      final refreshedUser = FirebaseAuth.instance.currentUser;
+
+      final idToken = await refreshedUser!.getIdToken();
+      await Dio().post(
+        'http://127.0.0.1:8000/api/create_user/', //Why isn't it creating a new
+        data: {
+          'email': credential.user?.email,
+          'name': _nameController.text, // optional
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $idToken',
+          },
         ),
+      );
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                WidgetTree()),
       );
     } on FirebaseAuthException catch (e) {
       setState(() {
@@ -199,46 +219,29 @@ class _SignupPageState extends State<SignupPage> {
               const SizedBox(height: 18),
               Center(
                 child: RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: 'Already have an account? ',
-                        style: TextStyle(
-                          color: Color.fromARGB(255, 4, 62, 104),
-                        ),
-                      ),
-                      TextSpan(
-                        text: 'Log In',
-                        style: TextStyle(
-                          color: Color.fromARGB(255, 4, 62, 104),
-                          fontWeight: FontWeight.bold,
-                        ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            Navigator.pushReplacement(
+                    text: TextSpan(children: [
+                  TextSpan(
+                    text: 'Already have an account? ',
+                    style: TextStyle(
+                      color: Color.fromARGB(255, 4, 62, 104),
+                    ),
+                  ),
+                  TextSpan(
+                    text: 'Log In',
+                    style: TextStyle(
+                      color: Color.fromARGB(255, 4, 62, 104),
+                      fontWeight: FontWeight.bold,
+                    ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        Navigator.push(
                           context,
-                          PageRouteBuilder(
-                            pageBuilder:
-                                (context, animation, secondaryAnimation) =>
-                                    LogInPage(),
-                            transitionsBuilder: (context, animation,
-                                secondaryAnimation, child) {
-                              return FadeTransition(
-                                opacity: animation,
-                                child: child,
-                              );
-                            },
-                            transitionDuration: const Duration(
-                                milliseconds: 100), // Adjust duration as needed
-                            reverseTransitionDuration:
-                                const Duration(milliseconds: 100),
-                          ),
+                          MaterialPageRoute(
+                              builder: (context) => const LogInPage()),
                         );
-                          },
-                      ),
-                    ]
-                  )
-                ),
+                      },
+                  ),
+                ])),
               )
             ],
           ),
