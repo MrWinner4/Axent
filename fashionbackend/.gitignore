@@ -156,6 +156,7 @@ dmypy.json
 
 #Firebase stuff
 firebase.py
+firebase_key.json
 
 # pytype static type analyzer
 .pytype/

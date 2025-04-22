@@ -20,6 +20,17 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Access values like this
+STOCKX_CLIENT_ID = os.getenv('STOCKX_CLIENT_ID')
+STOCKX_CLIENT_SECRET = os.getenv('STOCKX_CLIENT_SECRET')
+STOCKX_API_KEY = os.getenv('STOCKX_API_KEY')
+STOCKX_REDIRECT_URI = os.getenv('STOCKX_REDIRECT_URI')
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
