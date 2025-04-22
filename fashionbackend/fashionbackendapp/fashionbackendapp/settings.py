@@ -25,12 +25,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# Access values like this
-STOCKX_CLIENT_ID = os.getenv('STOCKX_CLIENT_ID')
-STOCKX_CLIENT_SECRET = os.getenv('STOCKX_CLIENT_SECRET')
-STOCKX_API_KEY = os.getenv('STOCKX_API_KEY')
-STOCKX_REDIRECT_URI = os.getenv('STOCKX_REDIRECT_URI')
-
+ZYLA_API_KEY = os.getenv('ZYLA_API_KEY')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -142,10 +137,7 @@ DATABASES = {
     )
 }
 
-# StockX API key
-STOCKX_API_KEY = os.getenv('STOCKX_API_KEY')
-if not STOCKX_API_KEY:
-    raise Exception("Missing STOCKX_API_KEY environment variable")
+
 
 
 
