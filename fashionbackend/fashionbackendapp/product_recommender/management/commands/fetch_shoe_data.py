@@ -5,6 +5,9 @@ from product_recommender.models import Product, ProductImage
 from django.utils.dateparse import parse_date
 import os
 
+
+#CURRENT: Got this command working and pulling from API, need to fill out things like url and images more
+
 API_KEY = os.getenv("ZYLA_API_KEY")
 BASE_URL = "https://zylalabs.com/api/916/sneakers+database+api/731"
 
