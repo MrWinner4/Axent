@@ -61,7 +61,7 @@ class SettingsPage extends StatelessWidget {
           ListTile(
             textColor: Colors.black,
             trailing: Icon(Icons.logout, color: Colors.black),
-            title: const Text("Lougout"),
+            title: const Text("Logout"),
             onTap: () async {
               // Sign out the user
               await FirebaseAuth.instance.signOut();
