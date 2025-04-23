@@ -8,12 +8,11 @@ class UserProfile(models.Model):
     username = models.CharField(max_length=150, unique=True, default="")
     email = models.EmailField(unique=True, default="")
     firebase_uid = models.CharField(max_length=256, unique=True)
-    preferences = models.JSONField(default=dict)  # Stores {product_id: preference}
     liked_products = models.ManyToManyField(Product, related_name="liked_by", blank=True)
 
     def update_preferences(self):
         """Recalculates and stores user preferences from UserPreference"""
-        user_prefs = UserPreference.objects.filter(user=self.user).values("product_id", "preference")
+        user_prefs = UserPreference.objects.filter(user=self).values("product_id", "preference")
         self.preferences = {str(p["product_id"]): p["preference"] for p in user_prefs}
         self.save()
 
@@ -33,9 +32,3 @@ class UserPreference(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.product.name}: {self.preference}"
-    
-    def update_preferences(self):
-        """Refreshes the preferences JSON field. Only needed if you're using this for ML."""
-        user_prefs = UserPreference.objects.filter(user=self).values("product_id", "preference")
-        self.preferences = {str(p["product_id"]): p["preference"] for p in user_prefs}
-        self.save()
