@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 import uuid
+from django.contrib.postgres.fields import ArrayField
+
 
 #Just got token refreshing working, now need to work on getting actual products from stockx into db
 
@@ -15,19 +17,20 @@ class Product(models.Model):
     retailprice = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     estimatedMarketValue = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     story = models.TextField(null=True, blank=True)
+    urls = ArrayField(
+        models.URLField(), blank=True, default=list,
+        help_text="List of image URLs"
+    )
 
     def __str__(self):
         return self.title
     
-class ProductImage(models.Model):
-    product = models.ForeignKey(
-        'Product',
-        related_name="images",
-        on_delete=models.CASCADE,
-        default=None,
-    )
+class ProductImage(models.Model): #Future versions, would like to utilize all images recieved
+    product = models.ForeignKey(Product, related_name="images", on_delete=models.CASCADE)
+    image_url = models.URLField() #Make arrayField if want > 1 image
+    image_type = models.CharField(max_length=20, default="original")  # optional
 
-    image_url = models.URLField()
+
     def __str__(self):
         return f"{self.product.title} - Image"
 

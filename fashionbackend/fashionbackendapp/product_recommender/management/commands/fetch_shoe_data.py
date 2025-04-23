@@ -1,4 +1,5 @@
 import datetime
+from time import sleep
 import requests
 from django.core.management.base import BaseCommand
 from product_recommender.models import Product, ProductImage
@@ -11,7 +12,7 @@ import os
 API_KEY = os.getenv("ZYLA_API_KEY")
 BASE_URL = "https://zylalabs.com/api/916/sneakers+database+api/731"
 
-MAX_REQUESTS = 1
+MAX_REQUESTS = 1000
 
 HEADERS = {
     "Authorization": f"Bearer {API_KEY}"
@@ -23,10 +24,15 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         
         request_count = 0
-        page = 1
 
-        while request_count < MAX_REQUESTS:
-            url = f"{BASE_URL}/search+sneaker?limit=10&page={page}&query=nike" #!EDIT
+        queries = ["Jordan", "Nike", "Adidas", "New Balance", "Yeezy", "Converse", "Puma", "Asics", "Reebok", "Hoka"]
+        limit = MAX_REQUESTS/len(queries)
+
+        for query in queries:
+            if request_count >= MAX_REQUESTS:
+                break
+
+            url = f"{BASE_URL}/search+sneaker?limit={limit}&query={query}" #!EDIT
             response = requests.get(url, headers=HEADERS)
 
             if response.status_code != 200:
@@ -34,6 +40,7 @@ class Command(BaseCommand):
                 break
 
             data = response.json()
+            print(data)
             sneakers = data.get("results", [])
 
             if not sneakers:
@@ -41,14 +48,17 @@ class Command(BaseCommand):
 
             for item in sneakers:
                 self.save_product(item)
-
-            self.stdout.write(f"✅ Page {page} processed.")
-            page += 1
+            self.stdout.write(f"✅ Fetched {len(sneakers)} sneakers for query '{query}'")
+            request_count += 1
+            sleep(1)
+                
 
     def save_product(self, data):
         title = data.get("name", "Unnamed Sneaker")
         images = data.get("image", {})
-        image_360 = images.get("360", [])
+        links_dict = data.get("links", {})
+        urls = list(links_dict.values())
+        orginal_image = images.get("original")
         other_images = {
             "original": images.get("original"),
             "small": images.get("small"),
@@ -68,20 +78,23 @@ class Command(BaseCommand):
                     "retailprice": data.get("retailPrice") or data.get("retail_price"),
                     "estimatedMarketValue": data.get("estimatedMarketValue") or data.get("estimated_market_value"),
                     "story": data.get("story"),
+                    "urls": urls,
+                    
                 },
             )
 
-            # Save 360 images
-            for url in image_360:
-                ProductImage.objects.get_or_create(product=product, image_url=url)
+
 
             # Save other image types
-            for label, url in other_images.items():
-                if url:
-                    ProductImage.objects.get_or_create(product=product, image_url=url)
+            if orginal_image:
+                ProductImage.objects.update_or_create(
+                    product=product,
+                    image_url=orginal_image,
+                    defaults={"image_type": "original"}
+                )
 
             action = "🆕 Created" if created else "🔁 Updated"
-            self.stdout.write(f"{action}: {product.title} ({len(image_360)} 360° images)")
+            self.stdout.write(f"{action}: {product.title}")
 
         except Exception as e:
             self.stderr.write(f"⚠️ Error saving product '{title}': {e}")
