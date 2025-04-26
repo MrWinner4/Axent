@@ -33,7 +33,7 @@ ZYLA_API_KEY = os.getenv('ZYLA_API_KEY')
 SECRET_KEY = 'django-insecure-6ua@)f*)c0xa+2j*0(&o%y(#2e9&29mrmw39g#r&j*i9(#9#(('
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1', 'AxentBackend.onrender.com', 'localhost']
 

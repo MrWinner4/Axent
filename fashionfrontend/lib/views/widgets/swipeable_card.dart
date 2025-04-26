@@ -493,7 +493,7 @@ class _SwipeableCardState extends State<SwipeableCard>
 // Calls API
   Future<Map<String, dynamic>> getShoe() async {
     final userID = widget.user.uid;
-    final String baseURL = ('http://127.0.0.1:8000/products/recommend/');//https://axentbackend.onrender.com/products/recommend/
+    final String baseURL = ('https://axentbackend.onrender.com/products/recommend/');//https://axentbackend.onrender.com/products/recommend/
     final url = Uri.parse('$baseURL?user_id=$userID');
     final Dio dio = Dio();
     final response = await dio.getUri(url);

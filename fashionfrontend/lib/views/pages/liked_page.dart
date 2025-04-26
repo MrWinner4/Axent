@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'product_detail.dart';
 
 const String apiBaseUrl = 'http://127.0.0.1:8000/api';
 
