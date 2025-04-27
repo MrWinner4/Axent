@@ -1,7 +1,7 @@
 import 'package:fashionfrontend/data/notifiers.dart';
 //import 'package:fashionfrontend/views/pages/collections_page.dart';
 import 'package:fashionfrontend/views/pages/home_page.dart';
-import 'package:fashionfrontend/views/pages/liked_page.dart';
+import 'package:fashionfrontend/views/pages/heart_page.dart';
 import 'package:fashionfrontend/views/pages/settings_page.dart';
 import 'package:fashionfrontend/views/widgets/navbar_widget.dart';
 import 'package:firebase_auth/firebase_auth.dart';

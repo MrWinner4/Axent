@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-const String apiBaseUrl = 'http://127.0.0.1:8000/api';
+const String apiBaseUrl = 'https://axentbackend.onrender.com/api';
 
 class LikedPage extends StatefulWidget {
   @override
@@ -72,12 +72,6 @@ class _LikedPageState extends State<LikedPage> {
                         right: 0,
                         child: GestureDetector(
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => LikedDetailPage(products: products),
-                              ),
-                            );
                           },
                           child: ShoeCard(item: products[index]),
                         ),
@@ -150,109 +144,3 @@ class ShoeCard extends StatelessWidget {
   }
 }
 
-class LikedDetailPage extends StatelessWidget {
-  final List<dynamic> products;
-  const LikedDetailPage({required this.products});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Liked Shoes'),
-        backgroundColor: Colors.white,
-        iconTheme: IconThemeData(color: Colors.black),
-        elevation: 1,
-      ),
-      body: ListView.builder(
-        padding: EdgeInsets.all(16),
-        itemCount: products.length,
-        itemBuilder: (context, index) {
-          final product = products[index];
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ProductDetailPage(productId: product['id']),
-                ),
-              );
-            },
-            child: ShoeCard(item: product),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class ProductDetailPage extends StatelessWidget {
-  final int productId;
-  const ProductDetailPage({required this.productId});
-
-  Future<Map<String, dynamic>> fetchProductDetails() async {
-    try {
-      final response = await Dio().get('$apiBaseUrl/liked_products/$productId/');
-      return response.data;
-    } catch (e) {
-      print('Error fetching product detail: $e');
-      return {};
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFFFDF9F6),
-      appBar: AppBar(
-        title: Text('Product Detail'),
-        backgroundColor: Colors.white,
-        iconTheme: IconThemeData(color: Colors.black),
-        elevation: 1,
-      ),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: fetchProductDetails(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('Product not found'));
-          }
-          final product = snapshot.data!;
-          return Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Image.network(product['image'], height: 200),
-                ),
-                SizedBox(height: 20),
-                Text(product['name'], style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
-                Text('\$${product['price'].toStringAsFixed(2)}', style: TextStyle(fontSize: 20, color: Colors.grey[700])),
-                SizedBox(height: 20),
-                Text(product['description'] ?? 'No description available.', style: TextStyle(fontSize: 16)),
-                Spacer(),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    onPressed: () {
-                      // Add to cart functionality or buy now logic
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added to cart!')));
-                    },
-                    child: Text('Buy Now', style: TextStyle(color: Colors.white, fontSize: 18)),
-                  ),
-                )
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-}

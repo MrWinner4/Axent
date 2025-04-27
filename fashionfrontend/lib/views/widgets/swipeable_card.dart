@@ -97,7 +97,8 @@ class _SwipeableCardState extends State<SwipeableCard>
           _buildCard(data: CardQueue.secondCard, showBorder: true);
       // If the queue has only one card
     } else if (CardQueue.queueLength == 1) {
-      _currentCardWidget = _buildCard(data: CardQueue.firstCard, showBorder: false);
+      _currentCardWidget =
+          _buildCard(data: CardQueue.firstCard, showBorder: false);
       _nextCardWidget =
           _buildCard(data: null, showBorder: true); // A loading card maybe
       //If the queue is empty
@@ -148,8 +149,8 @@ class _SwipeableCardState extends State<SwipeableCard>
               curve: Curves.easeOut,
               top: centerTop, // or simply centerTop if you remove the offset
               left: centerLeft, // or simply centerLeft if you remove the offset
-              child:
-                  _buildNextCard(CardQueue), //?: Am i building this every time the thing moves?
+              child: _buildNextCard(
+                  CardQueue), //?: Am i building this every time the thing moves?
             ),
             // FOREGROUND: The interactive (current) card.
             // hide it during pop‑up mode.
@@ -330,24 +331,25 @@ class _SwipeableCardState extends State<SwipeableCard>
           : Container(
               //If not
               decoration: BoxDecoration(
-                color: const Color.fromARGB(
-                    255, 249, 181, 79), //TODO needs to be gradient
-                gradient: LinearGradient(
-                    colors: [
-                      const Color.fromARGB(255, 172, 172, 172), //Ending Color
-                      const Color.fromARGB(
-                          255, 255, 255, 255), //Beginning Color
-                    ],
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    stops: [0.0, .25]),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(
-                  color: Colors.black.withAlpha(64), // about 25 % opacity
-                  blurRadius: 10,
-                  blurStyle: BlurStyle.outer,
-                )]
-              ),
+                  color: const Color.fromARGB(
+                      255, 249, 181, 79), //TODO needs to be gradient
+                  gradient: LinearGradient(
+                      colors: [
+                        const Color.fromARGB(255, 172, 172, 172), //Ending Color
+                        const Color.fromARGB(
+                            255, 255, 255, 255), //Beginning Color
+                      ],
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      stops: [0.0, .25]),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(64), // about 25 % opacity
+                      blurRadius: 10,
+                      blurStyle: BlurStyle.outer,
+                    )
+                  ]),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: Column(
@@ -361,8 +363,45 @@ class _SwipeableCardState extends State<SwipeableCard>
                         child: SizedBox(
                           width: cardWidth,
                           height: cardHeight * (30 / 40),
-                          child: Image.asset(
-                              'assets/images/Shoes3.jpg'), //! NEEDS TO BE A CALL FOR AN IMAGE FROM THE DATABASE/JUST THE IMAGE PROVIDED FROM THE CALL FOR THE ITME
+                          // Replace the current image section with:
+                          child: data.images.length >= 2
+                              ? Column(
+                                  children: [
+                                    Expanded(
+                                      child: Image.network(
+                                        data.images[0],
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                          return const Center(
+                                            child: Icon(Icons.error),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Image.network(
+                                        data.images[1],
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                          return const Center(
+                                            child: Icon(Icons.error),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Image.network(
+                                  data.images.first,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Center(
+                                      child: Icon(Icons.error),
+                                    );
+                                  },
+                                ),
                         ),
                       ),
                     ),
@@ -392,7 +431,7 @@ class _SwipeableCardState extends State<SwipeableCard>
                             ),
                             const SizedBox(height: 10),
                             Text(
-                              data.price,
+                              '\$${data.retailPrice.toStringAsFixed(2)}',
                               style: TextStyle(
                                 fontSize: 32,
                                 fontWeight: FontWeight.w600,
@@ -408,10 +447,11 @@ class _SwipeableCardState extends State<SwipeableCard>
             ),
     );
   }
+
   /// Called when the swipe passes the threshold.
   /// This version first animates the current card off-screen,
   /// then triggers the "pop-up" of the next card from its blurred position.
-  void _triggerNextCard(int currentCardID, CardQueueModel CardQueue) {
+  void _triggerNextCard(String currentCardID, CardQueueModel CardQueue) {
     final screenWidth = MediaQuery.of(context).size.width;
     final currentCardCenterX = _left + cardWidth / 2;
     final screenCenter = screenWidth / 2;
@@ -463,22 +503,31 @@ class _SwipeableCardState extends State<SwipeableCard>
   }
 
   Future<void> getShoeData(CardQueueModel CardQueue) async {
-    print("gettingShoe");
     try {
       final data = await getShoe(); // Directly using the response as a Map
-      print(data);
 
       final newCard = CardData(
-        title: data['name'] ?? 'No Name',
-        description: data['category'] ?? '',
-        info:
-            'features:\n${data['features']?.toString() ?? ''}', // Safely convert features to string
+        title: data['title'] ?? 'No Name',
+        brand: data['brand'] ?? '',
+        colorway: data['colorway'] ?? '',
+        gender: data['gender'] ?? '',
+        silhouette: data['silhouette'] ?? '',
+        releaseDate: data['release_date'] != null
+            ? DateTime.parse(data['release_date'])
+            : null,
+        retailPrice: double.tryParse(data['retailprice'].toString()) ?? 0.0,
+        estimatedMarketValue:
+            double.tryParse(data['estimatedMarketValue'].toString()) ?? 0.0,
+        story: data['story'] ?? '',
+        urls: List<String>.from(data['urls'] ?? []),
         images: (data['images'] is List)
-            ? (data['images'] as List).map((e) => e.toString()).toList()
-            : ['assets/images/Shoes1.jpg'], // Default if images is not a list
-        price:
-            '\$${data['price']?.toString() ?? '0.00'}', // Handle missing price gracefully
-        id: data['id'] ?? 0, // Handle missing ID gracefully
+            ? (data['images'] as List)
+                .map((e) => e['image_url'] ?? '')
+                .toList()
+                .cast<String>()
+            : ['assets/images/Shoes1.jpg'],
+        id: data['id'] ?? '',
+        likedAt: DateTime.now(),
       );
 
       setState(() {
@@ -493,7 +542,8 @@ class _SwipeableCardState extends State<SwipeableCard>
 // Calls API
   Future<Map<String, dynamic>> getShoe() async {
     final userID = widget.user.uid;
-    final String baseURL = ('https://axentbackend.onrender.com/products/recommend/');//https://axentbackend.onrender.com/products/recommend/
+    final String baseURL =
+        ('https://axentbackend.onrender.com/products/recommend/'); //
     final url = Uri.parse('$baseURL?user_id=$userID');
     final Dio dio = Dio();
     final response = await dio.getUri(url);
@@ -507,35 +557,46 @@ class _SwipeableCardState extends State<SwipeableCard>
   }
 
 //Posts to API
-  Future<void> sendInteraction(int productID, int liked) async {
-  final String baseURL = 'http://127.0.0.1:8000/api/handle_swipe/';
-  final Dio dio = Dio();
+  Future<void> sendInteraction(String productID, int liked) async {
+    final String baseURL =
+        'https://axentbackend.onrender.com/api/handle_swipe/';
+    final Dio dio = Dio();
 
-  // Get Firebase ID token
-  final user = FirebaseAuth.instance.currentUser;
-  final idToken = await user?.getIdToken();
+    // Get Firebase ID token
+    final user = FirebaseAuth.instance.currentUser;
+    final idToken = await user?.getIdToken();
 
-  if (idToken == null) {
-    print("Error: Could not get Firebase ID token.");
-    return;
-  }
+    if (idToken == null) {
+      print("Error: Could not get Firebase ID token.");
+      return;
+    }
 
-  try {
-    await dio.post(
-      baseURL,
-      data: {
-        'product_id': productID,
-        'preference': liked,
-      },
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $idToken',
+    try {
+      final response = await dio.post(
+        baseURL,
+        data: {
+          'product_id': productID,
+          'preference': liked.toString(),
         },
-      ),
-    );
-  } catch (e) {
-    print('Error sending interaction: $e');
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $idToken',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+      if (response.statusCode != 200) {
+        print('Server returned status: ${response.statusCode}');
+        print('Response data: ${response.data}');
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        print('Error response: ${e.response?.data}');
+      } else {
+        print('Error sending interaction: $e');
+      }
+    } catch (e) {
+      print('Unexpected error: $e');
+    }
   }
-}
-
 }

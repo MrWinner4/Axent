@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 const String apiBaseUrl = 'http://127.0.0.1:8000/api';
 
 class ProductDetailPage extends StatefulWidget {
-  final int productId;
+  final String productId;
   const ProductDetailPage({required this.productId});
 
   @override

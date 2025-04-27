@@ -43,16 +43,15 @@ class _SignupPageState extends State<SignupPage> {
 
       final idToken = await refreshedUser!.getIdToken();
       await Dio().post(
-        'http://127.0.0.1:8000/api/create_user/', //Why isn't it creating a new
-        data: {
-          'email': credential.user?.email,
-          'name': _nameController.text, // optional
-        },
+        'https://axentbackend.onrender.com/api/create_user/', //Why isn't it creating a new
         options: Options(
           headers: {
-            'Authorization': 'Bearer $idToken',
+            'Authorization': 'Bearer $idToken', // Send token in headers
           },
         ),
+        data: {
+          'name': _nameController.text, // Only send name, email is extracted from token
+        },
       );
       Navigator.pushReplacement(
         context,

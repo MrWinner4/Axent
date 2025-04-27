@@ -52,12 +52,10 @@ def handle_swipe(request):
             defaults={'preference': preference_value}
         )
 
-        user.preferences[str(product.id)] = preference_value
-        user.save()
-
         if preference_value == 1:
             user.liked_products.add(product)
-            user.save()
+
+        user.save()
 
         async_task('yourapp.tasks.background_update_preferences', user.id)
 
@@ -126,8 +124,6 @@ def liked_products(request):
         return Response({'error': f'Token expired: {str(e)}'}, status=400)
     except Exception as e:
         return Response({'error': f'Error verifying token: {str(e)}'}, status=400)
-    
-    decoded_token = verify_firebase_token(id_token)
     
     if decoded_token is None:
         return Response({"error": "Invalid token or user not authenticated"}, status=401)
