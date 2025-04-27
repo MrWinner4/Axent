@@ -9,6 +9,7 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)  # Nested serializer
+    id = serializers.UUIDField()
 
     class Meta:
         model = Product
