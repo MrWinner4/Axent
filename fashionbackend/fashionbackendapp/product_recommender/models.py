@@ -17,9 +17,22 @@ class Product(models.Model):
     retailprice = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     estimatedMarketValue = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     story = models.TextField(null=True, blank=True)
-    urls = ArrayField(
-        models.URLField(), blank=True, default=list,
-        help_text="List of image URLs"
+    urls = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Dictionary of store URLs with platform as key",
+        validators=[
+            JSONSchemaValidator({
+                'type': 'object',
+                'properties': {
+                    'stockx': {'type': 'string', 'format': 'uri'},
+                    'goat': {'type': 'string', 'format': 'uri'},
+                    'flightclub': {'type': 'string', 'format': 'uri'},
+                    'stadiumgoods': {'type': 'string', 'format': 'uri'},
+                },
+                'additionalProperties': False
+            })
+        ]
     )
 
     def __str__(self):

@@ -43,7 +43,7 @@ class WidgetTree extends StatelessWidget {
                   text: 'Hi, ',
                 ),
                 TextSpan(
-                  text: 'User',
+                  text: user.displayName ?? 'User'
                 ),
               ]),
             ),

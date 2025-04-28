@@ -65,7 +65,7 @@ class _SignupPageState extends State<SignupPage> {
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Something went wrong. Please try again.';
+        _errorMessage = e.toString();
       });
     } finally {
       setState(() {
