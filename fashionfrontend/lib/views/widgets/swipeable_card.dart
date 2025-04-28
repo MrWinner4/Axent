@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:fashionfrontend/models/card_queue_model.dart';
+import 'package:fashionfrontend/views/pages/heart_page.dart';
 import 'package:fashionfrontend/views/widgets/navbar_widget.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -335,7 +336,7 @@ class _SwipeableCardState extends State<SwipeableCard>
                       255, 249, 181, 79), //TODO needs to be gradient
                   gradient: LinearGradient(
                       colors: [
-                        const Color.fromARGB(255, 172, 172, 172), //Ending Color
+                        const Color.fromARGB(255, 205, 205, 205), //Ending Color
                         const Color.fromARGB(
                             255, 255, 255, 255), //Beginning Color
                       ],
@@ -345,8 +346,8 @@ class _SwipeableCardState extends State<SwipeableCard>
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withAlpha(64), // about 25 % opacity
-                      blurRadius: 10,
+                      color: Color.fromARGB(255, 6, 104, 173).withAlpha(64), // about 25 % opacity
+                      blurRadius: 20,
                       blurStyle: BlurStyle.outer,
                     )
                   ]),
@@ -431,7 +432,7 @@ class _SwipeableCardState extends State<SwipeableCard>
                             ),
                             const SizedBox(height: 10),
                             Text(
-                              '\$${data.retailPrice.toStringAsFixed(2)}',
+                              '\$${data.estimatedMarketValue.toStringAsFixed(2)}',
                               style: TextStyle(
                                 fontSize: 32,
                                 fontWeight: FontWeight.w600,
@@ -588,6 +589,12 @@ class _SwipeableCardState extends State<SwipeableCard>
       if (response.statusCode != 200) {
         print('Server returned status: ${response.statusCode}');
         print('Response data: ${response.data}');
+      }
+      else {
+        final likedPage = context.findAncestorStateOfType<HeartPageState>();
+        if (likedPage != null) {
+          likedPage.refreshLikedProducts();
+        }
       }
     } on DioException catch (e) {
       if (e.response != null) {

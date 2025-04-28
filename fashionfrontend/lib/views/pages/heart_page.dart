@@ -1,24 +1,41 @@
+import 'dart:async';
+
+import 'package:fashionfrontend/views/pages/liked_products_page.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 const String apiBaseUrl = 'https://axentbackend.onrender.com/api';
 
-class LikedPage extends StatefulWidget {
+class HeartPage extends StatefulWidget {
   @override
-  _LikedPageState createState() => _LikedPageState();
+  HeartPageState createState() => HeartPageState();
 }
 
-class _LikedPageState extends State<LikedPage> {
-  Future<List<dynamic>>? likedProducts;
+class HeartPageState extends State<HeartPage> {
+  final ValueNotifier<List<dynamic>> _productsNotifier = ValueNotifier([]);
+  bool _isLoading = true;
+
+  void refreshLikedProducts() {
+    setState(() {
+      _isLoading = true;
+    });
+    fetchLikedProducts();
+  }
 
   @override
   void initState() {
     super.initState();
-    likedProducts = fetchLikedProducts();
+    fetchLikedProducts();
   }
 
-  Future<List<dynamic>> fetchLikedProducts() async {
+  @override
+  void dispose() {
+    _productsNotifier.dispose();
+    super.dispose();
+  }
+
+  Future<void> fetchLikedProducts() async {
     try {
       // Get the Firebase ID token
       String idToken = (await FirebaseAuth.instance.currentUser!.getIdToken())!;
@@ -28,58 +45,60 @@ class _LikedPageState extends State<LikedPage> {
         '$apiBaseUrl/liked_products/',
         options: Options(
           headers: {
-            'Authorization': 'Bearer $idToken', // Pass the token in Authorization header
+            'Authorization':
+                'Bearer $idToken', // Pass the token in Authorization header
           },
         ),
       );
-      return response.data;
+
+      // Update the products list
+      _productsNotifier.value = response.data;
+      setState(() {
+        _isLoading = false;
+      });
     } catch (e) {
       print('Error fetching liked products: $e');
-      return [];
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<dynamic>>(
-      future: likedProducts,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+    return ValueListenableBuilder<List<dynamic>>(
+      valueListenable: _productsNotifier,
+      builder: (context, products, _) {
+        if (_isLoading) {
+          print('Loading...');
           return Center(child: CircularProgressIndicator());
         }
-        if (snapshot.hasError) {
-          return Center(child: Text("Error loading products"));
-        }
-        List<dynamic> products = snapshot.data ?? [];
         if (products.isEmpty) {
           return Center(child: Text("No liked products."));
         }
+
+        // Take the last 3 items (most recent)
+        final recentProducts = products.length >= 3
+            ? products.sublist(products.length - 3)
+            : products;
+
         return SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SectionTitle(title: 'Liked Shoes'),
-                SizedBox(height: 20),
-                Stack(
-                  children: List.generate(
-                    products.length > 3 ? 3 : products.length,
-                        (index) {
-                      return Positioned(
-                        top: index * 10.0,
-                        left: index * 10.0,
-                        right: 0,
-                        child: GestureDetector(
-                          onTap: () {
-                          },
-                          child: ShoeCard(item: products[index]),
-                        ),
-                      );
-                    },
-                  ),
+                PreviewSection(
+                    shoes: recentProducts.cast<Map<String, dynamic>>()),
+                SizedBox(
+                  height: 40,
                 ),
-                SizedBox(height: 40),
+                Center(
+                  child: Text(
+                    "more coming soon...",
+                    style: TextStyle(color: Color.fromARGB(255, 124, 149, 167)),
+                  ),
+                )
               ],
             ),
           ),
@@ -104,43 +123,100 @@ class SectionTitle extends StatelessWidget {
     );
   }
 }
-
-class ShoeCard extends StatelessWidget {
-  final Map<String, dynamic> item;
-  const ShoeCard({required this.item});
+class PreviewSection extends StatelessWidget {
+  final List<Map<String, dynamic>> shoes;
+  const PreviewSection({required this.shoes});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: 16),
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            offset: Offset(3, 3),
-            blurRadius: 6,
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Image.network(item['image'], height: 80),
-          SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    print('Building PreviewSection with ${shoes.length} shoes');
+
+    if (shoes.isEmpty) {
+      return Container();
+    }
+
+    // Reverse the list so the most recent shoe appears first
+    final reversedShoes = List.from(shoes.reversed);
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          PageRouteBuilder
+          (pageBuilder: (context, animation, secondaryAnimation) =>
+                LikedProductsPage()),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Color.fromARGB(255, 6, 104, 173),
+              offset: Offset(0, 0),
+              blurRadius: 10,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top row with shoe images
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: List.generate(
+                reversedShoes.length,
+                (index) {
+                  final shoe = reversedShoes[index];
+                  final imageUrl = shoe['images']?.first['image_url'] ??
+                      'assets/images/default_shoe.jpg';
+                  return Flexible(
+                    child: Column(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            imageUrl,
+                            height: 100,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.asset(
+                                'assets/images/default_shoe.jpg',
+                                height: 100,
+                                fit: BoxFit.cover,
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(item['name'], style: TextStyle(fontSize: 20)),
-                Text('\$${item['price'].toStringAsFixed(2)}'),
+                Text(
+                  'Liked shoes',
+                  style: TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black87,
+                  ),
+                ),
+                Text(
+                  "see more...",
+                  style: TextStyle(color: Color.fromARGB(255, 124, 149, 167)),
+                ),
               ],
             ),
-          )
-        ],
+          ],
+        ),
       ),
     );
   }
 }
-

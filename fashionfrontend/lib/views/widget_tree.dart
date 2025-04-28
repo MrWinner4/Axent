@@ -23,7 +23,7 @@ class WidgetTree extends StatelessWidget {
     final User user = FirebaseAuth.instance.currentUser!;
     final List<Widget> pages = [
       HomePage(user: user),
-      LikedPage(),
+      HeartPage(),
       //CollectionsPage(), //!THIS IS A COMING FEATURE, NOT IN VERSION 1.0
       SettingsPage(),
     ];
