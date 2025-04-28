@@ -21,7 +21,6 @@ class Product(models.Model):
         models.URLField(), blank=True, default=list,
         help_text="List of image URLs"
     )
-    store_links = models.JSONField(default=dict, blank=True, help_text="Dictionary of buy links for different platforms")
 
     def __str__(self):
         return self.title
