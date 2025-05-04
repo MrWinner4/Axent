@@ -107,25 +107,47 @@ class CardQueueModel with ChangeNotifier {
 }
 
 class LikedShoesModel with ChangeNotifier {
-  final List<CardData> _likedShoes = List<CardData>.empty();
+  final List<CardData> _likedShoes = <CardData>[];
 
   List<CardData> get likedShoes => _likedShoes;
 
-  void addItem(CardData data){
+  void addItem(CardData data) {
     _likedShoes.add(data);
+    notifyListeners();
   }
 
-  void removeLastItem(){
+  void removeLastItem() {
     _likedShoes.removeLast();
     notifyListeners();
   }
 
-  void removeLikedShoe(String shoeId){
+  void removeShoe(String shoeId) {
     _likedShoes.removeWhere((shoe) => shoe.id == shoeId);
     notifyListeners();
   }
 
   bool isShoeLiked(String shoeId) {
     return _likedShoes.any((shoe) => shoe.id == shoeId);
+  }
+}
+
+class PreviousShoeModel with ChangeNotifier {
+  final List<CardData> _likedShoes = <CardData>[];
+
+  List<CardData> get likedShoes => _likedShoes;
+
+  void addItem(CardData data) {
+    _likedShoes.add(data);
+    notifyListeners();
+  }
+
+  void removeLastItem() {
+    _likedShoes.removeLast();
+    notifyListeners();
+  }
+
+  void removeShoe(String shoeId) {
+    _likedShoes.removeWhere((shoe) => shoe.id == shoeId);
+    notifyListeners();
   }
 }

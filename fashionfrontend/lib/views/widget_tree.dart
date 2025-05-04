@@ -7,15 +7,10 @@ import 'package:fashionfrontend/views/widgets/navbar_widget.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-
 //TODO: Talk about what needs to be in the settings page
-//TODO: 
-
-
-
+//TODO:
 
 class WidgetTree extends StatelessWidget {
-
   WidgetTree({super.key});
 
   @override
@@ -27,28 +22,39 @@ class WidgetTree extends StatelessWidget {
       //CollectionsPage(), //!THIS IS A COMING FEATURE, NOT IN VERSION 1.0
       SettingsPage(),
     ];
+    final gradient = LinearGradient(
+      colors: [Color.fromARGB(255, 4, 62, 104), Color.fromARGB(255, 8, 123, 206)],
+    );
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
-        centerTitle: false,
-        title: DefaultTextStyle(
-            style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Color.fromARGB(255, 4, 62, 104)),
-            child: Text.rich(
-              TextSpan(children: [
+          backgroundColor: Color.fromARGB(255, 255, 255, 255),
+          toolbarHeight: 40,
+          automaticallyImplyLeading: false,
+          centerTitle: false,
+          title: RichText(
+            text: TextSpan(
+              style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 24,
+                  fontWeight: FontWeight.w500,
+                  color: Color.fromARGB(255, 4, 62, 104)),
+              children: [
+                TextSpan(text: 'Hi, '),
                 TextSpan(
-                  text: 'Hi, ',
+                  text: user.displayName ?? 'User',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    foreground: Paint()
+                      ..shader = gradient
+                          .createShader(const Rect.fromLTWH(0, 0, 200, 70)),
+                  ),
                 ),
                 TextSpan(
-                  text: user.displayName ?? 'User'
-                ),
-              ]),
+                  text: " 👋"
+                )
+              ],
             ),
-          ),
-        ),
+          )),
       bottomNavigationBar: NavbarWidget(),
       body: ValueListenableBuilder(
         valueListenable: selectedPageNotifier,

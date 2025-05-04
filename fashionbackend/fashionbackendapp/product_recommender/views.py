@@ -25,3 +25,15 @@ def recommend_product(request):
     serializer = ProductSerializer(recommended_product)
     print(serializer.data)
     return Response(serializer.data)
+
+
+# fashionbackendapp/product_recommender/views.py
+@api_view(['GET'])
+def search_products(request):
+    query = request.GET.get('q', '')
+    if not query:
+        return Response([])
+
+    results = Product.objects.filter(name__icontains=query)[:10]
+    data = [{'name': p.name, 'brand': p.brand} for p in results]
+    return Response(data)

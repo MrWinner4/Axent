@@ -2,11 +2,10 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:fashionfrontend/models/card_queue_model.dart';
 import 'package:fashionfrontend/views/pages/heart_page.dart';
-import 'package:fashionfrontend/views/widgets/navbar_widget.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-
+import 'package:fashionfrontend/models/card_queue_model.dart';
 import 'package:provider/provider.dart';
 
 /*
@@ -112,17 +111,21 @@ class _SwipeableCardState extends State<SwipeableCard>
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double screenHeight = MediaQuery.of(context).size.height;
-    double navBarHeight = NavbarWidget().preferredSize.height;
-    double appBarHeight =
-        Scaffold.of(context).appBarMaxHeight ?? kToolbarHeight;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final double navBarHeight = 40;
+    final double appBarHeight =
+        100;
+    final double IOSCORRECTION = 60;
+    final double SECONDSEARCHHEIGHT = (50 + 16);
     final padding = MediaQuery.of(context).padding;
     usableScreenHeight = (screenHeight -
         navBarHeight -
         appBarHeight -
         padding.top -
-        padding.bottom);
+        padding.bottom -
+        SECONDSEARCHHEIGHT -
+        IOSCORRECTION);
     cardWidth = screenWidth * .90;
     cardHeight = usableScreenHeight * .90;
     threshold = MediaQuery.of(context).size.width * .35; // 35% of screen width
@@ -332,8 +335,6 @@ class _SwipeableCardState extends State<SwipeableCard>
           : Container(
               //If not
               decoration: BoxDecoration(
-                  color: const Color.fromARGB(
-                      255, 249, 181, 79), //TODO needs to be gradient
                   gradient: LinearGradient(
                       colors: [
                         const Color.fromARGB(255, 205, 205, 205), //Ending Color
@@ -356,7 +357,6 @@ class _SwipeableCardState extends State<SwipeableCard>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Top Icon
                     Align(
                       alignment: Alignment.topLeft,
                       child: ColoredBox(
@@ -371,7 +371,7 @@ class _SwipeableCardState extends State<SwipeableCard>
                                     Expanded(
                                       child: Image.network(
                                         data.images[0],
-                                        fit: BoxFit.cover,
+                                        fit: BoxFit.contain,
                                         errorBuilder:
                                             (context, error, stackTrace) {
                                           return const Center(
@@ -383,7 +383,7 @@ class _SwipeableCardState extends State<SwipeableCard>
                                     Expanded(
                                       child: Image.network(
                                         data.images[1],
-                                        fit: BoxFit.cover,
+                                        fit: BoxFit.contain,
                                         errorBuilder:
                                             (context, error, stackTrace) {
                                           return const Center(
@@ -396,7 +396,7 @@ class _SwipeableCardState extends State<SwipeableCard>
                                 )
                               : Image.network(
                                   data.images.first,
-                                  fit: BoxFit.cover,
+                                  fit: BoxFit.contain,
                                   errorBuilder: (context, error, stackTrace) {
                                     return const Center(
                                       child: Icon(Icons.error),
@@ -452,8 +452,11 @@ class _SwipeableCardState extends State<SwipeableCard>
   /// Called when the swipe passes the threshold.
   /// This version first animates the current card off-screen,
   /// then triggers the "pop-up" of the next card from its blurred position.
-  void _triggerNextCard(String currentCardID, CardQueueModel CardQueue) {
+  /// 
+
+  void _triggerNextCard(String currentCardID, CardQueueModel cardQueue) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final swipedCard = cardQueue.firstCard;
     final currentCardCenterX = _left + cardWidth / 2;
     final screenCenter = screenWidth / 2;
     // Determine which side to fly off (right if swiped right, left otherwise)
@@ -473,11 +476,17 @@ class _SwipeableCardState extends State<SwipeableCard>
         _popUp = true;
         redOpacity = sittingOpacity;
         greenOpacity = sittingOpacity;
-        if (CardQueue.isNotEmpty) {
-          CardQueue.removeFirstCard();
+        if (cardQueue.isNotEmpty) {
+          cardQueue.removeFirstCard();
+          final previousShoeModel = Provider.of<PreviousShoeModel>(context, listen: false);
+          previousShoeModel.addItem(swipedCard!);
+          if(preference == 1) {
+            final likedShoesModel = Provider.of<LikedShoesModel>(context, listen: false);
+            likedShoesModel.addItem(swipedCard);
+          }
         }
-        updateCardWidgets(CardQueue);
-        getShoeData(CardQueue);
+        updateCardWidgets(cardQueue);
+        getShoeData(cardQueue);
       });
       // After the pop‑up animation, update the index and reset positions instantly.
       Future.delayed(const Duration(milliseconds: 300), () {
