@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 from product_recommender.models import Product, ProductImage
 from django.utils.dateparse import parse_date
 import os
+import requests
 
 
 #CURRENT: Got this command working and pulling from API, need to fill out things like url and images more
@@ -28,29 +29,30 @@ class Command(BaseCommand):
         queries = ["Jordan", "Nike", "Adidas", "New Balance", "Yeezy", "Converse", "Puma", "Asics", "Reebok", "Hoka"]
         limit = MAX_REQUESTS/len(queries)
 
-        for query in queries:
-            if request_count >= MAX_REQUESTS:
-                break
+        for page in range(1, 11): #!EDIT: This is the page number, change to 1-10 for more pages
+            for query in queries:
+                if request_count >= MAX_REQUESTS:
+                    break
 
-            url = f"{BASE_URL}/search+sneaker?limit={limit}&query={query}" #!EDIT
-            response = requests.get(url, headers=HEADERS)
+                url = f"{BASE_URL}/search+sneaker?limit={limit}&query={query}&page={page}" #!EDIT
+                response = requests.get(url, headers=HEADERS)
 
-            if response.status_code != 200:
-                self.stderr.write(f"❌ Error: {response.status_code}")
-                break
+                if response.status_code != 200:
+                    self.stderr.write(f"❌ Error: {response.status_code}")
+                    break
 
-            data = response.json()
-            print(data)
-            sneakers = data.get("results", [])
+                data = response.json()
+                print(data)
+                sneakers = data.get("results", [])
 
-            if not sneakers:
-                break
+                if not sneakers:
+                    break
 
-            for item in sneakers:
-                self.save_product(item)
-            self.stdout.write(f"✅ Fetched {len(sneakers)} sneakers for query '{query}'")
-            request_count += 1
-            sleep(1)
+                for item in sneakers:
+                    self.save_product(item)
+                self.stdout.write(f"✅ Fetched {len(sneakers)} sneakers for query '{query}'")
+                request_count += 1
+                sleep(1)
                 
 
     def save_product(self, data):
@@ -99,3 +101,9 @@ class Command(BaseCommand):
         except Exception as e:
             self.stderr.write(f"⚠️ Error saving product '{title}': {e}")
 
+    def is_valid_url(url):
+        try:
+            response = requests.get(url, timeout=5)
+            return response.status_code == 200
+        except requests.exceptions.RequestException:
+            return False

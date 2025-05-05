@@ -54,15 +54,19 @@ class HeartPageState extends State<HeartPage> {
       );
 
       // Update the products list
-      _productsNotifier.value = response.data;
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        _productsNotifier.value = response.data;
+        setState(() {
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       print('Error fetching liked products: $e');
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

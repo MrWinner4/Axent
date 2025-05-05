@@ -2,9 +2,28 @@ from django.db import models
 from django.contrib.auth.models import User
 import uuid
 from django.contrib.postgres.fields import ArrayField
+import jsonschema
+from jsonschema import validate, ValidationError
 
 
 #Just got token refreshing working, now need to work on getting actual products from stockx into db
+
+def validate_urls(urls):
+    schema = {
+        'type': 'object',
+        'properties': {
+            'stockx': {'type': 'string', 'format': 'uri'},
+            'goat': {'type': 'string', 'format': 'uri'},
+            'flightclub': {'type': 'string', 'format': 'uri'},
+            'stadiumgoods': {'type': 'string', 'format': 'uri'},
+        },
+        'additionalProperties': False
+    }
+    try:
+        validate(instance=urls, schema=schema)
+    except ValidationError as e:
+        raise ValueError(f"Invalid URL format: {e.message}")
+
 
 class Product(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -21,18 +40,7 @@ class Product(models.Model):
         default=dict,
         blank=True,
         help_text="Dictionary of store URLs with platform as key",
-        validators=[
-            JSONSchemaValidator({
-                'type': 'object',
-                'properties': {
-                    'stockx': {'type': 'string', 'format': 'uri'},
-                    'goat': {'type': 'string', 'format': 'uri'},
-                    'flightclub': {'type': 'string', 'format': 'uri'},
-                    'stadiumgoods': {'type': 'string', 'format': 'uri'},
-                },
-                'additionalProperties': False
-            })
-        ]
+        validators=[validate_urls],
     )
 
     def __str__(self):

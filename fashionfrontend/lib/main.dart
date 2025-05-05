@@ -2,9 +2,9 @@ import 'package:fashionfrontend/views/pages/auth_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'models/card_queue_model.dart'; // Your provider model.
-import 'providers/search_provider.dart';
-import 'firebase_options.dart';
+import 'package:fashionfrontend/models/card_queue_model.dart'; 
+import 'package:fashionfrontend/providers/search_provider.dart';
+import 'package:fashionfrontend/firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding

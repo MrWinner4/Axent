@@ -1,11 +1,11 @@
 import 'dart:math';
 import 'dart:ui';
+import 'dart:convert'; // Import the dart:convert library
 import 'package:fashionfrontend/models/card_queue_model.dart';
 import 'package:fashionfrontend/views/pages/heart_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'package:fashionfrontend/models/card_queue_model.dart';
 import 'package:provider/provider.dart';
 
 /*
@@ -83,22 +83,29 @@ class _SwipeableCardState extends State<SwipeableCard>
     final cardQueue = Provider.of<CardQueueModel>(context, listen: false);
     greenOpacity = sittingOpacity;
     redOpacity = sittingOpacity;
+    if (cardQueue.isEmpty){
     for (int i = 0; i < 3; i++) {
       getShoeData(cardQueue);
     }
+    } 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (mounted && cardQueue.isNotEmpty) {
+      updateCardWidgets(cardQueue);
+    }
+  });
   }
 
-  void updateCardWidgets(CardQueueModel CardQueue) {
+  void updateCardWidgets(CardQueueModel cardQueue) {
     //If the queue has more than 2
-    if (CardQueue.queueLength >= 2) {
+    if (cardQueue.queueLength >= 2) {
       _currentCardWidget =
-          _buildCard(data: CardQueue.firstCard, showBorder: false);
+          _buildCard(data: cardQueue.firstCard, showBorder: false);
       _nextCardWidget =
-          _buildCard(data: CardQueue.secondCard, showBorder: true);
+          _buildCard(data: cardQueue.secondCard, showBorder: true);
       // If the queue has only one card
-    } else if (CardQueue.queueLength == 1) {
+    } else if (cardQueue.queueLength == 1) {
       _currentCardWidget =
-          _buildCard(data: CardQueue.firstCard, showBorder: false);
+          _buildCard(data: cardQueue.firstCard, showBorder: false);
       _nextCardWidget =
           _buildCard(data: null, showBorder: true); // A loading card maybe
       //If the queue is empty
@@ -132,7 +139,7 @@ class _SwipeableCardState extends State<SwipeableCard>
     final double screenCenter = MediaQuery.of(context).size.width / 2;
     double currentCardCenterX = _left + cardWidth / 2;
     return Consumer<CardQueueModel>(
-      builder: (context, CardQueue, child) =>
+      builder: (context, cardQueue, child) =>
           LayoutBuilder(builder: (context, constraints) {
         centerLeft = (screenWidth - cardWidth) / 2;
         centerTop = (usableScreenHeight - cardHeight) / 2;
@@ -142,6 +149,10 @@ class _SwipeableCardState extends State<SwipeableCard>
           _isLoaded = true;
           currentCardCenterX = _left + cardWidth / 2;
         }
+        if (cardQueue.isEmpty){
+          return Center(child: CircularProgressIndicator());
+        }
+        else {
         return Stack(
           children: <Widget>[
             // BACKGROUND: The "next" card that sits behind the current card.
@@ -154,7 +165,7 @@ class _SwipeableCardState extends State<SwipeableCard>
               top: centerTop, // or simply centerTop if you remove the offset
               left: centerLeft, // or simply centerLeft if you remove the offset
               child: _buildNextCard(
-                  CardQueue), //?: Am i building this every time the thing moves?
+                  cardQueue), //?: Am i building this every time the thing moves?
             ),
             // FOREGROUND: The interactive (current) card.
             // hide it during pop‑up mode.
@@ -198,7 +209,7 @@ class _SwipeableCardState extends State<SwipeableCard>
                     setState(() {});
                     // If the card was dragged past the threshold, trigger off‑screen animation.
                     if ((currentCardCenterX - screenCenter).abs() > threshold) {
-                      _triggerNextCard(CardQueue.firstCard!.id, CardQueue);
+                      _triggerNextCard(cardQueue.firstCard!.id, cardQueue);
                     } else {
                       _resetCard();
                     }
@@ -208,7 +219,7 @@ class _SwipeableCardState extends State<SwipeableCard>
                       duration: const Duration(milliseconds: 300),
                       curve: Curves.easeOut,
                       turns: rotationAngle / (2 * 3.14),
-                      child: CardQueue.isEmpty
+                      child: cardQueue.isEmpty
                           ? _buildCard(
                               data: null,
                               showBorder: true,
@@ -263,6 +274,7 @@ class _SwipeableCardState extends State<SwipeableCard>
             ),
           ],
         );
+        }
       }),
     );
   }
@@ -270,7 +282,7 @@ class _SwipeableCardState extends State<SwipeableCard>
   /// Builds the next card widget.
   /// When _popUp is true, the next card animates (via scale and blur)
   /// from its preview state to its full appearance.
-  Widget _buildNextCard(CardQueueModel CardQueue) {
+  Widget _buildNextCard(CardQueueModel cardQueue) {
     if (_popUp) {
       return TweenAnimationBuilder<double>(
         tween: Tween<double>(begin: 0, end: 1),
@@ -295,7 +307,7 @@ class _SwipeableCardState extends State<SwipeableCard>
             ),
           );
         },
-        child: CardQueue.isNotEmpty
+        child: cardQueue.isNotEmpty
             ? _currentCardWidget
             : _buildCard(data: null, showBorder: true),
       );
@@ -512,38 +524,42 @@ class _SwipeableCardState extends State<SwipeableCard>
     });
   }
 
-  Future<void> getShoeData(CardQueueModel CardQueue) async {
+  Future<void> getShoeData(CardQueueModel cardQueue) async {
     try {
-      final data = await getShoe(); // Directly using the response as a Map
+      final data = await getShoe();
+      
+      // If the response is a string, parse it as JSON
+      final parsedData = data is String ? jsonDecode(data as String) : data;
 
       final newCard = CardData(
-        title: data['title'] ?? 'No Name',
-        brand: data['brand'] ?? '',
-        colorway: data['colorway'] ?? '',
-        gender: data['gender'] ?? '',
-        silhouette: data['silhouette'] ?? '',
-        releaseDate: data['release_date'] != null
-            ? DateTime.parse(data['release_date'])
+        title: parsedData['title'] ?? 'No Name',
+        brand: parsedData['brand'] ?? '',
+        colorway: parsedData['colorway'] ?? '',
+        gender: parsedData['gender'] ?? '',
+        silhouette: parsedData['silhouette'] ?? '',
+        releaseDate: parsedData['release_date'] != null
+            ? DateTime.parse(parsedData['release_date'])
             : null,
-        retailPrice: double.tryParse(data['retailprice'].toString()) ?? 0.0,
+        retailPrice: double.tryParse(parsedData['retailprice'].toString()) ?? 0.0,
         estimatedMarketValue:
-            double.tryParse(data['estimatedMarketValue'].toString()) ?? 0.0,
-        story: data['story'] ?? '',
-        urls: List<String>.from(data['urls'] ?? []),
-        images: (data['images'] is List)
-            ? (data['images'] as List)
+            double.tryParse(parsedData['estimatedMarketValue'].toString()) ?? 0.0,
+        story: parsedData['story'] ?? '',
+        urls: List<String>.from(parsedData['urls'] ?? []),
+        images: (parsedData['images'] is List)
+            ? (parsedData['images'] as List)
                 .map((e) => e['image_url'] ?? '')
                 .toList()
                 .cast<String>()
             : ['assets/images/Shoes1.jpg'],
-        id: data['id'] ?? '',
+        id: parsedData['id'] ?? '',
         likedAt: DateTime.now(),
       );
 
+      if (!mounted) return;
       setState(() {
-        CardQueue.addCard(newCard);
+        cardQueue.addCard(newCard);
       });
-      updateCardWidgets(CardQueue);
+      updateCardWidgets(cardQueue);
     } catch (e) {
       print('Error fetching shoe data: $e');
     }
@@ -553,15 +569,26 @@ class _SwipeableCardState extends State<SwipeableCard>
   Future<Map<String, dynamic>> getShoe() async {
     final userID = widget.user.uid;
     final String baseURL =
-        ('https://axentbackend.onrender.com/products/recommend/'); //
+        ('https://axentbackend.onrender.com/products/recommend/');
     final url = Uri.parse('$baseURL?user_id=$userID');
     final Dio dio = Dio();
-    final response = await dio.getUri(url);
-
-    if (response.statusCode == 200) {
-      // Parse the JSON response into a Map
-      return (response.data);
-    } else {
+    
+    try {
+      final response = await dio.getUri(url);
+      
+      if (response.statusCode == 200) {
+        // Parse the response data
+        final data = response.data;
+        
+        // If the data is a string, parse it as JSON
+        final parsedData = data is String ? jsonDecode(data) : data;
+        
+        return parsedData;
+      } else {
+        throw Exception('Failed to load recommended shoe: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getShoe: $e');
       throw Exception('Failed to load recommended shoe');
     }
   }

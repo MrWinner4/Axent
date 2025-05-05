@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'product_recommender',
     'user_preferences',
+    'wardrobes',
     'rest_framework',
     'corsheaders',
     'django_q',

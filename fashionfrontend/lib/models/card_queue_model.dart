@@ -33,6 +33,16 @@ class CardData {
   });
 
   factory CardData.fromJson(Map<String, dynamic> json) {
+    double parsePrice(String? priceStr) {
+      if (priceStr == null) return 0.0;
+      try {
+        return double.parse(priceStr.replaceAll(',', ''));
+      } catch (e) {
+        print('Error parsing price: $e');
+        return 0.0;
+      }
+    }
+
     return CardData(
       title: json['title'],
       brand: json['brand'],
@@ -40,11 +50,11 @@ class CardData {
       gender: json['gender'],
       silhouette: json['silhouette'],
       releaseDate: json['release_date'] != null ? DateTime.parse(json['release_date']) : null,
-      retailPrice: double.parse(json['retailprice'].toString()),
-      estimatedMarketValue: double.parse(json['estimatedMarketValue'].toString()),
+      retailPrice: parsePrice(json['retailprice'].toString()),
+      estimatedMarketValue: parsePrice(json['estimatedMarketValue'].toString()),
       story: json['story'],
       urls: List<String>.from(json['urls']),
-      images: json['images'].map((e) => e['image_url']).toList(),
+      images: json['images'].map((e) => e['image_url'].toString()).toList(),
       id: json['id'],
       likedAt: DateTime.now(),
     );
