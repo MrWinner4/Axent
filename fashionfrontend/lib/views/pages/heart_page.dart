@@ -9,14 +9,18 @@ const String apiBaseUrl = 'https://axentbackend.onrender.com/api';
 
 class HeartPage extends StatefulWidget {
   const HeartPage({super.key});
-
+  
   @override
   HeartPageState createState() => HeartPageState();
 }
 
-class HeartPageState extends State<HeartPage> {
+class HeartPageState extends State<HeartPage>
+    with AutomaticKeepAliveClientMixin {
   final ValueNotifier<List<dynamic>> _productsNotifier = ValueNotifier([]);
   bool _isLoading = true;
+
+  @override
+  bool get wantKeepAlive => true;
 
   void refreshLikedProducts() {
     setState(() {
@@ -28,6 +32,7 @@ class HeartPageState extends State<HeartPage> {
   @override
   void initState() {
     super.initState();
+    print("hi");
     fetchLikedProducts();
   }
 
@@ -72,6 +77,7 @@ class HeartPageState extends State<HeartPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       backgroundColor: Color.fromARGB(255, 255, 255, 255),
       body: ValueListenableBuilder<List<dynamic>>(
@@ -84,45 +90,117 @@ class HeartPageState extends State<HeartPage> {
           if (products.isEmpty) {
             return Center(child: Text("No liked products."));
           }
-      
+
           // Take the last 3 items (most recent)
           final recentProducts = products.length >= 3
               ? products.sublist(products.length - 3)
               : products;
-      
-          return SingleChildScrollView(
-            child: Container(
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    "Your Wardrobes",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold
-                    ),
-                  ),
-                  SizedBox(
-                    height: 40,
-                  ),
-                  LikedProductsSection(
-                      Products: recentProducts.cast<Map<String, dynamic>>()),
-                  SizedBox(
-                    height: 40,
-                  ),
-                  Wardrobe(products: products)
 
-                ],
+          return Scaffold(
+            floatingActionButton: FloatingActionButton(
+              onPressed: () async {
+                await createWardrobe(context, mounted);
+              },
+              backgroundColor: Color.fromARGB(255, 4, 62, 104),
+              child: Icon(
+                Icons.add,
+                color: Colors.white,
+              ),
+            ),
+            body: SingleChildScrollView(
+              child: Container(
+                color: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Your Wardrobes",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(
+                      height: 40,
+                    ),
+                    LikedProductsSection(
+                        Products: recentProducts.cast<Map<String, dynamic>>()),
+                    SizedBox(
+                      height: 40,
+                    ),
+                    Wardrobe(products: products),
+                    SizedBox(
+                      height: 40,
+                    ),
+                  ],
+                ),
               ),
             ),
           );
         },
       ),
     );
+  }
+}
+
+Future<void> createWardrobe(context, mounted) async {
+  try {
+    showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => const AlertDialog(
+      content: Row(
+        children: [
+          CircularProgressIndicator(),
+          SizedBox(width: 20),
+          Text('Creating wardrobe...'),
+        ],
+      ),
+    ),
+  );
+  final String baseURL = ('https://axentbackend.onrender.com/wardrobes/');
+  final Dio dio = Dio();
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    throw Exception("User not authenticated");
+  }
+
+  final String? token = await user.getIdToken();
+
+  final response = await dio.post(baseURL,
+      options: Options(headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      }));
+
+  if (response.statusCode == 201) {
+    print("wardrobe successful");
+    if (mounted) {
+      Navigator.of(context).pop(); // Close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Wardrobe created successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      throw Exception('Failed to create wardrobe');
+    }
+  }
+  } catch (e) {
+    print("error creating wardrobe: $e");
+    if (mounted) {
+      Navigator.of(context).pop(); // Close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to create wardrobe: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
 
@@ -136,9 +214,9 @@ class Wardrobe extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          PageRouteBuilder
-          (pageBuilder: (context, animation, secondaryAnimation) =>
-                LikedProductsPage()),
+          PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  LikedProductsPage()),
         );
       },
       child: Container(
@@ -158,38 +236,6 @@ class Wardrobe extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Top row with shoe images
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: List.generate(
-                products.length,
-                (index) {
-                  final shoe = products[index];
-                  final imageUrl = shoe['images']?.first['image_url'] ??
-                      'assets/images/default_shoe.jpg';
-                  return Flexible(
-                    child: Column(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            imageUrl,
-                            height: 100,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Image.asset(
-                                'assets/images/default_shoe.jpg',
-                                height: 100,
-                                fit: BoxFit.cover,
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
             SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -228,9 +274,9 @@ class LikedProductsSection extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          PageRouteBuilder
-          (pageBuilder: (context, animation, secondaryAnimation) =>
-                LikedProductsPage()),
+          PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  LikedProductsPage()),
         );
       },
       child: Container(

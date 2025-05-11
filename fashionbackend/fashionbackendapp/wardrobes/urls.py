@@ -1,10 +1,14 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import WardrobeViewSet
-
-router = DefaultRouter()
-router.register(r'', WardrobeViewSet, basename='wardrobe')
+from django.urls import path
+from . import views
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('', views.WardrobeViewSet.as_view({'post': 'create'}), name='wardrobe-create'),
+    path('<int:pk>/', views.WardrobeViewSet.as_view({
+        'get': 'retrieve',
+        'put': 'update',
+        'patch': 'partial_update',
+        'delete': 'destroy'
+    }), name='wardrobe-detail'),
+    path('<int:pk>/add_item/', views.WardrobeViewSet.as_view({'post': 'add_item'}), name='wardrobe-add-item'),
+    path('<int:pk>/remove_item/', views.WardrobeViewSet.as_view({'post': 'remove_item'}), name='wardrobe-remove-item'),
 ]

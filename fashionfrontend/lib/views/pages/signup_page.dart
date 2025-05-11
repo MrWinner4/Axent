@@ -1,5 +1,5 @@
+import 'package:fashionfrontend/views/pages/auth_wrapper.dart';
 import 'package:fashionfrontend/views/pages/login_page.dart';
-import 'package:fashionfrontend/views/widget_tree.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -57,7 +57,7 @@ class _SignupPageState extends State<SignupPage> {
         context,
         PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
-                WidgetTree()),
+                AuthWrapper()),
       );
     } on FirebaseAuthException catch (e) {
       setState(() {

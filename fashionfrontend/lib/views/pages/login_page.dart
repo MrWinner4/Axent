@@ -1,4 +1,4 @@
-import 'package:fashionfrontend/views/widget_tree.dart';
+import 'package:fashionfrontend/views/pages/auth_wrapper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -32,7 +32,7 @@ class _LogInPageState extends State<LogInPage> {
 
       Navigator.pushReplacement(context,
         PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => WidgetTree()
+          pageBuilder: (context, animation, secondaryAnimation) => AuthWrapper()
         ),
       );
     } on FirebaseAuthException catch (e) {
