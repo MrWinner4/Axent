@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 import uuid
 from django.contrib.postgres.fields import ArrayField
-import jsonschema
 from jsonschema import validate, ValidationError
 
 
