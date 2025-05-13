@@ -45,5 +45,5 @@ class ProductViewSet(viewsets.ViewSet):
             return Response([], status=status.HTTP_200_OK)
         
         results = Product.objects.filter(name__icontains=query)[:10]
-        serializaer = ProductSerializer(results, many=True)
+        serializer = ProductSerializer(results, many=True)
         return Response(serializer.data)
