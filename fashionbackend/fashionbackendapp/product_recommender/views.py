@@ -10,6 +10,7 @@ import random
 from sklearn.cluster import SpectralBiclustering
 from .serializer import ProductSerializer, ProductImageSerializer
 from firebase_admin import auth as firebase_auth
+from user_preferences.models import UserProfile
 
 # In user_preferences/utils.py or at the top of views.py
 from firebase_admin import auth as firebase_auth
