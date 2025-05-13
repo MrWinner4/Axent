@@ -38,7 +38,7 @@ class ProductViewSet(viewsets.ViewSet):
         """
 
 
-        token = request.headers.get('Authorization', '').replace('Bearer ', '').strip()
+        token = request.headers.get('Authorization', '').replace('Token ', '').strip()
         if not token:
             return Response({"error": "No token provided"}, status=401)
         
@@ -48,7 +48,7 @@ class ProductViewSet(viewsets.ViewSet):
                 return Response({"error": "Invalid or expired token"}, status=401)
         except Exception as e:
             return Response({"error": "Error verifying token"}, status=401)
-            
+
         #WHICH PRODUCTS TO PULL - USE FILTERS
         products= Product.objects.all()
 
