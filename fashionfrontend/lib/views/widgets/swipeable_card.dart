@@ -570,7 +570,7 @@ class _SwipeableCardState extends State<SwipeableCard>
     final userID = widget.user.uid;
     final String baseURL =
         ('https://axentbackend.onrender.com/products/recommend/');
-    final url = Uri.parse('$baseURL?user_id=$userID');
+    final url = Uri.parse(baseURL);
     final Dio dio = Dio();
     
     try {
