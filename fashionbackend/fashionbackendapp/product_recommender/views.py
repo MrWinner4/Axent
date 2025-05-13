@@ -25,9 +25,6 @@ class ProductViewSet(viewsets.ViewSet):
         Get a recommended product for the authenticated user
         """
 
-        print("Auth headers:", request.META.get('HTTP_AUTHORIZATION'))
-        print("User:", request.user)
-
 
         user = request.user
         #WHICH PRODUCTS TO PULL - USE FILTERS
