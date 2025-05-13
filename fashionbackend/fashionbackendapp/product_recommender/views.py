@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from .models import Product, User
 from rest_framework.decorators import action, authentication_classes
 from rest_framework.response import Response
@@ -18,6 +19,10 @@ class ProductViewSet(viewsets.ViewSet):
     def get_queryset(self):
         return Product.objects.all()
 
+
+    def test_view(request):
+        print("test works")
+        return JsonResponse({"message": "Test successful"})
     @action(detail=False, methods=['get'])
     def recommend(self, request):
         """
