@@ -168,9 +168,11 @@ Future<void> createWardrobe(context, mounted) async {
     throw Exception("User not authenticated");
   }
 
-  final String? token = await user.getIdToken();
+  final token = await user.getIdToken();
+
 
   final response = await dio.post(baseURL,
+      data: {'name': 'New Wardrobe'},
       options: Options(headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -244,8 +246,8 @@ class Wardrobe extends StatelessWidget {
                   'Wardrobe.name',
                   style: TextStyle(
                     fontSize: 25,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black87,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
                   ),
                 ),
               ],
@@ -332,14 +334,18 @@ class LikedProductsSection extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Liked Products',
-                  style: TextStyle(
-                    fontSize: 25,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black87,
-                  ),
-                ),
+                RichText(
+                    text: TextSpan(
+                      style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 25,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black),
+                      children: [
+                        TextSpan(text: 'Liked Products'),
+                      ],
+                    ),
+                  )
               ],
             ),
           ],

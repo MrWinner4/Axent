@@ -4,10 +4,13 @@ from django.shortcuts import get_object_or_404
 from .models import Wardrobe, WardrobeItem
 from .serializers import WardrobeSerializer, WardrobeItemSerializer
 from rest_framework.decorators import action
+from rest_framework.authentication import TokenAuthentication, SessionAuthentication
 from rest_framework import status
 
 
 class WardrobeViewSet(viewsets.ModelViewSet):
+    authentication_classes = [TokenAuthentication, SessionAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
     queryset = Wardrobe.objects.all()
     serializer_class = WardrobeSerializer
     permission_classes = [permissions.IsAuthenticated]
