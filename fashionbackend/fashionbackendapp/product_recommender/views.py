@@ -15,6 +15,9 @@ class ProductViewSet(viewsets.ViewSet):
     authentication_classes = [TokenAuthentication, SessionAuthentication]
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        return Product.objects.all()
+
     @action(detail=False, methods=['get'])
     def recommend(self, request):
         """

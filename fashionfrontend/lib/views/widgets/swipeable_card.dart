@@ -617,8 +617,8 @@ class _SwipeableCardState extends State<SwipeableCard>
         },
         options: Options(
           headers: {
-            'Authorization': 'Bearer $idToken',
             'Content-Type': 'application/json',
+            'Authorization': 'Bearer $idToken',
           },
         ),
       );
