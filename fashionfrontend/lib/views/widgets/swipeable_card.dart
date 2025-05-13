@@ -567,7 +567,6 @@ class _SwipeableCardState extends State<SwipeableCard>
 
 // Calls API
   Future<Map<String, dynamic>> getProduct() async {
-    final userID = widget.user.uid;
     final String baseURL =
         ('https://axentbackend.onrender.com/products/recommend/');
     final url = Uri.parse(baseURL);
@@ -646,13 +645,21 @@ class _SwipeableCardState extends State<SwipeableCard>
 }
 
 Future<Map<String, String>> getAuthHeaders() async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null){
-    throw Exception("User not authenticated");
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      print('No authenticated user');
+      throw Exception("User not authenticated");
+    }
+    final token = await user.getIdToken();
+    print('Using token: ${token?.substring(0, 20)}...');  // Log first 20 chars of token
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+  } catch (e) {
+    print('Error in getAuthHeaders: $e');
+    rethrow;
   }
-  final token = await user.getIdToken();
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer $token',
-  };
 }
+

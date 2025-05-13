@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-const String apiBaseUrl = 'https://axentbackend.onrender.com/api';
+const String likedProductsBaseUrl = 'https://axentbackend.onrender.com/likedProducts';
 
 class HeartPage extends StatefulWidget {
   const HeartPage({super.key});
@@ -49,7 +49,7 @@ class HeartPageState extends State<HeartPage>
 
       // Send the ID token in the Authorization header
       final response = await Dio().get(
-        '$apiBaseUrl/liked_products/',
+        '$likedProductsBaseUrl/liked_products/',
         options: Options(
           headers: {
             'Authorization':
