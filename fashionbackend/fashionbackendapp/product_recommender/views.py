@@ -19,10 +19,6 @@ class ProductViewSet(viewsets.ViewSet):
     def get_queryset(self):
         return Product.objects.all()
 
-
-    def test_view(request):
-        print("test works")
-        return JsonResponse({"message": "Test successful"})
     @action(detail=False, methods=['get'])
     def recommend(self, request):
         """
