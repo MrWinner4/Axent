@@ -85,7 +85,7 @@ class _SwipeableCardState extends State<SwipeableCard>
     redOpacity = sittingOpacity;
     if (cardQueue.isEmpty){
     for (int i = 0; i < 3; i++) {
-      getShoeData(cardQueue);
+      getProductData(cardQueue);
     }
     } 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -498,7 +498,7 @@ class _SwipeableCardState extends State<SwipeableCard>
           }
         }
         updateCardWidgets(cardQueue);
-        getShoeData(cardQueue);
+        getProductData(cardQueue);
       });
       // After the pop‑up animation, update the index and reset positions instantly.
       Future.delayed(const Duration(milliseconds: 300), () {
@@ -524,9 +524,9 @@ class _SwipeableCardState extends State<SwipeableCard>
     });
   }
 
-  Future<void> getShoeData(CardQueueModel cardQueue) async {
+  Future<void> getProductData(CardQueueModel cardQueue) async {
     try {
-      final data = await getShoe();
+      final data = await getProduct();
       
       // If the response is a string, parse it as JSON
       final parsedData = data is String ? jsonDecode(data as String) : data;
@@ -566,7 +566,7 @@ class _SwipeableCardState extends State<SwipeableCard>
   }
 
 // Calls API
-  Future<Map<String, dynamic>> getShoe() async {
+  Future<Map<String, dynamic>> getProduct() async {
     final userID = widget.user.uid;
     final String baseURL =
         ('https://axentbackend.onrender.com/products/recommend/');
@@ -574,7 +574,8 @@ class _SwipeableCardState extends State<SwipeableCard>
     final Dio dio = Dio();
     
     try {
-      final response = await dio.getUri(url);
+      final response = await dio.getUri(url,
+      options: Options(headers: await getAuthHeaders()));
       
       if (response.statusCode == 200) {
         // Parse the response data
@@ -588,7 +589,7 @@ class _SwipeableCardState extends State<SwipeableCard>
         throw Exception('Failed to load recommended shoe: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error in getShoe: $e');
+      print('Error in getProduct: $e');
       throw Exception('Failed to load recommended shoe');
     }
   }
@@ -642,4 +643,16 @@ class _SwipeableCardState extends State<SwipeableCard>
       print('Unexpected error: $e');
     }
   }
+}
+
+Future<Map<String, String>> getAuthHeaders() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null){
+    throw Exception("User not authenticated");
+  }
+  final token = await user.getIdToken();
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer $token',
+  };
 }
