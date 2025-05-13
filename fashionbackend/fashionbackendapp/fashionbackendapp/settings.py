@@ -40,6 +40,7 @@ ALLOWED_HOSTS = ['127.0.0.1', 'AxentBackend.onrender.com', 'localhost']
 
 
 
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -53,6 +54,7 @@ INSTALLED_APPS = [
     'user_preferences',
     'wardrobes',
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
     'django_q',
 ]

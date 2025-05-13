@@ -655,7 +655,7 @@ Future<Map<String, String>> getAuthHeaders() async {
     print('Using token: ${token?.substring(0, 20)}...');  // Log first 20 chars of token
     return {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
+      'Authorization': 'Token $token',
     };
   } catch (e) {
     print('Error in getAuthHeaders: $e');

@@ -11,10 +11,22 @@ from sklearn.cluster import SpectralBiclustering
 from .serializer import ProductSerializer, ProductImageSerializer
 from firebase_admin import auth as firebase_auth
 
+# In user_preferences/utils.py or at the top of views.py
+from firebase_admin import auth as firebase_auth
+
+def get_user_from_token(token):
+    try:
+        decoded_token = firebase_auth.verify_id_token(token)
+        firebase_uid = decoded_token['uid']
+        return UserProfile.objects.get(firebase_uid=firebase_uid)
+    except Exception as e:
+        print(f"Error getting user from token: {e}")
+        return None
+
 
 class ProductViewSet(viewsets.ViewSet):
-    authentication_classes = [TokenAuthentication, SessionAuthentication]
-    permission_classes = [IsAuthenticated]
+    authentication_classes = []
+    permission_classes = []
 
     def get_queryset(self):
         return Product.objects.all()
@@ -26,7 +38,17 @@ class ProductViewSet(viewsets.ViewSet):
         """
 
 
-        user = request.user
+        token = request.headers.get('Authorization', '').replace('Bearer ', '').strip()
+        if not token:
+            return Response({"error": "No token provided"}, status=401)
+        
+        try:
+            user_profile = get_user_from_token(token)
+            if not user_profile:
+                return Response({"error": "Invalid or expired token"}, status=401)
+        except Exception as e:
+            return Response({"error": "Error verifying token"}, status=401)
+            
         #WHICH PRODUCTS TO PULL - USE FILTERS
         products= Product.objects.all()
 
