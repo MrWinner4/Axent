@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-const String likedProductsBaseUrl = 'https://axentbackend.onrender.com/likedProducts';
+const String likedProductsBaseUrl = 'https://axentbackend.onrender.com/preferences';
 
 class HeartPage extends StatefulWidget {
   const HeartPage({super.key});
@@ -160,7 +160,7 @@ Future<void> createWardrobe(context, mounted) async {
       ),
     ),
   );
-  final String baseURL = ('https://axentbackend.onrender.com/wardrobes/');
+  final String wardrobesBaseURL = ('https://axentbackend.onrender.com/wardrobes/');
   final Dio dio = Dio();
   final user = FirebaseAuth.instance.currentUser;
   if (user == null) {
@@ -170,7 +170,7 @@ Future<void> createWardrobe(context, mounted) async {
   final token = await user.getIdToken();
 
 
-  final response = await dio.post(baseURL,
+  final response = await dio.post(wardrobesBaseURL,
       data: {'name': 'New Wardrobe'},
       options: Options(headers: {
         'Content-Type': 'application/json',

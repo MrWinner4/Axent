@@ -596,7 +596,7 @@ class _SwipeableCardState extends State<SwipeableCard>
 //Posts to API
   Future<void> sendInteraction(String productID, int liked) async {
     final String baseURL =
-        'https://axentbackend.onrender.com/api/handle_swipe/';
+        'https://axentbackend.onrender.com/preferences/handle_swipe/';
     final Dio dio = Dio();
 
     // Get Firebase ID token

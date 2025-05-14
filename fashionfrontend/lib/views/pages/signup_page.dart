@@ -43,7 +43,7 @@ class _SignupPageState extends State<SignupPage> {
 
       final idToken = await refreshedUser!.getIdToken();
       await Dio().post(
-        'https://axentbackend.onrender.com/api/create_user/', //Why isn't it creating a new
+        'https://axentbackend.onrender.com/preferences/create_user/',
         options: Options(
           headers: {
             'Authorization': 'Bearer $idToken', // Send token in headers
