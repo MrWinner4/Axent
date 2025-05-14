@@ -4,7 +4,6 @@ from django.shortcuts import get_object_or_404
 from .models import Wardrobe, WardrobeItem
 from .serializers import WardrobeSerializer, WardrobeItemSerializer
 from rest_framework.decorators import action
-from rest_framework.authentication import TokenAuthentication, SessionAuthentication
 from rest_framework import status
 from firebase_admin import auth
 from user_preferences.models import UserProfile
