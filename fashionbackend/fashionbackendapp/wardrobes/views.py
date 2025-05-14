@@ -20,6 +20,7 @@ class WardrobeViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         # Handle authentication
+        print(f"Auth header received: {request.headers.get('Authorization')}")
         auth_header = request.headers.get('Authorization', '')
         if not auth_header.startswith('Bearer '):
             return Response({"error": "Invalid authorization header"}, status=401)

@@ -52,7 +52,7 @@ class HeartPageState extends State<HeartPage>
         options: Options(
           headers: {
             'Authorization':
-                'Token $idToken', // Pass the token in Authorization header
+                'Bearer $idToken', // Pass the token in Authorization header
           },
         ),
       );
