@@ -51,12 +51,12 @@ class WardrobeViewSet(viewsets.ModelViewSet):
         data['user'] = user_profile.id
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
+        self.perform_create(serializer, user_profile)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    def perform_create(self, serializer, user_profile):
+        serializer.save(user=user_profile)
 
     @action(detail=True, methods=['post'])
     def add_item(self, request, pk=None):
