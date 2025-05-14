@@ -32,7 +32,6 @@ class HeartPageState extends State<HeartPage>
   @override
   void initState() {
     super.initState();
-    print("hi");
     fetchLikedProducts();
   }
 
@@ -53,7 +52,7 @@ class HeartPageState extends State<HeartPage>
         options: Options(
           headers: {
             'Authorization':
-                'Bearer $idToken', // Pass the token in Authorization header
+                'Token $idToken', // Pass the token in Authorization header
           },
         ),
       );
@@ -179,7 +178,6 @@ Future<void> createWardrobe(context, mounted) async {
       }));
 
   if (response.statusCode == 201) {
-    print("wardrobe successful");
     if (mounted) {
       Navigator.of(context).pop(); // Close loading dialog
       ScaffoldMessenger.of(context).showSnackBar(
