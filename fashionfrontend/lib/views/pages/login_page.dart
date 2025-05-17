@@ -61,18 +61,13 @@ class _LogInPageState extends State<LogInPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color.fromARGB(255, 252, 246, 237),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Image.asset(
-                'assets/images/AxentLogo.png',
-                height: 200,
-              ),
-              const SizedBox(height: 75),
               Text(
                 'Login',
                 style: TextStyle(
@@ -82,76 +77,80 @@ class _LogInPageState extends State<LogInPage> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 75),
+              const SizedBox(height: 48),
+              Text("Email"),
+              const SizedBox(height: 8),
               TextField(
                 controller: _emailController,
-                cursorColor: Color.fromARGB(255, 4, 62, 104),
+                cursorColor: Theme.of(context).colorScheme.primary,
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Color.fromARGB(255, 238, 240, 243),
+                  fillColor: Theme.of(context).colorScheme.onSurfaceVariant,
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: Color.fromARGB(255, 4, 62, 104),
+                      color: Theme.of(context).colorScheme.primary,
                       width: 1,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: Color.fromARGB(255, 4, 62, 104),
+                      color: Theme.of(context).colorScheme.primary,
                       width: 1,
                     ),
                   ),
-                  labelText: 'Email',
+                  labelText: 'johndoe@example.com',
                   labelStyle: TextStyle(
-                    color: Color.fromARGB(255, 4, 62, 104),
+                    color: Theme.of(context).colorScheme.primary.withAlpha(128),
                   ),
+                floatingLabelBehavior: FloatingLabelBehavior.never),
                 ),
-              ),
               const SizedBox(height: 16),
+              Text("Password"),
+              const SizedBox(height: 8),
               TextField(
                 controller: _passwordController,
-                cursorColor: Color.fromARGB(255, 4, 62, 104),
+                cursorColor: Theme.of(context).colorScheme.primary,
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Color.fromARGB(255, 238, 240, 243),
+                  fillColor: Theme.of(context).colorScheme.onSurfaceVariant,
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: Color.fromARGB(255, 4, 62, 104),
+                      color: Theme.of(context).colorScheme.primary,
                       width: 1,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: Color.fromARGB(255, 4, 62, 104),
+                      color: Theme.of(context).colorScheme.primary,
                       width: 1,
                     ),
                   ),
-                  labelText: 'Password',
+                  labelText: '••••••••••',
                   labelStyle: TextStyle(
-                    color: Color.fromARGB(255, 4, 62, 104),
+                    color: Theme.of(context).colorScheme.primary.withAlpha(128),
                   ),
-                ),
+                floatingLabelBehavior: FloatingLabelBehavior.never),
                 obscureText: true,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               if (_errorMessage != null)
                 Text(
                   _errorMessage!,
                   style: TextStyle(color: Colors.red),
                   textAlign: TextAlign.center,
                 ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 32),
               SizedBox(
                 height: 50,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _logIn,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Color.fromARGB(255, 4, 62, 104),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -171,13 +170,13 @@ class _LogInPageState extends State<LogInPage> {
                   TextSpan(
                     text: 'Don\'t have an account? ',
                     style: TextStyle(
-                      color: Color.fromARGB(255, 4, 62, 104),
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                   TextSpan(
                     text: 'Sign Up',
                     style: TextStyle(
-                      color: Color.fromARGB(255, 4, 62, 104),
+                      color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.bold,
                     ),
                     recognizer: TapGestureRecognizer()

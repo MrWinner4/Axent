@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
 import 'dart:convert'; // Import the dart:convert library
@@ -10,7 +11,6 @@ import 'package:provider/provider.dart';
 
 /*
   Biggest todos right now:
-  ! Need CocoaPods for iOS, talk to admin about that "sudo gem install cocoapods" for firebase auth
   - Currently working on backend and updating userpreferences every so often using djangoq
   - Back button
   - Header fleshed out
@@ -123,7 +123,10 @@ class _SwipeableCardState extends State<SwipeableCard>
     final double navBarHeight = 40;
     final double appBarHeight =
         100;
-    final double IOSCORRECTION = 60;
+    double IOSCORRECTION = 0;
+        if (Platform.isIOS){
+          IOSCORRECTION = 60;
+        }
     final double SECONDSEARCHHEIGHT = (50 + 16);
     final padding = MediaQuery.of(context).padding;
     usableScreenHeight = (screenHeight -

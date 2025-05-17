@@ -11,8 +11,8 @@ class WelcomePage extends StatelessWidget {
           //Gradient in the background
           gradient: LinearGradient(
         colors: [
-          const Color.fromARGB(255, 6, 104, 173),
-          const Color.fromRGBO(251, 240, 225, 1.0),
+          Color(0xFF087BCE),
+          Theme.of(context).colorScheme.surface,
         ], //Blue Color
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
