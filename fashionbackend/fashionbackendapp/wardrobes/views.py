@@ -16,7 +16,17 @@ class WardrobeViewSet(viewsets.ModelViewSet):
     
 
     def get_queryset(self):
-        return Wardrobe.objects.none()
+    # Handle authentication
+        auth_header = self.request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return Wardrobe.objects.none()
+        
+        token = auth_header.split(' ').pop()
+        user_profile = get_user_profile_from_token(token)
+        if not user_profile:
+            return Wardrobe.objects.none()
+        
+        return Wardrobe.objects.filter(user=user_profile)
 
     def list(self, request, *args, **kwargs):
         # Handle authentication
