@@ -72,12 +72,12 @@ class WardrobeViewSet(viewsets.ModelViewSet):
             return Response({"error": "Invalid or expired token"}, status=401)
         
         # Get user ID from query parameters
-        user_id = request.query_params.get('user_id')
-        if not user_id:
-            return Response({"error": "user_id parameter is required"}, status=400)
+        firebase_uid = request.query_params.get('firebase_uid')
+        if not firebase_uid:
+            return Response({"error": "firebase_uid parameter is required"}, status=400)
         
         try:
-            user_profile = UserProfile.objects.get(firebase_uid=user_id)
+            user_profile = UserProfile.objects.get(firebase_uid=firebase_uid)
         except UserProfile.DoesNotExist:
             return Response({"error": "User not found"}, status=404)
         

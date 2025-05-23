@@ -112,7 +112,7 @@ class HeartPageState extends State<HeartPage>
         },
       );
 
-      if (mounted) {
+      if (mounted && response.data != null) {
         _wardrobesNotifier.value =
             response.data.map((json) => Wardrobe.fromJson(json)).toList();
         setState(() {
@@ -152,7 +152,7 @@ class HeartPageState extends State<HeartPage>
       );
 
       String idToken = (await FirebaseAuth.instance.currentUser!.getIdToken())!;
-      final response = await Dio().post(
+      await Dio().post(
         '$wardrobesBaseUrl/',
         data: {'name': 'New Wardrobe'},
         options: Options(
