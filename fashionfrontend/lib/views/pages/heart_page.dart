@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'package:fashionfrontend/models/card_queue_model.dart';
 import 'package:fashionfrontend/models/wardrobe_model.dart';
 import 'package:fashionfrontend/views/pages/liked_products_page.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/rendering.dart';
 
 const String likedProductsBaseUrl =
     'https://axentbackend.onrender.com/preferences';
@@ -42,6 +44,7 @@ class HeartPageState extends State<HeartPage>
 
   @override
   void initState() {
+    print("init");
     super.initState();
     fetchLikedProducts();
     fetchWardrobes();
@@ -108,19 +111,27 @@ class HeartPageState extends State<HeartPage>
           },
         ),
         queryParameters: {
-          'user_id': userId,
+          'firebase_uid': userId,
         },
       );
 
       if (mounted && response.data != null) {
-        _wardrobesNotifier.value =
-            response.data.map((json) => Wardrobe.fromJson(json)).toList();
-        setState(() {
-          _isWardrobesLoading = false;
-        });
+        try {
+          final List<dynamic> data = response.data as List<dynamic>;
+
+          _wardrobesNotifier.value =
+              data.map((json) => Wardrobe.fromJson(json)).toList();
+          setState(() {
+            _isWardrobesLoading = false;
+          });
+        } catch (e) {
+          _wardrobesNotifier.value = [];
+          setState(() {
+            _isWardrobesLoading = false;
+          });
+        }
       }
     } catch (e) {
-      print('Error fetching wardrobes: $e');
       if (mounted) {
         setState(() {
           _isWardrobesLoading = false;
@@ -136,25 +147,75 @@ class HeartPageState extends State<HeartPage>
   }
 
   Future<void> createWardrobe(BuildContext context, bool mounted) async {
-    try {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 20),
-              Text('Creating wardrobe...'),
-            ],
+  try {
+    final name = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        final controller = TextEditingController();
+        
+        return AlertDialog(
+          title: const Text('Create New Wardrobe'),
+          content: TextField(
+            autofocus: true,
+            controller: controller,
+            decoration: const InputDecoration(
+              hintText: 'Enter wardrobe name',
+            ),
+            onSubmitted: (value) {
+              Navigator.of(dialogContext).pop(controller.text);
+            },
           ),
-        ),
-      );
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(null),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+              child: const Text('Create'),
+            ),
+          ],
+        );
+      },
+    );
 
-      String idToken = (await FirebaseAuth.instance.currentUser!.getIdToken())!;
+    if (name == null || name.isEmpty) {
+      return;
+    }
+
+    // Now create the wardrobe
+    String idToken = (await FirebaseAuth.instance.currentUser!.getIdToken())!;
+    final decodedToken = await FirebaseAuth.instance.currentUser!.getIdTokenResult();
+    final userId = decodedToken.claims?['user_id'];
+
+    if (userId == null) {
+      throw Exception('User ID not found in token');
+    }
+
+    // Show loading dialog
+    if (!mounted) return;
+    showDialog(
+      context: context, // Use the original context here
+      barrierDismissible: false,
+      builder: (BuildContext loadingContext) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 20),
+            Text('Creating wardrobe...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
       await Dio().post(
         '$wardrobesBaseUrl/',
-        data: {'name': 'New Wardrobe'},
+        data: {
+          'name': name,
+          'user': userId,
+        },
         options: Options(
           headers: {
             'Authorization': 'Bearer $idToken',
@@ -166,15 +227,14 @@ class HeartPageState extends State<HeartPage>
       if (mounted) {
         Navigator.of(context).pop(); // Close loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Wardrobe created successfully!'),
+          SnackBar(
+            content: Text('Wardrobe created successfully: $name'),
             backgroundColor: Colors.green,
           ),
         );
-        refreshWardrobes(); // Refresh the wardrobes list
+        refreshWardrobes();
       }
     } catch (e) {
-      print('Error creating wardrobe: $e');
       if (mounted) {
         Navigator.of(context).pop(); // Close loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
@@ -184,8 +244,20 @@ class HeartPageState extends State<HeartPage>
           ),
         );
       }
+      rethrow;
+    }
+  } catch (e) {
+    print('Error creating wardrobe: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to create wardrobe: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
+}
 
   Future<void> deleteWardrobe(String wardrobeId) async {
     try {
@@ -372,11 +444,11 @@ class WardrobeWidget extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         Navigator.push(
-          context,
-          PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) =>
-                  LikedProductsPage()),
-        );
+            context,
+            MaterialPageRoute(
+              builder: (context) => WardrobeDetailsPage(wardrobe: wardrobe),
+            ),
+          );
       },
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -547,6 +619,199 @@ class LikedProductsSection extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+
+class WardrobeDetailsPage extends StatelessWidget {
+  final Wardrobe wardrobe;
+
+  const WardrobeDetailsPage({super.key, required this.wardrobe});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(wardrobe.name),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              // Navigate to edit wardrobe page
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () {
+              // Show delete confirmation dialog
+            },
+          ),
+        ],
+      ),
+      body: WardrobeDetailsContent(wardrobe: wardrobe),
+    );
+  }
+}
+
+class WardrobeDetailsContent extends StatefulWidget {
+  final Wardrobe wardrobe;
+
+  const WardrobeDetailsContent({super.key, required this.wardrobe});
+
+  @override
+  State<WardrobeDetailsContent> createState() => _WardrobeDetailsContentState();
+}
+
+class _WardrobeDetailsContentState extends State<WardrobeDetailsContent> {
+  var _products = <CardData>[];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchWardrobeProducts();
+  }
+
+  Future<void> _fetchWardrobeProducts() async {
+    try {
+      String idToken = (await FirebaseAuth.instance.currentUser!.getIdToken())!;
+      setState(() => _isLoading = true);
+      
+      // First fetch wardrobe details
+      final wardrobeResponse = await Dio().get(
+        '$wardrobesBaseUrl/${widget.wardrobe.id}', 
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $idToken',
+          },
+        ),
+      );
+      
+      // Get the product IDs from wardrobe response
+      final productIds = (wardrobeResponse.data['product_ids'] as List<dynamic>).cast<String>();
+      
+      // Fetch each product individually
+      final products = await Future.wait(
+        productIds.map((productId) async {
+          final productResponse = await Dio().get(
+            '$wardrobesBaseUrl/products/$productId',
+            options: Options(
+              headers: {
+                'Authorization': 'Bearer $idToken',
+              },
+            ),
+          );
+          return CardData.fromJson(productResponse.data);
+        }).toList(),
+      );
+      
+      setState(() {
+        _products = products;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load wardrobe products: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: _fetchWardrobeProducts,
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.wardrobe.name,
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Created: ${widget.wardrobe.createdAt}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildProductGrid(),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductGrid() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (_products.isEmpty) {
+      return const Center(
+        child: Text('No products in this wardrobe'),
+      );
+    }
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.75,
+      ),
+      itemCount: _products.length,
+      itemBuilder: (context, index) {
+        final product = _products[index];
+        return Card(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Image.network(
+                  product.images[0],
+                  fit: BoxFit.cover,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      '\$${product.retailPrice.toStringAsFixed(2)}',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () {
+                  // Show remove product confirmation dialog
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

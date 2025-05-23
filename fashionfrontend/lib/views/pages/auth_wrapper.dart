@@ -15,12 +15,19 @@ class AuthWrapper extends StatefulWidget {
 }
 
 class _AuthWrapperState extends State<AuthWrapper> {
-  List<Widget> pages = [];
   User? user;
+
+  final List<Widget> pages =  [
+      const HomePage(),
+      const HeartPage(),
+      //CollectionsPage(), //!THIS IS A COMING FEATURE, NOT IN VERSION 1.0
+      SettingsPage(),
+    ];
 
   @override
   void initState() {
     super.initState();
+    
   }
 
   @override
@@ -34,12 +41,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
           }
           if (snapshot.hasData) {
             user ??= FirebaseAuth.instance.currentUser!;
-            pages = [
-              HomePage(user: user!),
-              HeartPage(),
-              //CollectionsPage(), //!THIS IS A COMING FEATURE, NOT IN VERSION 1.0
-              SettingsPage(),
-            ];
+
             final gradient = LinearGradient(
               colors: [
                 Color.fromARGB(255, 4, 62, 104),

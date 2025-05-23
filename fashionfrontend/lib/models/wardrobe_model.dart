@@ -15,14 +15,14 @@ class Wardrobe {
 
   factory Wardrobe.fromJson(Map<String, dynamic> json) {
     return Wardrobe(
-      id: json['id'],
+      id: json['id'].toString(),
       name: json['name'],
-      productIds: List<String>.from(json['product_ids']),
+      productIds: json['product_ids'] != null ? List<String>.from(json['product_ids']) : [],
       createdAt: DateTime.parse(json['created_at']),
       coverImageUrl: json['cover_image_url'],
     );
   }
-  
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

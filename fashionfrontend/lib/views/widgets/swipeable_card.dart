@@ -41,8 +41,7 @@ import 'package:provider/provider.dart';
   Makes the most sense to go in the home_page somwewhere
  */
 class SwipeableCard extends StatefulWidget {
-  final User user;
-  const SwipeableCard({Key? key, required this.user}) : super(key: key);
+  const SwipeableCard({Key? key}) : super(key: key);
 
   @override
   _SwipeableCardState createState() => _SwipeableCardState();
