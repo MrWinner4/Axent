@@ -1,15 +1,17 @@
 import 'dart:async';
-
+import 'package:fashionfrontend/models/wardrobe_model.dart';
 import 'package:fashionfrontend/views/pages/liked_products_page.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-const String likedProductsBaseUrl = 'https://axentbackend.onrender.com/preferences';
+const String likedProductsBaseUrl =
+    'https://axentbackend.onrender.com/preferences';
+const String wardrobesBaseUrl = 'https://axentbackend.onrender.com/wardrobes';
 
 class HeartPage extends StatefulWidget {
   const HeartPage({super.key});
-  
+
   @override
   HeartPageState createState() => HeartPageState();
 }
@@ -17,7 +19,9 @@ class HeartPage extends StatefulWidget {
 class HeartPageState extends State<HeartPage>
     with AutomaticKeepAliveClientMixin {
   final ValueNotifier<List<dynamic>> _productsNotifier = ValueNotifier([]);
+  final ValueNotifier<List<Wardrobe>> _wardrobesNotifier = ValueNotifier([]);
   bool _isLoading = true;
+  bool _isWardrobesLoading = true;
 
   @override
   bool get wantKeepAlive => true;
@@ -29,15 +33,24 @@ class HeartPageState extends State<HeartPage>
     fetchLikedProducts();
   }
 
+  void refreshWardrobes() {
+    setState(() {
+      _isWardrobesLoading = true;
+    });
+    fetchWardrobes();
+  }
+
   @override
   void initState() {
     super.initState();
     fetchLikedProducts();
+    fetchWardrobes();
   }
 
   @override
   void dispose() {
     _productsNotifier.dispose();
+    _wardrobesNotifier.dispose();
     super.dispose();
   }
 
@@ -74,11 +87,199 @@ class HeartPageState extends State<HeartPage>
     }
   }
 
+  Future<void> fetchWardrobes() async {
+    try {
+      String idToken = (await FirebaseAuth.instance.currentUser!.getIdToken())!;
+
+      // Get user ID from token
+      final decodedToken =
+          await FirebaseAuth.instance.currentUser!.getIdTokenResult();
+      final userId = decodedToken.claims?['user_id'];
+
+      if (userId == null) {
+        throw Exception('User ID not found in token');
+      }
+
+      final response = await Dio().get(
+        '$wardrobesBaseUrl/user/',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $idToken',
+          },
+        ),
+        queryParameters: {
+          'user_id': userId,
+        },
+      );
+
+      if (mounted) {
+        _wardrobesNotifier.value =
+            response.data.map((json) => Wardrobe.fromJson(json)).toList();
+        setState(() {
+          _isWardrobesLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching wardrobes: $e');
+      if (mounted) {
+        setState(() {
+          _isWardrobesLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load wardrobes: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> createWardrobe(BuildContext context, bool mounted) async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text('Creating wardrobe...'),
+            ],
+          ),
+        ),
+      );
+
+      String idToken = (await FirebaseAuth.instance.currentUser!.getIdToken())!;
+      final response = await Dio().post(
+        '$wardrobesBaseUrl/',
+        data: {'name': 'New Wardrobe'},
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $idToken',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Wardrobe created successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        refreshWardrobes(); // Refresh the wardrobes list
+      }
+    } catch (e) {
+      print('Error creating wardrobe: $e');
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create wardrobe: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> deleteWardrobe(String wardrobeId) async {
+    try {
+      String idToken = (await FirebaseAuth.instance.currentUser!.getIdToken())!;
+      await Dio().delete(
+        '$wardrobesBaseUrl/$wardrobeId/',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $idToken',
+          },
+        ),
+      );
+
+      if (mounted) {
+        refreshWardrobes();
+      }
+    } catch (e) {
+      print('Error deleting wardrobe: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete wardrobe: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> addToWardrobe(String wardrobeId, String productId) async {
+    try {
+      String idToken = (await FirebaseAuth.instance.currentUser!.getIdToken())!;
+      await Dio().post(
+        '$wardrobesBaseUrl/$wardrobeId/add_item/',
+        data: {'product_id': productId},
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $idToken',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      if (mounted) {
+        refreshWardrobes();
+      }
+    } catch (e) {
+      print('Error adding to wardrobe: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to add to wardrobe: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> removeFromWardrobe(String wardrobeId, String productId) async {
+    try {
+      String idToken = (await FirebaseAuth.instance.currentUser!.getIdToken())!;
+      await Dio().post(
+        '$wardrobesBaseUrl/$wardrobeId/remove_item/',
+        data: {'product_id': productId},
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $idToken',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      if (mounted) {
+        refreshWardrobes();
+      }
+    } catch (e) {
+      print('Error removing from wardrobe: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to remove from wardrobe: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: Color.fromARGB(255, 255, 255, 255),
+      backgroundColor: ColorScheme.of(context).surfaceBright,
       body: ValueListenableBuilder<List<dynamic>>(
         valueListenable: _productsNotifier,
         builder: (context, products, _) {
@@ -100,7 +301,7 @@ class HeartPageState extends State<HeartPage>
               onPressed: () async {
                 await createWardrobe(context, mounted);
               },
-              backgroundColor: Color.fromARGB(255, 4, 62, 104),
+              backgroundColor: ColorScheme.of(context).primary,
               child: Icon(
                 Icons.add,
                 color: Colors.white,
@@ -130,7 +331,24 @@ class HeartPageState extends State<HeartPage>
                     SizedBox(
                       height: 40,
                     ),
-                    Wardrobe(products: products),
+                    ValueListenableBuilder<List<Wardrobe>>(
+                      valueListenable: _wardrobesNotifier,
+                      builder: (context, wardrobes, _) {
+                        if (_isWardrobesLoading) {
+                          return Center(child: CircularProgressIndicator());
+                        }
+                        if (wardrobes.isEmpty) {
+                          return Center(child: Text("No wardrobes."));
+                        }
+
+                        return Column(
+                          children: wardrobes
+                              .map((wardrobe) =>
+                                  WardrobeWidget(wardrobe: wardrobe))
+                              .toList(),
+                        );
+                      },
+                    ),
                     SizedBox(
                       height: 40,
                     ),
@@ -145,68 +363,9 @@ class HeartPageState extends State<HeartPage>
   }
 }
 
-Future<void> createWardrobe(context, mounted) async {
-  try {
-    showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => const AlertDialog(
-      content: Row(
-        children: [
-          CircularProgressIndicator(),
-          SizedBox(width: 20),
-          Text('Creating wardrobe...'),
-        ],
-      ),
-    ),
-  );
-  final String wardrobesBaseURL = ('https://axentbackend.onrender.com/wardrobes/');
-  final Dio dio = Dio();
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null) {
-    throw Exception("User not authenticated");
-  }
-
-  final token = await user.getIdToken();
-
-
-  final response = await dio.post(wardrobesBaseURL,
-      data: {'name': 'New Wardrobe'},
-      options: Options(headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      }));
-
-  if (response.statusCode == 201) {
-    if (mounted) {
-      Navigator.of(context).pop(); // Close loading dialog
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Wardrobe created successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } else {
-      throw Exception('Failed to create wardrobe');
-    }
-  }
-  } catch (e) {
-    print("error creating wardrobe: $e");
-    if (mounted) {
-      Navigator.of(context).pop(); // Close loading dialog
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to create wardrobe: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-}
-
-class Wardrobe extends StatelessWidget {
-  final products;
-  const Wardrobe({super.key, required this.products});
+class WardrobeWidget extends StatelessWidget {
+  final Wardrobe wardrobe;
+  const WardrobeWidget({super.key, required this.wardrobe});
 
   @override
   Widget build(BuildContext context) {
@@ -226,9 +385,9 @@ class Wardrobe extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Color.fromARGB(64, 6, 104, 173),
+              color: Colors.black.withAlpha(64),
               offset: Offset(0, 0),
-              blurRadius: 10,
+              blurRadius: 20,
             ),
           ],
         ),
@@ -241,7 +400,7 @@ class Wardrobe extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Wardrobe.name',
+                  wardrobe.name,
                   style: TextStyle(
                     fontSize: 25,
                     fontWeight: FontWeight.w600,
@@ -281,71 +440,110 @@ class LikedProductsSection extends StatelessWidget {
       },
       child: Container(
         padding: const EdgeInsets.all(16),
+        width: 200,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Color.fromARGB(64, 6, 104, 173),
+              color: Colors.black.withAlpha(64),
               offset: Offset(0, 0),
-              blurRadius: 10,
+              blurRadius: 20,
             ),
           ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Top row with shoe images
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: List.generate(
-                reversedProducts.length,
-                (index) {
-                  final shoe = reversedProducts[index];
-                  final imageUrl = shoe['images']?.first['image_url'] ??
-                      'assets/images/default_shoe.jpg';
-                  return Flexible(
-                    child: Column(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            imageUrl,
-                            height: 100,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Image.asset(
-                                'assets/images/default_shoe.jpg',
-                                height: 100,
-                                fit: BoxFit.cover,
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-            SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 RichText(
-                    text: TextSpan(
-                      style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 25,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black),
-                      children: [
-                        TextSpan(text: 'Liked Products'),
-                      ],
-                    ),
-                  )
+                  text: TextSpan(
+                    style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black),
+                    children: [
+                      TextSpan(text: '❤ ', style: TextStyle(color: Colors.red)),
+                      TextSpan(text: 'Liked Products'),
+                    ],
+                  ),
+                )
               ],
             ),
+            SizedBox(
+              width: 100,
+              height: 100,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Positioned(
+                    top: 28,
+                    left: 24,
+                    child: Container(
+                      width: 70,
+                      height: 60,
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withAlpha(64),
+                                blurRadius: 10,
+                                offset: Offset(4, 4))
+                          ]),
+                    ),
+                  ),
+                  Positioned(
+                    top: 24,
+                    left: 20,
+                    child: Container(
+                      width: 70,
+                      height: 60,
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withAlpha(64),
+                                blurRadius: 10,
+                                offset: Offset(4, 4))
+                          ]),
+                    ),
+                  ),
+                  Container(
+                    width: 70,
+                    height: 60,
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(64),
+                            blurRadius: 10,
+                            offset: Offset(4, 4),
+                          )
+                        ]),
+                    child: Image.network(
+                      reversedProducts[0]['images']?.first['image_url'] ??
+                          'assets/images/default_shoe.jpg',
+                      height: 100,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Image.asset(
+                          'assets/images/default_shoe.jpg',
+                          height: 100,
+                          fit: BoxFit.cover,
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Text("102 saved shoes", style: TextStyle(color: Colors.grey))
           ],
         ),
       ),

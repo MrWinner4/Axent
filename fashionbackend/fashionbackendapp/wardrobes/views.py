@@ -58,6 +58,34 @@ class WardrobeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer, user_profile):
         serializer.save(user=user_profile)
 
+    @action(detail=False, methods=['get'])
+    def list_by_user(self, request, *args, **kwargs):
+        """List all wardrobes for a specific user"""
+        # Handle authentication
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return Response({"error": "Invalid authorization header"}, status=401)
+        
+        token = auth_header.split(' ').pop()
+        user_profile = get_user_profile_from_token(token)
+        if not user_profile:
+            return Response({"error": "Invalid or expired token"}, status=401)
+        
+        # Get user ID from query parameters
+        user_id = request.query_params.get('user_id')
+        if not user_id:
+            return Response({"error": "user_id parameter is required"}, status=400)
+        
+        try:
+            user_profile = UserProfile.objects.get(id=user_id)
+        except UserProfile.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
+        
+        # Filter wardrobes for this user
+        queryset = Wardrobe.objects.filter(user=user_profile)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     @action(detail=True, methods=['post'])
     def add_item(self, request, pk=None):
         # Handle authentication

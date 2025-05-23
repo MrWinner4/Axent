@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path('', views.WardrobeViewSet.as_view({'post': 'create'}), name='wardrobe-create'),
+    path('user/', views.WardrobeViewSet.as_view({'get': 'list_by_user'}), name='wardrobe-list-by-user'),
     path('<int:pk>/', views.WardrobeViewSet.as_view({
         'get': 'retrieve',
         'put': 'update',

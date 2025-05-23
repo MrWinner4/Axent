@@ -350,19 +350,11 @@ class _SwipeableCardState extends State<SwipeableCard>
           : Container(
               //If not
               decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                      colors: [
-                        const Color.fromARGB(255, 205, 205, 205), //Ending Color
-                        const Color.fromARGB(
-                            255, 255, 255, 255), //Beginning Color
-                      ],
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      stops: [0.0, .25]),
+                  color: ColorScheme.of(context).surfaceBright,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Color.fromARGB(255, 6, 104, 173).withAlpha(64), // about 25 % opacity
+                      color: ColorScheme.of(context).primary.withAlpha(64), // about 25 % opacity
                       blurRadius: 20,
                       blurStyle: BlurStyle.outer,
                     )
@@ -375,7 +367,7 @@ class _SwipeableCardState extends State<SwipeableCard>
                     Align(
                       alignment: Alignment.topLeft,
                       child: ColoredBox(
-                        color: Color.fromARGB(255, 255, 255, 255),
+                        color: Colors.white,
                         child: SizedBox(
                           width: cardWidth,
                           height: cardHeight * (30 / 40),

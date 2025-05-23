@@ -14,7 +14,7 @@ class LikedProductsPage extends StatefulWidget {
 class _LikedProductsPageState extends State<LikedProductsPage> {
   final ValueNotifier<List<dynamic>> _productsNotifier = ValueNotifier([]);
   bool _isLoading = true;
-  final apiBaseUrl = 'https://axentbackend.onrender.com/api';
+  final preferencesBaseUrl = 'https://axentbackend.onrender.com/preferences';
 
   @override
   void initState() {
@@ -161,7 +161,7 @@ class _LikedProductsPageState extends State<LikedProductsPage> {
 
       String idToken = (await FirebaseAuth.instance.currentUser!.getIdToken())!;
       final response = await Dio().get(
-        '$apiBaseUrl/liked_products/',
+        '$preferencesBaseUrl/liked_products/',
         options: Options(
           headers: {
             'Authorization': 'Bearer $idToken',
