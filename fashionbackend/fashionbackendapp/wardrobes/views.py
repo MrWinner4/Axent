@@ -77,7 +77,7 @@ class WardrobeViewSet(viewsets.ModelViewSet):
             return Response({"error": "user_id parameter is required"}, status=400)
         
         try:
-            user_profile = UserProfile.objects.get(id=user_id)
+            user_profile = UserProfile.objects.get(irebase_uid=user_id)
         except UserProfile.DoesNotExist:
             return Response({"error": "User not found"}, status=404)
         
