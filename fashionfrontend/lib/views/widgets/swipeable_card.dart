@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
 import 'dart:convert'; // Import the dart:convert library
+import 'dart:collection'; // Add this at the top of the file with other imports
 import 'package:fashionfrontend/models/card_queue_model.dart';
 import 'package:fashionfrontend/views/pages/heart_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -41,14 +42,14 @@ import 'package:provider/provider.dart';
   Makes the most sense to go in the home_page somwewhere
  */
 class SwipeableCard extends StatefulWidget {
-  const SwipeableCard({Key? key}) : super(key: key);
+  const SwipeableCard({super.key});
 
   @override
-  _SwipeableCardState createState() => _SwipeableCardState();
+  State<SwipeableCard> createState() => SwipeableCardState();
 }
 
-class _SwipeableCardState extends State<SwipeableCard>
-    with SingleTickerProviderStateMixin {
+class SwipeableCardState extends State<SwipeableCard>
+    with TickerProviderStateMixin {
   //Position for Card
   double _left = 0;
   double _top = 0;
@@ -76,43 +77,72 @@ class _SwipeableCardState extends State<SwipeableCard>
   //For caching next card
   Widget? _nextCardWidget;
 
+  double undoLeft = 0;
+  bool isUndoing = false;
+
+  late AnimationController undoController;
+  late Animation<double> undoPositionAnimation;
+
+  late AnimationController transitionController;
+  late Animation<double> scaleAnimation;
+  late Animation<double> blurAnimation;
+
   @override
   void initState() {
     super.initState();
-    final cardQueue = Provider.of<CardQueueModel>(context, listen: false);
+    undoController = AnimationController(
+        duration: const Duration(milliseconds: 300), vsync: this);
+    undoPositionAnimation =
+        Tween<double>(begin: 0, end: 0).animate(undoController);
+
+    transitionController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: transitionController, curve: Curves.easeOut),
+    );
+    blurAnimation = Tween<double>(begin: 0.0, end: 5.0).animate(
+      CurvedAnimation(parent: transitionController, curve: Curves.easeOut),
+    );
+
     greenOpacity = sittingOpacity;
     redOpacity = sittingOpacity;
-    if (cardQueue.isEmpty){
-    for (int i = 0; i < 3; i++) {
-      getProductData(cardQueue);
+    final cardQueue = Provider.of<CardQueueModel>(context, listen: false);
+    if (cardQueue.isEmpty) {
+      for (int i = 0; i < 3; i++) {
+        getProductData(cardQueue);
+      }
     }
-    } 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (mounted && cardQueue.isNotEmpty) {
-      updateCardWidgets(cardQueue);
-    }
-  });
+      if (mounted && cardQueue.isNotEmpty) {
+        updateCardWidgets(cardQueue);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   void updateCardWidgets(CardQueueModel cardQueue) {
-    //If the queue has more than 2
-    if (cardQueue.queueLength >= 2) {
-      _currentCardWidget =
-          _buildCard(data: cardQueue.firstCard, showBorder: false);
-      _nextCardWidget =
-          _buildCard(data: cardQueue.secondCard, showBorder: true);
-      // If the queue has only one card
-    } else if (cardQueue.queueLength == 1) {
-      _currentCardWidget =
-          _buildCard(data: cardQueue.firstCard, showBorder: false);
-      _nextCardWidget =
-          _buildCard(data: null, showBorder: true); // A loading card maybe
-      //If the queue is empty
-    } else {
-      _currentCardWidget = _buildCard(data: null, showBorder: true);
-      _nextCardWidget = _buildCard(data: null, showBorder: true);
-    }
-    setState(() {});
+    // Get the current cards from the queue
+    final currentCard = cardQueue.firstCard;
+    final nextCard = cardQueue.secondCard;
+
+    // Update the widgets
+    setState(() {
+      // Current card should be the first card in the queue
+      _currentCardWidget = currentCard != null
+          ? _buildCard(data: currentCard, showBorder: false)
+          : const Center(child: CircularProgressIndicator());
+
+      // Next card should be the second card in the queue
+      _nextCardWidget = nextCard != null
+          ? _buildCard(data: nextCard, showBorder: true)
+          : null;
+    });
   }
 
   @override
@@ -120,12 +150,11 @@ class _SwipeableCardState extends State<SwipeableCard>
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
     final double navBarHeight = 40;
-    final double appBarHeight =
-        100;
+    final double appBarHeight = 100;
     double IOSCORRECTION = 0;
-        if (Platform.isIOS){
-          IOSCORRECTION = 60;
-        }
+    if (Platform.isIOS) {
+      IOSCORRECTION = 60;
+    }
     final double SECONDSEARCHHEIGHT = (50 + 16);
     final padding = MediaQuery.of(context).padding;
     usableScreenHeight = (screenHeight -
@@ -140,144 +169,202 @@ class _SwipeableCardState extends State<SwipeableCard>
     threshold = MediaQuery.of(context).size.width * .35; // 35% of screen width
     final double screenCenter = MediaQuery.of(context).size.width / 2;
     double currentCardCenterX = _left + cardWidth / 2;
+
     return Consumer<CardQueueModel>(
-      builder: (context, cardQueue, child) =>
-          LayoutBuilder(builder: (context, constraints) {
-        centerLeft = (screenWidth - cardWidth) / 2;
-        centerTop = (usableScreenHeight - cardHeight) / 2;
-        if (!_isLoaded) {
-          _left = centerLeft;
-          _top = centerTop;
-          _isLoaded = true;
-          currentCardCenterX = _left + cardWidth / 2;
-        }
-        if (cardQueue.isEmpty){
-          return Center(child: CircularProgressIndicator());
-        }
-        else {
-        return Stack(
-          children: <Widget>[
-            // BACKGROUND: The "next" card that sits behind the current card.
-            // When _popUp is true, it is placed exactly in the center.
-            // Otherwise, it shows a blurred preview at a slight offset.
-            //BEHIND ONE
-            AnimatedPositioned(
-              duration: Duration.zero,
-              curve: Curves.easeOut,
-              top: centerTop, // or simply centerTop if you remove the offset
-              left: centerLeft, // or simply centerLeft if you remove the offset
-              child: _buildNextCard(
-                  cardQueue), //?: Am i building this every time the thing moves?
-            ),
-            // FOREGROUND: The interactive (current) card.
-            // hide it during pop‑up mode.
-            //IN FRONT ONE
-            if (!_popUp)
-              AnimatedPositioned(
-                //MOVING STUFF
-                duration: _isLoaded
-                    ? const Duration(milliseconds: 300)
-                    : Duration.zero,
-                top: (_isLoaded) ? _top : centerTop,
-                left: (_isLoaded)
-                    ? _left
-                    : centerLeft, // Only animate after loading
-                curve: Curves.easeOut,
-                child: GestureDetector(
-                  onPanUpdate: (details) {
-                    setState(() {
-                      _top += details.delta.dy;
-                      _left += details.delta.dx;
-                      double distanceFromCenter =
-                          currentCardCenterX - screenCenter;
-                      rotationAngle = distanceFromCenter * 0.0008;
-                      if (distanceFromCenter < 0) {
-                        redOpacity = max(
-                            (distanceFromCenter.abs() / threshold)
-                                .clamp(0.0, 1.0),
-                            sittingOpacity);
-                        greenOpacity = sittingOpacity;
-                      }
-                      if (distanceFromCenter > 0) {
-                        greenOpacity = max(
-                            (distanceFromCenter.abs() / threshold)
-                                .clamp(0.0, 1.0),
-                            sittingOpacity);
-                        redOpacity = sittingOpacity;
-                      }
-                    });
-                  },
-                  onPanEnd: (details) {
-                    setState(() {});
-                    // If the card was dragged past the threshold, trigger off‑screen animation.
-                    if ((currentCardCenterX - screenCenter).abs() > threshold) {
-                      _triggerNextCard(cardQueue.firstCard!.id, cardQueue);
-                    } else {
-                      _resetCard();
-                    }
-                  },
-                  child: AnimatedRotation(
-                      //Rotating stuff!
-                      duration: const Duration(milliseconds: 300),
+      builder: (context, cardQueue, child) {
+        return LayoutBuilder(builder: (context, constraints) {
+          centerLeft = (screenWidth - cardWidth) / 2;
+          centerTop = (usableScreenHeight - cardHeight) / 2;
+          if (!_isLoaded) {
+            _left = centerLeft;
+            _top = centerTop;
+            _isLoaded = true;
+            currentCardCenterX = _left + cardWidth / 2;
+          }
+          if (cardQueue.isEmpty) {
+            return Center(child: CircularProgressIndicator());
+          } else {
+            if (isUndoing) {
+              return Stack(
+                children: [
+                  Positioned(
+                    left: _left,
+                    top: _top,
+                    child: AnimatedBuilder(
+                      animation: transitionController,
+                      builder: (context, child) {
+                        return Align(
+                          alignment: Alignment.center,
+                          child: Transform.scale(
+                            scale: scaleAnimation.value,
+                            alignment: Alignment.center,
+                            child: ImageFiltered(
+                              imageFilter: ImageFilter.blur(
+                                sigmaX: blurAnimation.value,
+                                sigmaY: blurAnimation.value,
+                              ),
+                              child: SizedBox(
+                                width: cardWidth,
+                                height: cardHeight,
+                                child: _buildCard(data: cardQueue.secondCard, showBorder: false ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  Positioned(
+                    left: _left,
+                    top: _top,
+                    child: AnimatedBuilder(
+                      animation: undoController,
+                      builder: (context, child) {
+                        return Transform.translate(
+                          offset: Offset(undoPositionAnimation.value, 0),
+                          child: SizedBox(
+                            width: cardWidth,
+                            height: cardHeight,
+                            child: _currentCardWidget,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              );
+            } else {
+              return Stack(
+                children: <Widget>[
+                  // BACKGROUND: The "next" card that sits behind the current card.
+                  // When _popUp is true, it is placed exactly in the center.
+                  // Otherwise, it shows a blurred preview at a slight offset.
+                  //BEHIND ONE
+                  AnimatedPositioned(
+                    duration: Duration.zero,
+                    curve: Curves.easeOut,
+                    top:
+                        centerTop, // or simply centerTop if you remove the offset
+                    left:
+                        centerLeft, // or simply centerLeft if you remove the offset
+                    child: _buildNextCard(
+                        cardQueue), //?: Am i building this every time the thing moves?
+                  ),
+                  // FOREGROUND: The interactive (current) card.
+                  // hide it during pop‑up mode.
+                  //IN FRONT ONE
+                  if (!_popUp)
+                    AnimatedPositioned(
+                      //MOVING STUFF
+                      duration: _isLoaded
+                          ? const Duration(milliseconds: 300)
+                          : Duration.zero,
+                      top: (_isLoaded) ? _top : centerTop,
+                      left: (_isLoaded)
+                          ? _left
+                          : centerLeft, // Only animate after loading
                       curve: Curves.easeOut,
-                      turns: rotationAngle / (2 * 3.14),
-                      child: cardQueue.isEmpty
-                          ? _buildCard(
-                              data: null,
-                              showBorder: true,
-                            )
-                          : _currentCardWidget),
-                ),
-              ),
-            Positioned(
-              left: -50, // Adjust based on your layout
-              top: centerTop, // Align vertically with the card
-              child: Container(
-                width: 50,
-                height: cardHeight,
-                decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color.fromRGBO(237, 8, 8, 1).withValues(
-                          alpha: redOpacity), // Glow color with transparency
-                      blurRadius:
-                          redOpacity * 200, // Increases the glow intensity
-                      spreadRadius:
-                          redOpacity * 20, // How much the glow expands
-                      offset: Offset(0, 0), // Keeps the glow centered
+                      child: GestureDetector(
+                        onPanUpdate: (details) {
+                          setState(() {
+                            _top += details.delta.dy;
+                            _left += details.delta.dx;
+                            double distanceFromCenter =
+                                currentCardCenterX - screenCenter;
+                            rotationAngle = distanceFromCenter * 0.0008;
+                            if (distanceFromCenter < 0) {
+                              redOpacity = max(
+                                  (distanceFromCenter.abs() / threshold)
+                                      .clamp(0.0, 1.0),
+                                  sittingOpacity);
+                              greenOpacity = sittingOpacity;
+                            }
+                            if (distanceFromCenter > 0) {
+                              greenOpacity = max(
+                                  (distanceFromCenter.abs() / threshold)
+                                      .clamp(0.0, 1.0),
+                                  sittingOpacity);
+                              redOpacity = sittingOpacity;
+                            }
+                          });
+                        },
+                        onPanEnd: (details) {
+                          setState(() {});
+                          // If the card was dragged past the threshold, trigger off‑screen animation.
+                          if ((currentCardCenterX - screenCenter).abs() >
+                              threshold) {
+                            _triggerNextCard(
+                                cardQueue.firstCard!.id, cardQueue);
+                          } else {
+                            _resetCard();
+                          }
+                        },
+                        child: AnimatedRotation(
+                            //Rotating stuff!
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeOut,
+                            turns: rotationAngle / (2 * 3.14),
+                            child: cardQueue.isEmpty
+                                ? _buildCard(
+                                    data: null,
+                                    showBorder: true,
+                                  )
+                                : _currentCardWidget),
+                      ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              // Green Box
-              left: MediaQuery.of(context)
-                  .size
-                  .width, // Adjust based on your layout
-              top: centerTop, // Align vertically with the card
-              child: Container(
-                width: 50,
-                height: cardHeight,
-                decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color.fromRGBO(0, 255, 106, 1).withValues(
-                          alpha: greenOpacity), // Glow color with transparency
-                      blurRadius:
-                          greenOpacity * 200, // Increases the glow intensity
-                      spreadRadius:
-                          greenOpacity * 20, // How much the glow expands
-                      offset: Offset(0, 0), // Keeps the glow centered
+                  Positioned(
+                    left: -50, // Adjust based on your layout
+                    top: centerTop, // Align vertically with the card
+                    child: Container(
+                      width: 50,
+                      height: cardHeight,
+                      decoration: BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color.fromRGBO(237, 8, 8, 1).withValues(
+                                alpha:
+                                    redOpacity), // Glow color with transparency
+                            blurRadius: redOpacity *
+                                200, // Increases the glow intensity
+                            spreadRadius:
+                                redOpacity * 20, // How much the glow expands
+                            offset: Offset(0, 0), // Keeps the glow centered
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
-        }
-      }),
+                  ),
+                  Positioned(
+                    // Green Box
+                    left: MediaQuery.of(context)
+                        .size
+                        .width, // Adjust based on your layout
+                    top: centerTop, // Align vertically with the card
+                    child: Container(
+                      width: 50,
+                      height: cardHeight,
+                      decoration: BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color.fromRGBO(0, 255, 106, 1).withValues(
+                                alpha:
+                                    greenOpacity), // Glow color with transparency
+                            blurRadius: greenOpacity *
+                                200, // Increases the glow intensity
+                            spreadRadius:
+                                greenOpacity * 20, // How much the glow expands
+                            offset: Offset(0, 0), // Keeps the glow centered
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }
+          }
+        });
+      },
     );
   }
 
@@ -332,6 +419,25 @@ class _SwipeableCardState extends State<SwipeableCard>
     required CardData? data,
     required bool showBorder,
   }) {
+    if (data == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // Use the first image if available, otherwise show a placeholder
+    final imageWidget = data.images.isNotEmpty
+        ? Image.network(
+            data.images.first,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return const Center(
+                child: Icon(Icons.error),
+              );
+            },
+          )
+        : const Center(
+            child: Icon(Icons.image_not_supported),
+          );
+
     return SizedBox(
       width: cardWidth,
       height: cardHeight,
@@ -353,7 +459,9 @@ class _SwipeableCardState extends State<SwipeableCard>
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: ColorScheme.of(context).primary.withAlpha(64), // about 25 % opacity
+                      color: ColorScheme.of(context)
+                          .primary
+                          .withAlpha(64), // about 25 % opacity
                       blurRadius: 20,
                       blurStyle: BlurStyle.outer,
                     )
@@ -458,7 +566,7 @@ class _SwipeableCardState extends State<SwipeableCard>
   /// Called when the swipe passes the threshold.
   /// This version first animates the current card off-screen,
   /// then triggers the "pop-up" of the next card from its blurred position.
-  /// 
+  ///
 
   void _triggerNextCard(String currentCardID, CardQueueModel cardQueue) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -484,12 +592,10 @@ class _SwipeableCardState extends State<SwipeableCard>
         greenOpacity = sittingOpacity;
         if (cardQueue.isNotEmpty) {
           cardQueue.removeFirstCard();
-          final previousShoeModel = Provider.of<PreviousShoeModel>(context, listen: false);
-          previousShoeModel.addItem(swipedCard!);
-          if(preference == 1) {
-            final likedShoesModel = Provider.of<LikedShoesModel>(context, listen: false);
-            likedShoesModel.addItem(swipedCard);
-          }
+          //Add previous swipe to previousProductModel
+          final previousShoeModel =
+              Provider.of<PreviousProductModel>(context, listen: false);
+          previousShoeModel.addSwipe(swipedCard!, preference);
         }
         updateCardWidgets(cardQueue);
         getProductData(cardQueue);
@@ -518,10 +624,60 @@ class _SwipeableCardState extends State<SwipeableCard>
     });
   }
 
+  void undo() {
+    final previousShoeModel =
+        Provider.of<PreviousProductModel>(context, listen: false);
+
+    final previousSwipe = previousShoeModel.getLastSwipe();
+
+    if (previousSwipe != null) {
+      final previousCard = previousSwipe['data'] as CardData;
+      final cardQueue = Provider.of<CardQueueModel>(context, listen: false);
+      //Animation Stuff
+      final direction = previousSwipe['direction'] as int;
+      final screenWidth = MediaQuery.of(context).size.width;
+
+      cardQueue.addCardFirst(previousCard);
+
+      setState(() {
+        _currentCardWidget = _buildCard(data: previousCard, showBorder: false);
+        isUndoing = true;
+      });
+
+      undoLeft = direction == 1 ? screenWidth : -screenWidth;
+      undoController.reset();
+      undoPositionAnimation = Tween<double>(
+        begin: undoLeft,
+        end: 0,
+      ).animate(
+          CurvedAnimation(parent: undoController, curve: Curves.easeInOut));
+
+      // Add the undone card back to the queue
+
+      undoController.duration = const Duration(milliseconds: 300);
+      undoController.reset();
+      undoController.forward();
+
+      undoController.addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          setState(() {
+            isUndoing = false;
+            updateCardWidgets(cardQueue);
+          });
+        }
+      });
+
+      // Log the queue state
+      previousShoeModel.removeLastSwipe();
+    } else {
+      return;
+    }
+  }
+
   Future<void> getProductData(CardQueueModel cardQueue) async {
     try {
       final data = await getProduct();
-      
+
       // If the response is a string, parse it as JSON
       final parsedData = data is String ? jsonDecode(data as String) : data;
 
@@ -534,9 +690,11 @@ class _SwipeableCardState extends State<SwipeableCard>
         releaseDate: parsedData['release_date'] != null
             ? DateTime.parse(parsedData['release_date'])
             : null,
-        retailPrice: double.tryParse(parsedData['retailprice'].toString()) ?? 0.0,
+        retailPrice:
+            double.tryParse(parsedData['retailprice'].toString()) ?? 0.0,
         estimatedMarketValue:
-            double.tryParse(parsedData['estimatedMarketValue'].toString()) ?? 0.0,
+            double.tryParse(parsedData['estimatedMarketValue'].toString()) ??
+                0.0,
         story: parsedData['story'] ?? '',
         urls: List<String>.from(parsedData['urls'] ?? []),
         images: (parsedData['images'] is List)
@@ -559,27 +717,28 @@ class _SwipeableCardState extends State<SwipeableCard>
     }
   }
 
-// Calls API
+  // Calls API
   Future<Map<String, dynamic>> getProduct() async {
     final String baseURL =
         ('https://axentbackend.onrender.com/products/recommend/');
     final url = Uri.parse(baseURL);
     final Dio dio = Dio();
-    
+
     try {
       final response = await dio.getUri(url,
-      options: Options(headers: await getAuthHeaders()));
-      
+          options: Options(headers: await getAuthHeaders()));
+
       if (response.statusCode == 200) {
         // Parse the response data
         final data = response.data;
-        
+
         // If the data is a string, parse it as JSON
         final parsedData = data is String ? jsonDecode(data) : data;
-        
+
         return parsedData;
       } else {
-        throw Exception('Failed to load recommended shoe: ${response.statusCode}');
+        throw Exception(
+            'Failed to load recommended shoe: ${response.statusCode}');
       }
     } catch (e) {
       print('Error in getProduct: $e');
@@ -587,7 +746,7 @@ class _SwipeableCardState extends State<SwipeableCard>
     }
   }
 
-//Posts to API
+  //Posts to API
   Future<void> sendInteraction(String productID, int liked) async {
     final String baseURL =
         'https://axentbackend.onrender.com/preferences/handle_swipe/';
@@ -619,8 +778,7 @@ class _SwipeableCardState extends State<SwipeableCard>
       if (response.statusCode != 200) {
         print('Server returned status: ${response.statusCode}');
         print('Response data: ${response.data}');
-      }
-      else {
+      } else {
         final likedPage = context.findAncestorStateOfType<HeartPageState>();
         if (likedPage != null) {
           likedPage.refreshLikedProducts();
@@ -646,7 +804,8 @@ Future<Map<String, String>> getAuthHeaders() async {
       throw Exception("User not authenticated");
     }
     final token = await user.getIdToken();
-    print('Using token: ${token?.substring(0, 20)}...');  // Log first 20 chars of token
+    print(
+        'Using token: ${token?.substring(0, 20)}...'); // Log first 20 chars of token
     return {
       'Content-Type': 'application/json',
       'Authorization': 'Token $token',
@@ -656,4 +815,3 @@ Future<Map<String, String>> getAuthHeaders() async {
     rethrow;
   }
 }
-

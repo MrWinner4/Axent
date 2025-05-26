@@ -24,7 +24,17 @@ class NavbarWidget extends StatelessWidget {
       builder: (context, selectedPage, child) {
         return Container(
           height: 100,
-          color: colorScheme.surface,
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black
+                    .withAlpha(25), // Adjust opacity for intensity
+                blurRadius: 10, // Adjust for spread
+                offset: const Offset(0, 2), // Adjust for direction
+              ),
+            ],
+          ),
           child: NavigationBar(
             backgroundColor: colorScheme.primary,
             onDestinationSelected: (int index) {
@@ -108,5 +118,6 @@ class NavbarWidget extends StatelessWidget {
       },
     );
   }
+
   Size get preferredSize => Size.fromHeight(100);
 }

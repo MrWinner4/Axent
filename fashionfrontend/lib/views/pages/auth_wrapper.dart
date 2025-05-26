@@ -50,7 +50,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
             );
             return Scaffold(
               appBar: AppBar(
-                  backgroundColor: Color.fromARGB(255, 255, 255, 255),
+                  backgroundColor: Color.fromARGB(255, 251, 252, 254),
                   toolbarHeight: 40,
                   automaticallyImplyLeading: false,
                   centerTitle: false,

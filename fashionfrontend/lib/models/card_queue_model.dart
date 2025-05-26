@@ -70,16 +70,28 @@ class CardQueueModel with ChangeNotifier {
 
   Queue<CardData> get queue => _queue;
 
-  // Add a card to the queue
+  void addCardFirst(CardData data){
+    _queue.addFirst(data);
+  }
+
   void addCard(CardData data) {
+    // Always keep 3 cards in the queue
+    if (_queue.length >= 3) {
+      _queue.removeLast();
+    }
     _queue.addLast(data);
     notifyListeners();
   }
 
-  // Remove the card at the front
   void removeFirstCard() {
     if (_queue.isNotEmpty) {
       _queue.removeFirst();
+      notifyListeners();
+    }
+  }
+  void removeLastCard() {
+    if (_queue.last != null) {
+      _queue.removeLast();
       notifyListeners();
     }
   }
@@ -90,74 +102,58 @@ class CardQueueModel with ChangeNotifier {
     notifyListeners();
   }
 
-
   int get queueLength {
     return _queue.length;
   }
 
-  // Get the card at the front of the queue
   CardData? get firstCard {
-    if (_queue.isNotEmpty) {
-      return _queue.first;
-    }
-    return null;
+    return _queue.isNotEmpty ? _queue.first : null;
   }
+
   CardData? get secondCard {
-    if (_queue.length > 1) {
-      return _queue.elementAt(1);
-    }
-    return null;
+    return _queue.length > 1 ? _queue.elementAt(1) : null;
   }
+
+  CardData? get thirdCard {
+    return _queue.length > 2 ? _queue.elementAt(2) : null;
+  }
+
   bool get isEmpty {
     return _queue.isEmpty;
   }
+
   bool get isNotEmpty {
     return _queue.isNotEmpty;
   }
 }
 
-class LikedShoesModel with ChangeNotifier {
-  final List<CardData> _likedShoes = <CardData>[];
+class PreviousProductModel with ChangeNotifier {
+  final List<Map<String, dynamic>> _previousShoes = [];
 
-  List<CardData> get likedShoes => _likedShoes;
+  List<Map<String, dynamic>> get previousShoes => _previousShoes;
 
-  void addItem(CardData data) {
-    _likedShoes.add(data);
+  void addSwipe(CardData data, int direction) {
+    _previousShoes.add({
+      'data': data,
+      'direction': direction, // 1 for right swipe, -1 for left swipe
+    });
     notifyListeners();
   }
 
-  void removeLastItem() {
-    _likedShoes.removeLast();
-    notifyListeners();
+  Map<String, dynamic>? getLastSwipe() {
+    if (_previousShoes.isEmpty) return null;
+    return _previousShoes.last;
   }
 
-  void removeShoe(String shoeId) {
-    _likedShoes.removeWhere((shoe) => shoe.id == shoeId);
-    notifyListeners();
+  void removeLastSwipe() {
+    if (_previousShoes.isNotEmpty) {
+      _previousShoes.removeLast();
+      notifyListeners();
+    }
   }
 
-  bool isShoeLiked(String shoeId) {
-    return _likedShoes.any((shoe) => shoe.id == shoeId);
-  }
-}
-
-class PreviousShoeModel with ChangeNotifier {
-  final List<CardData> _likedShoes = <CardData>[];
-
-  List<CardData> get likedShoes => _likedShoes;
-
-  void addItem(CardData data) {
-    _likedShoes.add(data);
-    notifyListeners();
-  }
-
-  void removeLastItem() {
-    _likedShoes.removeLast();
-    notifyListeners();
-  }
-
-  void removeShoe(String shoeId) {
-    _likedShoes.removeWhere((shoe) => shoe.id == shoeId);
+  void clear() {
+    _previousShoes.clear();
     notifyListeners();
   }
 }

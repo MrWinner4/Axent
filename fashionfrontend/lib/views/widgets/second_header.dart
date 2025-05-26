@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import 'custom_search_bar.dart';
 
 class SecondHeader extends StatelessWidget {
-  const SecondHeader({super.key});
+  final VoidCallback? onUndo;
+  const SecondHeader({super.key, this.onUndo});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
+      color: Color.fromARGB(255, 251, 252, 254),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // Back button
+            // Undo button
             Container(
               width: 50,
               height: 50,
@@ -25,26 +26,30 @@ class SecondHeader extends StatelessWidget {
                       spreadRadius: 2,
                       blurStyle: BlurStyle.outer,
                       blurRadius: 10,
-                      offset: Offset(0, 0)),
+                    offset: Offset(0, 0),
+                  ),
                 ],
               ),
               child: IconButton(
                 iconSize: 24,
                 icon: const Icon(Icons.undo_rounded),
-                onPressed: () {
-                  
+                onPressed: () async {
+                  try {
+                    if (onUndo != null) {
+                      onUndo!();
+                    }
+                  } catch (e) {
+                    print('Error during undo: $e');
+                  }
                 },
-                /* shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  side: const BorderSide(color: Colors.black12),
-                ), */
               ),
             ),
             // Search bar
             SizedBox(
                 height: 48,
                 width: MediaQuery.of(context).size.width * .6,
-                child: CustomSearchBar()),
+              child: CustomSearchBar(),
+            ),
             // Filter button
             Container(
               width: 50,
@@ -57,7 +62,8 @@ class SecondHeader extends StatelessWidget {
                       spreadRadius: 2,
                       blurStyle: BlurStyle.outer,
                       blurRadius: 10,
-                      offset: Offset(0, 0)),
+                    offset: Offset(0, 0),
+                  ),
                 ],
               ),
               child: IconButton(

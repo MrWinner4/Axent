@@ -5,7 +5,7 @@ import 'package:fashionfrontend/views/pages/liked_products_page.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/rendering.dart';
+import 'trends_page.dart';
 
 const String likedProductsBaseUrl =
     'https://axentbackend.onrender.com/preferences';
@@ -147,96 +147,110 @@ class HeartPageState extends State<HeartPage>
   }
 
   Future<void> createWardrobe(BuildContext context, bool mounted) async {
-  try {
-    final name = await showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext dialogContext) {
-        final controller = TextEditingController();
-        
-        return AlertDialog(
-          title: const Text('Create New Wardrobe'),
-          content: TextField(
-            autofocus: true,
-            controller: controller,
-            decoration: const InputDecoration(
-              hintText: 'Enter wardrobe name',
-            ),
-            onSubmitted: (value) {
-              Navigator.of(dialogContext).pop(controller.text);
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(null),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-              child: const Text('Create'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (name == null || name.isEmpty) {
-      return;
-    }
-
-    // Now create the wardrobe
-    String idToken = (await FirebaseAuth.instance.currentUser!.getIdToken())!;
-    final decodedToken = await FirebaseAuth.instance.currentUser!.getIdTokenResult();
-    final userId = decodedToken.claims?['user_id'];
-
-    if (userId == null) {
-      throw Exception('User ID not found in token');
-    }
-
-    // Show loading dialog
-    if (!mounted) return;
-    showDialog(
-      context: context, // Use the original context here
-      barrierDismissible: false,
-      builder: (BuildContext loadingContext) => const AlertDialog(
-        content: Row(
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 20),
-            Text('Creating wardrobe...'),
-          ],
-        ),
-      ),
-    );
-
     try {
-      await Dio().post(
-        '$wardrobesBaseUrl/',
-        data: {
-          'name': name,
-          'user': userId,
+      final name = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) {
+          final controller = TextEditingController();
+
+          return AlertDialog(
+            title: const Text('Create New Wardrobe'),
+            content: TextField(
+              autofocus: true,
+              controller: controller,
+              decoration: const InputDecoration(
+                hintText: 'Enter wardrobe name',
+              ),
+              onSubmitted: (value) {
+                Navigator.of(dialogContext).pop(controller.text);
+              },
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(null),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () =>
+                    Navigator.of(dialogContext).pop(controller.text),
+                child: const Text('Create'),
+              ),
+            ],
+          );
         },
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $idToken',
-            'Content-Type': 'application/json',
-          },
+      );
+
+      if (name == null || name.isEmpty) {
+        return;
+      }
+
+      // Now create the wardrobe
+      String idToken = (await FirebaseAuth.instance.currentUser!.getIdToken())!;
+      final decodedToken =
+          await FirebaseAuth.instance.currentUser!.getIdTokenResult();
+      final userId = decodedToken.claims?['user_id'];
+
+      if (userId == null) {
+        throw Exception('User ID not found in token');
+      }
+
+      // Show loading dialog
+      if (!mounted) return;
+      showDialog(
+        context: context, // Use the original context here
+        barrierDismissible: false,
+        builder: (BuildContext loadingContext) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text('Creating wardrobe...'),
+            ],
+          ),
         ),
       );
 
-      if (mounted) {
-        Navigator.of(context).pop(); // Close loading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Wardrobe created successfully: $name'),
-            backgroundColor: Colors.green,
+      try {
+        await Dio().post(
+          '$wardrobesBaseUrl/',
+          data: {
+            'name': name,
+            'user': userId,
+          },
+          options: Options(
+            headers: {
+              'Authorization': 'Bearer $idToken',
+              'Content-Type': 'application/json',
+            },
           ),
         );
-        refreshWardrobes();
+
+        if (mounted) {
+          Navigator.of(context).pop(); // Close loading dialog
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Wardrobe created successfully: $name'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          refreshWardrobes();
+        }
+      } catch (e) {
+        if (mounted) {
+          Navigator.of(context).pop(); // Close loading dialog
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to create wardrobe: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        rethrow;
       }
     } catch (e) {
+      print('Error creating wardrobe: $e');
       if (mounted) {
-        Navigator.of(context).pop(); // Close loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to create wardrobe: ${e.toString()}'),
@@ -244,20 +258,8 @@ class HeartPageState extends State<HeartPage>
           ),
         );
       }
-      rethrow;
-    }
-  } catch (e) {
-    print('Error creating wardrobe: $e');
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to create wardrobe: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
-}
 
   Future<void> deleteWardrobe(String wardrobeId) async {
     try {
@@ -349,141 +351,262 @@ class HeartPageState extends State<HeartPage>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-    return Scaffold(
-      backgroundColor: ColorScheme.of(context).surfaceBright,
-      body: ValueListenableBuilder<List<dynamic>>(
-        valueListenable: _productsNotifier,
-        builder: (context, products, _) {
-          if (_isLoading) {
-            print('Loading...');
-            return Center(child: CircularProgressIndicator());
-          }
-          if (products.isEmpty) {
-            return Center(child: Text("No liked products."));
-          }
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: TabBar(
+            tabs: const [
+              Tab(text: 'Trends'),
+              Tab(text: 'Wardrobes'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            const TrendsPage(),
+            // Heart tab content
+            Stack(
+              children: [
+                Positioned.fill(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20.0, vertical: 40),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Your Wardrobes",
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 40),
+                          ValueListenableBuilder<List<dynamic>>(
+                            valueListenable: _productsNotifier,
+                            builder: (context, products, _) {
+                              if (_isLoading) {
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              }
+                              if (products.isEmpty) {
+                                return const Center(
+                                    child: Text("No liked products."));
+                              }
+                              // Take the last 3 items (most recent)
+                              final recentProducts = products.length >= 3
+                                  ? products.sublist(products.length - 3)
+                                  : products;
+                              return LikedProductsSection(
+                                  Products: recentProducts
+                                      .cast<Map<String, dynamic>>());
+                            },
+                          ),
+                          const SizedBox(height: 40),
+                          ValueListenableBuilder<List<Wardrobe>>(
+                            valueListenable: _wardrobesNotifier,
+                            builder: (context, wardrobes, _) {
+                              if (_isWardrobesLoading) {
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              }
+                              if (wardrobes.isEmpty) {
+                                return const Center(
+                                    child: Text("No wardrobes."));
+                              }
 
-          // Take the last 3 items (most recent)
-          final recentProducts = products.length >= 3
-              ? products.sublist(products.length - 3)
-              : products;
-
-          return Scaffold(
-            floatingActionButton: FloatingActionButton(
-              onPressed: () async {
-                await createWardrobe(context, mounted);
-              },
-              backgroundColor: ColorScheme.of(context).primary,
-              child: Icon(
-                Icons.add,
-                color: Colors.white,
-              ),
-            ),
-            body: SingleChildScrollView(
-              child: Container(
-                color: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Your Wardrobes",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold),
+                              return ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: wardrobes.length,
+                                separatorBuilder: (context, index) =>
+                                    const SizedBox(height: 32),
+                                itemBuilder: (context, index) {
+                                  final wardrobe = wardrobes[index];
+                                  return WardrobeWidget(
+                                    wardrobe: wardrobe,
+                                    onDelete: () => deleteWardrobe(wardrobe.id),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 40),
+                        ],
+                      ),
                     ),
-                    SizedBox(
-                      height: 40,
-                    ),
-                    LikedProductsSection(
-                        Products: recentProducts.cast<Map<String, dynamic>>()),
-                    SizedBox(
-                      height: 40,
-                    ),
-                    ValueListenableBuilder<List<Wardrobe>>(
-                      valueListenable: _wardrobesNotifier,
-                      builder: (context, wardrobes, _) {
-                        if (_isWardrobesLoading) {
-                          return Center(child: CircularProgressIndicator());
-                        }
-                        if (wardrobes.isEmpty) {
-                          return Center(child: Text("No wardrobes."));
-                        }
-
-                        return Column(
-                          children: wardrobes
-                              .map((wardrobe) =>
-                                  WardrobeWidget(wardrobe: wardrobe))
-                              .toList(),
-                        );
-                      },
-                    ),
-                    SizedBox(
-                      height: 40,
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                Positioned(
+                  right: 20,
+                  bottom: 20,
+                  child: FloatingActionButton(
+                    onPressed: () => createWardrobe(context, true),
+                    child: const Icon(Icons.add),
+                  ),
+                ),
+              ],
             ),
-          );
-        },
+
+            // Trends tab content
+          ],
+        ),
       ),
     );
   }
 }
 
-class WardrobeWidget extends StatelessWidget {
+class WardrobeWidget extends StatefulWidget {
   final Wardrobe wardrobe;
-  const WardrobeWidget({super.key, required this.wardrobe});
+  final VoidCallback onDelete;
+
+  const WardrobeWidget({
+    super.key,
+    required this.wardrobe,
+    required this.onDelete,
+  });
+
+  @override
+  State<WardrobeWidget> createState() => _WardrobeWidgetState();
+}
+
+class _WardrobeWidgetState extends State<WardrobeWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _heightAnimation;
+  bool _isSwiping = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _heightAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _handleDismiss() {
+    _animationController.forward().then((_) {
+      widget.onDelete();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => WardrobeDetailsPage(wardrobe: wardrobe),
-            ),
-          );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(64),
-              offset: Offset(0, 0),
-              blurRadius: 20,
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top row with shoe images
-            SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  wardrobe.name,
-                  style: TextStyle(
-                    fontSize: 25,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
+    return Stack(
+      children: [
+        // Base wardrobe card
+        AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            return Opacity(
+              opacity: _isSwiping ? 0.0 : 1.0,
+              child: SizedBox(
+                height: 100 * _heightAnimation.value,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            WardrobeDetailsPage(wardrobe: widget.wardrobe),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha(64),
+                          offset: Offset(0, 0),
+                          blurRadius: 10,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                widget.wardrobe.name,
+                                style: TextStyle(
+                                  fontSize: 25,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ],
-            ),
-          ],
+              ),
+            );
+          },
         ),
-      ),
+        // Red overlay that slides over the wardrobe
+        Positioned.fill(
+            child: Dismissible(
+          key: Key('${widget.wardrobe.id}_overlay'),
+          direction: DismissDirection.endToStart,
+          background: Container(),
+          child: Container(),
+          secondaryBackground: Container(
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
+            child: const Icon(
+              Icons.delete,
+              color: Colors.white,
+            ),
+          ),
+          movementDuration:
+              const Duration(milliseconds: 300), // Make it smoother
+          resizeDuration:
+              const Duration(milliseconds: 300), // Make resize smoother
+          onDismissed: (_) {
+            _handleDismiss();
+          },
+          onResize: () {
+            setState(() {
+              _isSwiping = true;
+            });
+          },
+          confirmDismiss: (direction) async {
+            // This makes the swipe feel more natural
+            return true;
+          },
+        )),
+      ],
     );
   }
 }
@@ -512,7 +635,7 @@ class LikedProductsSection extends StatelessWidget {
       },
       child: Container(
         padding: const EdgeInsets.all(16),
-        width: 200,
+        width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -545,84 +668,245 @@ class LikedProductsSection extends StatelessWidget {
                 )
               ],
             ),
-            SizedBox(
-              width: 100,
-              height: 100,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Positioned(
-                    top: 28,
-                    left: 24,
-                    child: Container(
-                      width: 70,
-                      height: 60,
-                      decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                SizedBox(
+                  width: 100,
+                  height: 100,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Positioned(
+                        top: 28,
+                        left: 24,
+                        child: Container(
+                          width: 70,
+                          height: 60,
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.black.withAlpha(64),
+                                    blurRadius: 10,
+                                    offset: Offset(4, 4))
+                              ]),
+                        ),
+                      ),
+                      Positioned(
+                        top: 24,
+                        left: 20,
+                        child: Container(
+                          width: 70,
+                          height: 60,
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.black.withAlpha(64),
+                                    blurRadius: 10,
+                                    offset: Offset(4, 4))
+                              ]),
+                        ),
+                      ),
+                      Container(
+                        width: 70,
+                        height: 60,
+                        decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 4.0,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
                                 color: Colors.black.withAlpha(64),
                                 blurRadius: 10,
-                                offset: Offset(4, 4))
-                          ]),
-                    ),
-                  ),
-                  Positioned(
-                    top: 24,
-                    left: 20,
-                    child: Container(
-                      width: 70,
-                      height: 60,
-                      decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                                color: Colors.black.withAlpha(64),
-                                blurRadius: 10,
-                                offset: Offset(4, 4))
-                          ]),
-                    ),
-                  ),
-                  Container(
-                    width: 70,
-                    height: 60,
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withAlpha(64),
-                            blurRadius: 10,
-                            offset: Offset(4, 4),
-                          )
-                        ]),
-                    child: Image.network(
-                      reversedProducts[0]['images']?.first['image_url'] ??
-                          'assets/images/default_shoe.jpg',
-                      height: 100,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Image.asset(
-                          'assets/images/default_shoe.jpg',
+                                offset: Offset(4, 4),
+                              )
+                            ]),
+                        child: Image.network(
+                          reversedProducts[0]['images']?.first['image_url'] ??
+                              'assets/images/default_shoe.jpg',
                           height: 100,
                           fit: BoxFit.cover,
-                        );
-                      },
-                    ),
+                          errorBuilder: (context, error, stackTrace) {
+                            return Image.asset(
+                              'assets/images/default_shoe.jpg',
+                              height: 100,
+                              fit: BoxFit.cover,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                SizedBox(
+                  width: 100,
+                  height: 100,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Positioned(
+                        top: 28,
+                        left: 24,
+                        child: Container(
+                          width: 70,
+                          height: 60,
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.black.withAlpha(64),
+                                    blurRadius: 10,
+                                    offset: Offset(4, 4))
+                              ]),
+                        ),
+                      ),
+                      Positioned(
+                        top: 24,
+                        left: 20,
+                        child: Container(
+                          width: 70,
+                          height: 60,
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.black.withAlpha(64),
+                                    blurRadius: 10,
+                                    offset: Offset(4, 4))
+                              ]),
+                        ),
+                      ),
+                      Container(
+                        width: 70,
+                        height: 60,
+                        decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 4.0,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(64),
+                                blurRadius: 10,
+                                offset: Offset(4, 4),
+                              )
+                            ]),
+                        child: Image.network(
+                          reversedProducts[1]['images']?.first['image_url'] ??
+                              'assets/images/default_shoe.jpg',
+                          height: 100,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Image.asset(
+                              'assets/images/default_shoe.jpg',
+                              height: 100,
+                              fit: BoxFit.cover,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  width: 100,
+                  height: 100,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Positioned(
+                        top: 28,
+                        left: 24,
+                        child: Container(
+                          width: 70,
+                          height: 60,
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.black.withAlpha(64),
+                                    blurRadius: 10,
+                                    offset: Offset(4, 4))
+                              ]),
+                        ),
+                      ),
+                      Positioned(
+                        top: 24,
+                        left: 20,
+                        child: Container(
+                          width: 70,
+                          height: 60,
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.black.withAlpha(64),
+                                    blurRadius: 10,
+                                    offset: Offset(4, 4))
+                              ]),
+                        ),
+                      ),
+                      Container(
+                        width: 70,
+                        height: 60,
+                        decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 4.0,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(64),
+                                blurRadius: 10,
+                                offset: Offset(4, 4),
+                              )
+                            ]),
+                        child: Image.network(
+                          reversedProducts[2]['images']?.first['image_url'] ??
+                              'assets/images/default_shoe.jpg',
+                          height: 100,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Image.asset(
+                              'assets/images/default_shoe.jpg',
+                              height: 100,
+                              fit: BoxFit.cover,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            Text("102 saved shoes", style: TextStyle(color: Colors.grey))
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text("102 saved shoes", style: TextStyle(color: Colors.grey)),
+              ],
+            )
           ],
         ),
       ),
     );
   }
 }
-
 
 class WardrobeDetailsPage extends StatelessWidget {
   final Wardrobe wardrobe;
@@ -632,6 +916,7 @@ class WardrobeDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(wardrobe.name),
         actions: [
@@ -677,20 +962,23 @@ class _WardrobeDetailsContentState extends State<WardrobeDetailsContent> {
     try {
       String idToken = (await FirebaseAuth.instance.currentUser!.getIdToken())!;
       setState(() => _isLoading = true);
-      
+
       // First fetch wardrobe details
       final wardrobeResponse = await Dio().get(
-        '$wardrobesBaseUrl/${widget.wardrobe.id}', 
+        '$wardrobesBaseUrl/${widget.wardrobe.id}',
         options: Options(
           headers: {
             'Authorization': 'Bearer $idToken',
           },
         ),
       );
-      
+
       // Get the product IDs from wardrobe response
-      final productIds = (wardrobeResponse.data['product_ids'] as List<dynamic>).cast<String>();
-      
+      final productIds = wardrobeResponse.data['product_ids'] != null
+          ? (wardrobeResponse.data['product_ids'] as List<dynamic>)
+              .cast<String>()
+          : [];
+
       // Fetch each product individually
       final products = await Future.wait(
         productIds.map((productId) async {
@@ -705,7 +993,7 @@ class _WardrobeDetailsContentState extends State<WardrobeDetailsContent> {
           return CardData.fromJson(productResponse.data);
         }).toList(),
       );
-      
+
       setState(() {
         _products = products;
         _isLoading = false;

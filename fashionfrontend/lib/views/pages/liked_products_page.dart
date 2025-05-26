@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
 class LikedProductsPage extends StatefulWidget {
   const LikedProductsPage({super.key});
 
@@ -27,7 +26,8 @@ class _LikedProductsPageState extends State<LikedProductsPage> {
     _productsNotifier.dispose();
     super.dispose();
   }
-    @override
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -41,7 +41,7 @@ class _LikedProductsPageState extends State<LikedProductsPage> {
           if (_isLoading) {
             return Center(child: CircularProgressIndicator());
           }
-          
+
           if (products.isEmpty) {
             return Center(
               child: Text(
@@ -51,20 +51,26 @@ class _LikedProductsPageState extends State<LikedProductsPage> {
             );
           }
 
-          return ListView.builder(
+          return GridView.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 0.75,
+            ),
             padding: EdgeInsets.all(16),
             itemCount: products.length,
             itemBuilder: (context, index) {
               final product = products[products.length - index - 1];
-              final imageUrl = product['images']?.first['image_url'] ?? 'assets/images/default_shoe.jpg';
-
+              final imageUrl = product['images']?.first['image_url'] ??
+                  'assets/images/default_shoe.jpg';
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ProductDetailPage(product:
-                        {
+                      builder: (context) => ProductDetailPage(
+                        product: {
                           'title': product['title'],
                           'brand': product['brand'],
                           'colorway': product['colorway'],
@@ -72,7 +78,8 @@ class _LikedProductsPageState extends State<LikedProductsPage> {
                           'silhouette': product['silhouette'],
                           'releaseDate': product['releaseDate'],
                           'retailprice': product['retailprice'],
-                          'estimatedMarketValue': product['estimatedMarketValue'],
+                          'estimatedMarketValue':
+                              product['estimatedMarketValue'],
                           'story': product['story'],
                           'urls': product['urls'],
                           'images': product['images'],
@@ -99,9 +106,11 @@ class _LikedProductsPageState extends State<LikedProductsPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(12)),
                         child: SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.42, // 30% of screen height
+                          height: MediaQuery.of(context).size.height *
+                              .2, // 30% of screen height
                           child: Image.network(
                             imageUrl,
                             width: double.infinity,
@@ -110,7 +119,8 @@ class _LikedProductsPageState extends State<LikedProductsPage> {
                               return Image.asset(
                                 'assets/images/default_shoe.jpg',
                                 width: double.infinity,
-                                height: MediaQuery.of(context).size.height * 0.3,
+                                height:
+                                    MediaQuery.of(context).size.height * 0.2,
                                 fit: BoxFit.cover,
                               );
                             },
@@ -118,27 +128,29 @@ class _LikedProductsPageState extends State<LikedProductsPage> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.only(left: 16, right: 16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               product['title'] ?? 'Unknown Shoe',
                               style: TextStyle(
-                                fontSize: 32,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w800,
                               ),
-                            ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 2,
+                            ),/* 
                             SizedBox(height: 12),
                             Text(
-                              product['estimatedMarketValue'] != null ? '\$${product['estimatedMarketValue']}' : 'Not available',
+                              product['estimatedMarketValue'] != null
+                                  ? '\$${product['estimatedMarketValue']}'
+                                  : 'Price not available',
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold
-                              ),
-                            ),
+                                  fontSize: 24, fontWeight: FontWeight.bold),
+                            ), */
                           ],
                         ),
                       ),
@@ -153,7 +165,7 @@ class _LikedProductsPageState extends State<LikedProductsPage> {
     );
   }
 
-    Future<void> fetchLikedProducts() async {
+  Future<void> fetchLikedProducts() async {
     try {
       setState(() {
         _isLoading = true;

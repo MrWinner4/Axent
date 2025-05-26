@@ -19,8 +19,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => CardQueueModel()),
-        ChangeNotifierProvider(create: (_) => PreviousShoeModel()),
-        ChangeNotifierProvider(create: (_) => LikedShoesModel()),
+        ChangeNotifierProvider(create: (_) => PreviousProductModel()),
         ChangeNotifierProvider(create: (_) => SearchProvider()),
       ],
       child: const MainPage(),
@@ -97,4 +96,3 @@ class MainPage extends StatelessWidget {
     );
   }
 }
-
