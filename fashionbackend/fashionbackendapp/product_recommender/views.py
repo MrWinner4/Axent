@@ -102,7 +102,7 @@ users = [
 from .models import Product
 import numpy as np
 def recommendation_algorithm(current_user):
-    global num_clusters
+    num_clusters = 10
 
     # Run biclustering
     model = SpectralBiclustering(n_clusters=num_clusters, random_state=0)
