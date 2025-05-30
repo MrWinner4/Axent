@@ -1,12 +1,13 @@
 import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
-import 'dart:convert'; // Import the dart:convert library
-import 'dart:collection'; // Add this at the top of the file with other imports
+import 'dart:convert';
 import 'package:fashionfrontend/models/card_queue_model.dart';
 import 'package:fashionfrontend/views/pages/heart_page.dart';
+import 'package:fashionfrontend/views/pages/home_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:dio/dio.dart';
 import 'package:provider/provider.dart';
 
@@ -42,7 +43,9 @@ import 'package:provider/provider.dart';
   Makes the most sense to go in the home_page somwewhere
  */
 class SwipeableCard extends StatefulWidget {
-  const SwipeableCard({super.key});
+  final SwipeableCardController controller;
+
+  const SwipeableCard({super.key, required this.controller});
 
   @override
   State<SwipeableCard> createState() => SwipeableCardState();
@@ -50,6 +53,7 @@ class SwipeableCard extends StatefulWidget {
 
 class SwipeableCardState extends State<SwipeableCard>
     with TickerProviderStateMixin {
+  final int CARDSTACKSIZE = 3; // How many cards to load at once
   //Position for Card
   double _left = 0;
   double _top = 0;
@@ -106,11 +110,14 @@ class SwipeableCardState extends State<SwipeableCard>
       CurvedAnimation(parent: transitionController, curve: Curves.easeOut),
     );
 
+    widget.controller.undo = undo;
+    widget.controller.filter = filter;
+
     greenOpacity = sittingOpacity;
     redOpacity = sittingOpacity;
     final cardQueue = Provider.of<CardQueueModel>(context, listen: false);
     if (cardQueue.isEmpty) {
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < CARDSTACKSIZE; i++) {
         getProductData(cardQueue);
       }
     }
@@ -135,13 +142,11 @@ class SwipeableCardState extends State<SwipeableCard>
     setState(() {
       // Current card should be the first card in the queue
       _currentCardWidget = currentCard != null
-          ? _buildCard(data: currentCard, showBorder: false)
+          ? _buildCard(data: currentCard)
           : const Center(child: CircularProgressIndicator());
 
       // Next card should be the second card in the queue
-      _nextCardWidget = nextCard != null
-          ? _buildCard(data: nextCard, showBorder: true)
-          : null;
+      _nextCardWidget = nextCard != null ? _buildCard(data: nextCard) : null;
     });
   }
 
@@ -152,8 +157,10 @@ class SwipeableCardState extends State<SwipeableCard>
     final double navBarHeight = 40;
     final double appBarHeight = 100;
     double IOSCORRECTION = 0;
-    if (Platform.isIOS) {
-      IOSCORRECTION = 60;
+    if (kIsWeb) {
+      IOSCORRECTION = 0;
+    } else if (Platform.isIOS) {
+      IOSCORRECTION = 0;
     }
     final double SECONDSEARCHHEIGHT = (50 + 16);
     final padding = MediaQuery.of(context).padding;
@@ -206,7 +213,9 @@ class SwipeableCardState extends State<SwipeableCard>
                               child: SizedBox(
                                 width: cardWidth,
                                 height: cardHeight,
-                                child: _buildCard(data: cardQueue.secondCard, showBorder: false ),
+                                child: _buildCard(
+                                  data: cardQueue.secondCard,
+                                ),
                               ),
                             ),
                           ),
@@ -307,7 +316,6 @@ class SwipeableCardState extends State<SwipeableCard>
                             child: cardQueue.isEmpty
                                 ? _buildCard(
                                     data: null,
-                                    showBorder: true,
                                   )
                                 : _currentCardWidget),
                       ),
@@ -396,9 +404,8 @@ class SwipeableCardState extends State<SwipeableCard>
             ),
           );
         },
-        child: cardQueue.isNotEmpty
-            ? _currentCardWidget
-            : _buildCard(data: null, showBorder: true),
+        child:
+            cardQueue.isNotEmpty ? _currentCardWidget : _buildCard(data: null),
       );
     } else {
       // Preview state: blurred and slightly scaled down.
@@ -417,99 +424,47 @@ class SwipeableCardState extends State<SwipeableCard>
   /// Builds a card widget from the provided data.
   Widget _buildCard({
     required CardData? data,
-    required bool showBorder,
   }) {
     if (data == null) {
       return const Center(child: CircularProgressIndicator());
     }
-
-    // Use the first image if available, otherwise show a placeholder
-    final imageWidget = data.images.isNotEmpty
-        ? Image.network(
-            data.images.first,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              return const Center(
-                child: Icon(Icons.error),
-              );
-            },
-          )
-        : const Center(
-            child: Icon(Icons.image_not_supported),
-          );
-
     return SizedBox(
       width: cardWidth,
       height: cardHeight,
       // Card content
-      child: data == null
-          ? const Center(
-              //If the data is null
-              child: Text(
-              'Loading...',
-              style: TextStyle(
-                fontSize: 24,
-                color: Colors.black,
-              ),
-            ))
-          : Container(
-              //If not
-              decoration: BoxDecoration(
-                  color: ColorScheme.of(context).surfaceBright,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: ColorScheme.of(context)
-                          .primary
-                          .withAlpha(64), // about 25 % opacity
-                      blurRadius: 20,
-                      blurStyle: BlurStyle.outer,
-                    )
-                  ]),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Align(
-                      alignment: Alignment.topLeft,
-                      child: ColoredBox(
-                        color: Colors.white,
-                        child: SizedBox(
-                          width: cardWidth,
-                          height: cardHeight * (30 / 40),
-                          // Replace the current image section with:
-                          child: data.images.length >= 2
-                              ? Column(
-                                  children: [
-                                    Expanded(
-                                      child: Image.network(
-                                        data.images[0],
-                                        fit: BoxFit.contain,
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                          return const Center(
-                                            child: Icon(Icons.error),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Image.network(
-                                        data.images[1],
-                                        fit: BoxFit.contain,
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                          return const Center(
-                                            child: Icon(Icons.error),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : Image.network(
-                                  data.images.first,
+      child: Container(
+        //If not
+        decoration: BoxDecoration(
+            color: ColorScheme.of(context).surfaceBright,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: ColorScheme.of(context)
+                    .primary
+                    .withAlpha(64), // about 25 % opacity
+                blurRadius: 20,
+                blurStyle: BlurStyle.outer,
+              )
+            ]),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Align(
+                alignment: Alignment.topLeft,
+                child: ColoredBox(
+                  color: Colors.white,
+                  child: SizedBox(
+                    width: cardWidth,
+                    height: cardHeight * (30 / 40),
+                    // Replace the current image section with:
+                    child: data.images.length >= 2
+                        ? Column(
+                            children: [
+                              Expanded(
+                                child: Image.network(
+                                  data.images[0],
                                   fit: BoxFit.contain,
                                   errorBuilder: (context, error, stackTrace) {
                                     return const Center(
@@ -517,49 +472,71 @@ class SwipeableCardState extends State<SwipeableCard>
                                     );
                                   },
                                 ),
-                        ),
-                      ),
-                    ),
-                    // Image, Defines bounds and stuff
-                    // Product Info
-                    Expanded(
-                      // or Flexible
-                      child: Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                data.title,
-                                style: TextStyle(
-                                  fontSize: 40,
-                                  fontWeight: FontWeight.w800,
-                                  height: 1,
-                                  overflow: TextOverflow.ellipsis,
+                              ),
+                              Expanded(
+                                child: Image.network(
+                                  data.images[1],
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Center(
+                                      child: Icon(Icons.error),
+                                    );
+                                  },
                                 ),
-                                maxLines:
-                                    2, // limit so it doesn't take over the screen
                               ),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              '\$${data.estimatedMarketValue.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                            ],
+                          )
+                        : Image.network(
+                            data.images.first,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Center(
+                                child: Icon(Icons.error),
+                              );
+                            },
+                          ),
+                  ),
                 ),
               ),
-            ),
+              // Image, Defines bounds and stuff
+              // Product Info
+              Expanded(
+                // or Flexible
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          data.title,
+                          style: TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.w800,
+                            height: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          maxLines:
+                              2, // limit so it doesn't take over the screen
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        '\$${data.estimatedMarketValue.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -624,6 +601,17 @@ class SwipeableCardState extends State<SwipeableCard>
     });
   }
 
+  void filter() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Filters();
+      },
+    );
+  }
+
   void undo() {
     final previousShoeModel =
         Provider.of<PreviousProductModel>(context, listen: false);
@@ -640,7 +628,7 @@ class SwipeableCardState extends State<SwipeableCard>
       cardQueue.addCardFirst(previousCard);
 
       setState(() {
-        _currentCardWidget = _buildCard(data: previousCard, showBorder: false);
+        _currentCardWidget = _buildCard(data: previousCard);
         isUndoing = true;
       });
 
@@ -813,5 +801,161 @@ Future<Map<String, String>> getAuthHeaders() async {
   } catch (e) {
     print('Error in getAuthHeaders: $e');
     rethrow;
+  }
+}
+
+/* */
+
+class Filters extends StatefulWidget {
+  const Filters({super.key});
+
+  @override
+  State<Filters> createState() => _FiltersState();
+}
+
+class _FiltersState extends State<Filters> {
+  RangeValues _currentRangeValues = const RangeValues(20, 80);
+
+  String selectedGender = 'Male';
+
+  @override
+  Widget build(BuildContext context) {
+    RangeValues currentRangeValues = _currentRangeValues;
+    return StatefulBuilder(
+      builder: (context, setModalState) => Container(
+        height: MediaQuery.of(context).size.height * .9,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // header
+            Container(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("Filters",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      )),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    color: Theme.of(context).colorScheme.onSurface,
+                    onPressed: () => Navigator.pop(context),
+                  )
+                ],
+              ),
+            ),
+            // body
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Gender',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    SizedBox(
+                      height: 16,
+                    ),
+                    Wrap(
+                      spacing: 12,
+                      children: ['Men', 'Women', 'Unisex'].map((gender) {
+                        final isSelected = selectedGender == gender;
+                        return ChoiceChip(
+                          label: Text(
+                            gender,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: isSelected
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Colors.black87,
+                            ),
+                          ),
+                          selected: isSelected,
+                          onSelected: (_) {
+                            setState(() {
+                              selectedGender = gender;
+                            });
+                          },
+                          selectedColor: Theme.of(context)
+                              .colorScheme
+                              .primaryContainer, // light filled background
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: isSelected
+                                ? BorderSide(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primaryContainer,
+                                    width: 1.5,
+                                    strokeAlign: BorderSide.strokeAlignInside)
+                                : BorderSide(
+                                    color: Colors.grey.shade300,
+                                    width: 1.5,
+                                    strokeAlign: BorderSide.strokeAlignInside),
+                          ),
+                          elevation: 0,
+                          pressElevation: 0,
+                          showCheckmark: false,
+                          labelPadding:
+                              EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                        );
+                      }).toList(),
+                    ),
+                    SizedBox(height: 32),
+                    Text(
+                      'Price',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Column(children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('\$${_currentRangeValues.start.round()}',
+                              style: TextStyle(fontSize: 20)),
+                          Text('\$${_currentRangeValues.end.round()}',
+                              style: TextStyle(fontSize: 20)),
+                        ],
+                      ),
+                      RangeSlider(
+                        values: currentRangeValues,
+                        min: 0,
+                        max: 200,
+                        activeColor: Theme.of(context).colorScheme.primary,
+                        onChanged: (RangeValues values) {
+                          setModalState(() {
+                            currentRangeValues = values;
+                          });
+                          setState(() {
+                            _currentRangeValues = values;
+                          });
+                        },
+                      ),
+                    ]),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

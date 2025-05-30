@@ -1,4 +1,3 @@
-import 'package:fashionfrontend/models/card_queue_model.dart';
 import 'package:fashionfrontend/providers/search_provider.dart';
 import 'package:fashionfrontend/views/pages/search_results.dart';
 import 'package:fashionfrontend/views/widgets/second_header.dart';
@@ -6,8 +5,15 @@ import 'package:fashionfrontend/views/widgets/swipeable_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+class SwipeableCardController {
+  VoidCallback? undo;
+  VoidCallback? filter;
+}
+
+
 class HomePage extends StatelessWidget {
   static final GlobalKey<SwipeableCardState> _swipeableCardKey = GlobalKey();
+  static final _cardController = SwipeableCardController();
 
   const HomePage({super.key});
 
@@ -18,11 +24,10 @@ class HomePage extends StatelessWidget {
         children: [
           SecondHeader(
             onUndo: () {
-              final swipeableCardState = _swipeableCardKey.currentState;
-              if (swipeableCardState != null) {
-                print("broski");
-                swipeableCardState.undo();
-              } 
+              _cardController.undo?.call();
+            },
+            onFilter: () {
+              _cardController.filter?.call();
             },
           ),
           Expanded(
@@ -35,6 +40,7 @@ class HomePage extends StatelessWidget {
                   color: const Color.fromARGB(255, 251, 252, 254),
                   child: SwipeableCard(
                     key: _swipeableCardKey,
+                    controller: _cardController,
                   ),
                 );
               },

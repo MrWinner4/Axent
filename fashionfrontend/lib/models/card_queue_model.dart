@@ -90,6 +90,7 @@ class CardQueueModel with ChangeNotifier {
     }
   }
   void removeLastCard() {
+    // ignore: unnecessary_null_comparison
     if (_queue.last != null) {
       _queue.removeLast();
       notifyListeners();

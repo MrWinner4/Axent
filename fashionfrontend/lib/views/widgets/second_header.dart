@@ -3,7 +3,8 @@ import 'custom_search_bar.dart';
 
 class SecondHeader extends StatelessWidget {
   final VoidCallback? onUndo;
-  const SecondHeader({super.key, this.onUndo});
+  final VoidCallback? onFilter;
+  const SecondHeader({super.key, this.onUndo, this.onFilter});
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +70,15 @@ class SecondHeader extends StatelessWidget {
               child: IconButton(
                 iconSize: 24,
                 icon: const Icon(Icons.filter_alt_outlined),
-                onPressed: () {},
+                onPressed: () async {
+                  try {
+                    if(onFilter != null) {
+                      onFilter!();
+                    }
+                  } catch (e) {
+                    print('Error during filter: $e');
+                  }
+                },
                 /* shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                   side: const BorderSide(color: Colors.black12),

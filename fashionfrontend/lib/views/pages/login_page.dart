@@ -30,10 +30,11 @@ class _LogInPageState extends State<LogInPage> {
         password: _passwordController.text,
       );
 
-      Navigator.pushReplacement(context,
+      Navigator.pushAndRemoveUntil(context,
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) => AuthWrapper()
         ),
+        (route) => false,
       );
     } on FirebaseAuthException catch (e) {
       setState(() {

@@ -351,6 +351,7 @@ class HeartPageState extends State<HeartPage>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Call super.build to ensure keepAlive works
     return DefaultTabController(
       length: 2,
       child: Scaffold(
