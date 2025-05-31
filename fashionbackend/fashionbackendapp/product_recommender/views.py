@@ -24,44 +24,13 @@ def get_user_from_token(token):
         print(f"Error getting user from token: {e}")
         return None
 
-
 class ProductViewSet(viewsets.ViewSet):
     authentication_classes = []
     permission_classes = []
-
+    
     def get_queryset(self):
         return Product.objects.all()
 
-    @action(detail=False, methods=['get'])
-    def recommend(self, request):
-        """
-        Get a recommended product for the authenticated user
-        """
-
-
-        token = request.headers.get('Authorization', '').replace('Token ', '').strip()
-        if not token:
-            return Response({"error": "No token provided"}, status=401)
-        
-        try:
-            user_profile = get_user_from_token(token)
-            if not user_profile:
-                return Response({"error": "Invalid or expired token"}, status=401)
-        except Exception as e:
-            return Response({"error": "Error verifying token"}, status=401)
-
-        #WHICH PRODUCTS TO PULL - USE FILTERS
-        products= Product.objects.all()
-
-        if not products.exists():
-            return Response(
-                {"error": "No products available."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        #RECOMMENDATION LOGIC HERE
-        recommended_product = recommendation_algorithm(user_profile)
-        serializer = ProductSerializer(recommended_product)
-        return Response(serializer.data)
 
     @action(detail=False, methods=['get'])
     def search(self, request):
@@ -75,8 +44,107 @@ class ProductViewSet(viewsets.ViewSet):
         results = Product.objects.filter(name__icontains=query)[:10]
         serializer = ProductSerializer(results, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def recommend(self, request):
+        token = request.headers.get('Authorization', '').replace('Token', '').strip()
+        if not token:
+            return Response({"error": "No token provided"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        user_profile = get_user_from_token(token)
+        if not user_profile:
+            return Response({"error": "Invalid or expired token"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        model, user_id_map, product_id_map, users, products, user_product_csr = train_als_model()
+        recommendations = recommend_product_for_user(model, user_profile.id, user_id_map, product_id_map, products, user_product_csr)
+        
+        if not recommendations:
+            return Response({"error": "No recommendations available"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ProductSerializer(recommendations, many=True)
+        print(serializer.data)
+        return Response(serializer.data)
     
 
+# Recommend products for a specific user
+def recommend_product_for_user(model, user_id, user_id_map, product_id_map, products, user_product_csr, N=5):
+        user_idx = user_id_map.get(user_id)
+        if user_idx is None:
+            return []  # User not found in the mapping
+
+
+
+
+        if user_idx >= user_product_csr.shape[0]:
+            print(f"user_idx {user_idx} is out of bounds for user_product_csr with shape {user_product_csr.shape}")
+
+        print(model.item_factors.shape)  # shape: (num_items, factors)
+        print(model.user_factors.shape)  # shape: (num_users, factors)
+
+        #Get recommended product indicies
+
+        recommended = model.recommend(user_idx, user_product_csr[user_idx], N=N, filter_already_liked_items=True)
+
+        # recommend is a list of (product_idx)
+        recommended_products = []
+        
+        recommended_indices, recommended_scores = recommended
+
+        reverse_product_id_map = {v: k for k, v in product_id_map.items()}
+
+        products_by_id = {product.id: product for product in products}
+
+
+        recommended_products = []
+        for prod_idx, score in zip(recommended_indices, recommended_scores):
+            product_id = reverse_product_id_map.get(prod_idx)
+            if product_id is not None:
+                recommended_products.append(products_by_id[product_id])
+
+        
+        return recommended_products
+
+# Train the ALS model to be better
+import numpy as np
+import scipy.sparse as sparse
+from scipy.sparse import csr_matrix
+from implicit.als import AlternatingLeastSquares
+from user_preferences.models import UserPreference, UserProfile
+from .models import Product
+
+def train_als_model():
+    # Load Data
+    prefs = UserPreference.objects.filter(preference=1)
+    users = list(UserProfile.objects.all())
+    products = list(Product.objects.all())
+
+    #Map ids to matrix indicies
+    user_id_map = {user.id: idx for idx, user in enumerate(users)}
+    product_id_map = {product.id: idx for idx, product in enumerate(products)}
+
+    # Build matrix of shape (num_users, num_products) filled with 0s
+    user_product_matrix = np.zeros((len(users), len(products)))
+
+    # Fill the matrix with 1s where a user liked a product
+    for pref in prefs:
+        user_idx = user_id_map.get(pref.user.id)
+        product_idx = product_id_map.get(pref.product.id)
+        if user_idx is not None and product_idx is not None:
+            user_product_matrix[user_idx, product_idx] = 1
+
+    # Convert to CSR format for efficiency
+    user_product_csr = csr_matrix(user_product_matrix)
+
+    # Initialize ALS model
+    model = AlternatingLeastSquares(factors=50, regularization=0.1, iterations=20)
+
+    # Train the model
+    model.fit(user_product_csr)
+
+    return model, user_id_map, product_id_map, users, products, user_product_csr
+
+
+"""
 from user_preferences.models import UserPreference
 from .models import Product
 import numpy as np
@@ -156,3 +224,4 @@ def recommendation_algorithm(current_user_profile):
         return Product.objects.get(id=product_id)
     else:
         return None
+"""
