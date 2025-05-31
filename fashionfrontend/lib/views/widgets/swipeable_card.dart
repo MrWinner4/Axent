@@ -708,7 +708,7 @@ class SwipeableCardState extends State<SwipeableCard>
   // Calls API
   Future<Map<String, dynamic>> getProduct() async {
     final String baseURL =
-        ('http://127.0.0.1:8000/products/recommend/');
+        ('https://axentbackend.onrender.com/products/recommend/');
     final url = Uri.parse(baseURL);
     final Dio dio = Dio();
 
@@ -722,6 +722,8 @@ class SwipeableCardState extends State<SwipeableCard>
 
         // If the data is a string, parse it as JSON
         final parsedData = data is String ? jsonDecode(data) : data;
+
+        
 
         return parsedData;
       } else {
