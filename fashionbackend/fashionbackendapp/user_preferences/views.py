@@ -79,7 +79,7 @@ class UserPreferenceViewSet(viewsets.ViewSet):
 def create_user(request):
     print('Creating user')
     auth_header = request.headers.get('Authorization', '')
-    if not auth_header.startswith('Bearer '):
+    if not auth_header.startswith('Token '):
         return Response({"error": "Invalid authorization header"}, status=401)
     
     token = auth_header.split(' ').pop()

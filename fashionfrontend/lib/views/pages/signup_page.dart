@@ -92,12 +92,14 @@ class _SignupPageState extends State<SignupPage> {
           await newUser?.reload(); // Force refresh
           final refreshedUser = FirebaseAuth.instance.currentUser;
 
+
           final idToken = await refreshedUser!.getIdToken();
+          print(idToken);
           await Dio().post(
             'https://axentbackend.onrender.com/preferences/create_user/',
             options: Options(
               headers: {
-                'Authorization': 'Bearer $idToken', // Send token in headers
+                'Authorization': 'Token $idToken', // Send token in headers
               },
             ),
             data: {

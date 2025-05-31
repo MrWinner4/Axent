@@ -792,8 +792,6 @@ Future<Map<String, String>> getAuthHeaders() async {
       throw Exception("User not authenticated");
     }
     final token = await user.getIdToken();
-    print(
-        'Using token: ${token?.substring(0, 20)}...'); // Log first 20 chars of token
     return {
       'Content-Type': 'application/json',
       'Authorization': 'Token $token',
