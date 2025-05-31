@@ -99,7 +99,7 @@ class _SignupPageState extends State<SignupPage> {
             'https://axentbackend.onrender.com/preferences/create_user/',
             options: Options(
               headers: {
-                'Authorization': 'Token $idToken', // Send token in headers
+                'Authorization': 'Bearer $idToken', // Send token in headers
               },
             ),
             data: {

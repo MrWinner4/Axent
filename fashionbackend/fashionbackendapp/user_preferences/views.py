@@ -74,15 +74,11 @@ class UserPreferenceViewSet(viewsets.ViewSet):
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
 
-from django.views.decorators.csrf import csrf_exempt
-
-
-@csrf_exempt
 @api_view(['POST'])
 def create_user(request):
     print('Creating user')
     auth_header = request.headers.get('Authorization', '')
-    if not auth_header.startswith('Token '):
+    if not auth_header.startswith('Bearer '):
         return Response({"error": "Invalid authorization header"}, status=401)
     
     token = auth_header.split(' ').pop()
