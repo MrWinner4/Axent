@@ -7,7 +7,7 @@ class ProductRecommenderConfig(AppConfig):
 
     def ready(self):
         from django_q.models import Schedule
-        if not Shedule.objects.filter(name="Retrain ALS model").exists():
+        if not Schedule.objects.filter(name="Retrain ALS model").exists():
             Schedule.objects.create(
                 name="Retrain ALS model",
                 func='django.core.management.call_command',
