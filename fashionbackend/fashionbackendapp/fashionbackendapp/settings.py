@@ -59,16 +59,26 @@ INSTALLED_APPS = [
     'django_q',
 ]
 
+# In settings.py
+
 Q_CLUSTER = {
-    'name': 'DjangoQ',
-    'workers': 4,
-    'recycle': 500,
-    'timeout': 60,
-    'retry': 120,
-    'queue_limit': 50,
-    'bulk': 10,
-    'orm': 'default',  # Use Django's ORM instead of Redis
+    "name": "DjangoQ",
+    "workers": 1,
+    "timeout": 90,
+    "retry": 120,
+    "queue_limit": 50,
+    "bulk": 10,
+    "orm": "default",
+    "schedule": [
+        {
+            "func": "recommendation.tasks.scheduled_train",
+            "schedule_type": "I",
+            "minutes": 60,
+            "name": "Hourly ALS training",
+        }
+    ],
 }
+
 
 
 #For rest framework pagination, not really sure what it does yet

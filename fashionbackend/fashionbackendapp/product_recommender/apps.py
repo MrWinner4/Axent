@@ -7,10 +7,10 @@ class ProductRecommenderConfig(AppConfig):
 
     def ready(self):
         from django_q.models import Schedule
-        if not Schedule.objects.filter(name="Refresh StockX Token").exists():
+        if not Shedule.objects.filter(name="Retrain ALS model").exists():
             Schedule.objects.create(
-                func='product_recommender.tasks.refresh_stockx_token_command',
-                name='Refresh StockX Token Cmd',
-                schedule_type=Schedule.MINUTES,
-                minutes=360,  # Every 6 hours
+                name="Retrain ALS model",
+                func='django.core.management.call_command',
+                schedule_type=Schedule.HOURLY,
+                repeats=-1
             )

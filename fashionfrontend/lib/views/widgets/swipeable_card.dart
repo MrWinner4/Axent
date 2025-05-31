@@ -663,50 +663,56 @@ class SwipeableCardState extends State<SwipeableCard>
   }
 
   Future<void> getProductData(CardQueueModel cardQueue) async {
-    try {
-      final data = await getProduct();
+  try {
+    final data = await getProduct();
 
-      // If the response is a string, parse it as JSON
-      final parsedData = data is String ? jsonDecode(data as String) : data;
+    // Parse JSON if data is a string
+    final parsedData = data is String ? jsonDecode(data as String) : data;
 
-      final newCard = CardData(
-        title: parsedData['title'] ?? 'No Name',
-        brand: parsedData['brand'] ?? '',
-        colorway: parsedData['colorway'] ?? '',
-        gender: parsedData['gender'] ?? '',
-        silhouette: parsedData['silhouette'] ?? '',
-        releaseDate: parsedData['release_date'] != null
-            ? DateTime.parse(parsedData['release_date'])
-            : null,
-        retailPrice:
-            double.tryParse(parsedData['retailprice'].toString()) ?? 0.0,
-        estimatedMarketValue:
-            double.tryParse(parsedData['estimatedMarketValue'].toString()) ??
-                0.0,
-        story: parsedData['story'] ?? '',
-        urls: List<String>.from(parsedData['urls'] ?? []),
-        images: (parsedData['images'] is List)
-            ? (parsedData['images'] as List)
-                .map((e) => e['image_url'] ?? '')
-                .toList()
-                .cast<String>()
-            : ['assets/images/Shoes1.jpg'],
-        id: parsedData['id'] ?? '',
-        likedAt: DateTime.now(),
-      );
+    if (parsedData is List && parsedData.isNotEmpty) {
+      List<CardData> newCards = parsedData.map<CardData>((product) {
+        return CardData(
+          title: product['title'] ?? 'No Name',
+          brand: product['brand'] ?? '',
+          colorway: product['colorway'] ?? '',
+          gender: product['gender'] ?? '',
+          silhouette: product['silhouette'] ?? '',
+          releaseDate: product['release_date'] != null
+              ? DateTime.tryParse(product['release_date'])
+              : null,
+          retailPrice: double.tryParse(product['retailprice'].toString()) ?? 0.0,
+          estimatedMarketValue: double.tryParse(product['estimatedMarketValue'].toString()) ?? 0.0,
+          story: product['story'] ?? '',
+          urls: List<String>.from(product['urls'] ?? []),
+          images: (product['images'] is List)
+              ? (product['images'] as List)
+                  .map((e) => e['image_url'] ?? '')
+                  .toList()
+                  .cast<String>()
+              : ['assets/images/Shoes1.jpg'],
+          id: product['id'] ?? '',
+          likedAt: DateTime.now(),
+        );
+      }).toList();
 
       if (!mounted) return;
       setState(() {
-        cardQueue.addCard(newCard);
+        // Add all new cards to the card queue
+        newCards.forEach(cardQueue.addCard);
       });
+
       updateCardWidgets(cardQueue);
-    } catch (e) {
-      print('Error fetching shoe data: $e');
+    } else {
+      print('No products found in response');
     }
+  } catch (e) {
+    print('Error fetching shoe data: $e');
   }
+}
+
 
   // Calls API
-  Future<Map<String, dynamic>> getProduct() async {
+  Future<List<dynamic>> getProduct() async {
     final String baseURL =
         ('https://axentbackend.onrender.com/products/recommend/');
     final url = Uri.parse(baseURL);

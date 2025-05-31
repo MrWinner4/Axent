@@ -62,7 +62,6 @@ class ProductViewSet(viewsets.ViewSet):
             return Response({"error": "No recommendations available"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = ProductSerializer(recommendations, many=True)
-        print(serializer.data)
         return Response(serializer.data)
     
 
@@ -78,8 +77,7 @@ def recommend_product_for_user(model, user_id, user_id_map, product_id_map, prod
         if user_idx >= user_product_csr.shape[0]:
             print(f"user_idx {user_idx} is out of bounds for user_product_csr with shape {user_product_csr.shape}")
 
-        print(model.item_factors.shape)  # shape: (num_items, factors)
-        print(model.user_factors.shape)  # shape: (num_users, factors)
+
 
         #Get recommended product indicies
 
