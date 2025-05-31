@@ -78,27 +78,6 @@ class ProductViewSet(viewsets.ViewSet):
     
 
 from user_preferences.models import UserPreference
-
-prefs = UserPreference.objects.all() # Gets all user preferences
-
-user_ids = {user.id: idx for idx, user in enumerate(UserProfile.objects.all())} # Maps over all ids from the profiles and assigns them an index for the matrix
-product_ids = {product.id: idx for idx, product in enumerate(Product.objects.all())} # Maps over all products and assigns them an index for the matrix
-
-data = [[0] * len(product_ids) for _ in range(len(user_ids))] # Creates a 2d Matrix with all products and users
-
-for pref in prefs: # Populates the matrix with user preferences that you just made
-    u_idx = user_ids[pref.user_id]
-    p_idx = product_ids[pref.product_id]
-    data[u_idx][p_idx] = pref.preference
-
-num_users = len(user_ids)
-num_products = len(product_ids)
-
-users = [
-    {"user_id": user_id, "responses": data[user_ids[user_id]]}
-    for user_id in user_ids
-]
-
 from .models import Product
 import numpy as np
 def recommendation_algorithm(current_user_profile):
