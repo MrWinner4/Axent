@@ -74,7 +74,7 @@ class UserPreferenceViewSet(viewsets.ViewSet):
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
 
-
+@csrf_exempt
 @api_view(['POST'])
 def create_user(request):
     print('Creating user')

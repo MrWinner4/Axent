@@ -802,7 +802,6 @@ Future<Map<String, String>> getAuthHeaders() async {
   }
 }
 
-/* */
 
 class Filters extends StatefulWidget {
   const Filters({super.key});
