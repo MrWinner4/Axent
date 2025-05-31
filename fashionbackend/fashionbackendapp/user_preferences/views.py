@@ -75,7 +75,7 @@ class UserPreferenceViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     @action(detail=False, methods=['post'])
-    def create_user(request):
+    def create_user(self, request):
         print('Creating user')
         auth_header = request.headers.get('Authorization', '')
         if not auth_header.startswith('Bearer '):
