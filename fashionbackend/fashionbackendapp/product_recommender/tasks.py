@@ -1,5 +1,4 @@
+from django.core.management import call_command
 
-from .training import train_als_model
-
-def scheduled_train():
-    train_als_model()
+def run_train_recommender():
+    call_command('train_recommender')

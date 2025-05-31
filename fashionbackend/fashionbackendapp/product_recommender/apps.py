@@ -1,6 +1,5 @@
 from django.apps import AppConfig
 
-
 class ProductRecommenderConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'product_recommender'
@@ -10,8 +9,7 @@ class ProductRecommenderConfig(AppConfig):
         if not Schedule.objects.filter(name="Retrain ALS model").exists():
             Schedule.objects.create(
                 name="Retrain ALS model",
-                func='django.core.management.call_command',
-                args='train_recommender',
+                func='product_recommender.tasks.run_train_recommender',  # Full Python path
                 schedule_type=Schedule.HOURLY,
-                repeats=-1
+                repeats=-1,
             )
