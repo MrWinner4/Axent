@@ -12,5 +12,5 @@ urlpatterns = [
     path('product_detail/<int:product_id>/', views.product_detail, name='product_detail'),
     
     # User creation
-    path('create_user/', views.create_user, name='create_user'),
+    path('create_user/', views.UserPreferenceViewSet.as_view({'post': 'create_user'}), name='create_user'),
 ]

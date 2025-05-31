@@ -74,45 +74,47 @@ class UserPreferenceViewSet(viewsets.ViewSet):
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
 
-@api_view(['POST'])
-def create_user(request):
-    print('Creating user')
-    auth_header = request.headers.get('Authorization', '')
-    if not auth_header.startswith('Bearer '):
-        return Response({"error": "Invalid authorization header"}, status=401)
-    
-    token = auth_header.split(' ').pop()
-    
-    try:
-        decoded_token = auth.verify_id_token(token)
-        uid = decoded_token['uid']
-        email = decoded_token.get('email')
-        name = request.data.get('name', '')
+    @action(detail=False, methods=['post'])
+    def create_user(request):
+        print('Creating user')
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return Response({"error": "Invalid authorization header"}, status=401)
+        
+        token = auth_header.split(' ').pop()
+        
+        try:
+            decoded_token = auth.verify_id_token(token)
+            uid = decoded_token['uid']
+            email = decoded_token.get('email')
+            name = request.data.get('name', '')
 
-        # Create or update the UserProfile with Firebase UID + name
-        profile, profile_created = UserProfile.objects.get_or_create(
-            firebase_uid=uid,
-            defaults={
-                'username': name,
-                'email': email,
-            }
-        )
+            # Create or update the UserProfile with Firebase UID + name
+            profile, profile_created = UserProfile.objects.get_or_create(
+                firebase_uid=uid,
+                defaults={
+                    'username': name,
+                    'email': email,
+                }
+            )
 
-        if not profile_created:
-            # If profile already exists, update it
-            profile.firebase_uid = uid
-            profile.name = name
-            profile.save()
+            if not profile_created:
+                # If profile already exists, update it
+                profile.firebase_uid = uid
+                profile.name = name
+                profile.save()
 
-        return Response({
-            'message': 'User and profile created successfully' if profile_created else 'User already exists'
-        })
+            return Response({
+                'message': 'User and profile created successfully' if profile_created else 'User already exists'
+            })
 
-    except auth.InvalidIdTokenError:
-        return Response({'error': 'Invalid ID token'}, status=400)
-    except Exception as e:
-        print(f"Error creating user: {e}")
-        return Response({'error': 'Server error'}, status=500)
+        except auth.InvalidIdTokenError:
+            return Response({'error': 'Invalid ID token'}, status=400)
+        except Exception as e:
+            print(f"Error creating user: {e}")
+            return Response({'error': 'Server error'}, status=500)
+
+
 
 
 @api_view(['GET'])
