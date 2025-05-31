@@ -1,6 +1,6 @@
 
 from django.core.management.base import BaseCommand
-from recommendation.training import train_als_model
+from product_recommender.training import train_als_model
 
 class Command(BaseCommand):
     help = "Train ALS recommendation model"

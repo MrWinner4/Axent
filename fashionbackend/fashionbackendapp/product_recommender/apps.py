@@ -11,6 +11,7 @@ class ProductRecommenderConfig(AppConfig):
             Schedule.objects.create(
                 name="Retrain ALS model",
                 func='django.core.management.call_command',
+                args='train_recommender',
                 schedule_type=Schedule.HOURLY,
                 repeats=-1
             )
