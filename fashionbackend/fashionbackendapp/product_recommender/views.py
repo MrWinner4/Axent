@@ -101,83 +101,79 @@ users = [
 
 from .models import Product
 import numpy as np
-def recommendation_algorithm(current_user):
+def recommendation_algorithm(current_user_profile):
+    # Load fresh data
+    prefs = UserPreference.objects.all()
+    users = list(UserProfile.objects.all())
+    products = list(Product.objects.all())
+
+    user_ids = {user.id: idx for idx, user in enumerate(users)}
+    product_ids = {product.id: idx for idx, product in enumerate(products)}
+
+    # Build preference matrix
+    data = [[0] * len(products) for _ in range(len(users))]
+    for pref in prefs:
+        u_idx = user_ids.get(pref.user_id)
+        p_idx = product_ids.get(pref.product_id)
+        if u_idx is not None and p_idx is not None:
+            data[u_idx][p_idx] = pref.preference
+
+    data_np = np.array(data)
+
+    # Current user preferences vector
+    current_user_idx = user_ids.get(current_user_profile.id)
+    if current_user_idx is None:
+        return None  # User not found in preferences
+
+    current_user_responses = data_np[current_user_idx]
+
+    # Run clustering
     num_clusters = 10
+    if len(users) < num_clusters or len(products) < num_clusters:
+        num_clusters = min(len(users), len(products), 2)
 
-    # Run biclustering
     model = SpectralBiclustering(n_clusters=num_clusters, random_state=0)
-    model.fit(data)
+    model.fit(data_np)
 
-    # Reorder the matrix based on biclustering
-    row_order = np.argsort(model.row_labels_)
-    col_order = np.argsort(model.column_labels_)
-    reordered_data = data[row_order][:, col_order]
+    liked_products = np.where(current_user_responses == 1)[0]
 
-        # Determine products user likes
-    liked_products = np.where(np.array(current_user["responses"]) == 1)[0]
-    if len(liked_products) == 0: # If they havent liked any products yet
-        if num_clusters > 2:
-            num_clusters -= 1
-
-        # Find indices of products the user hasn't reviewed yet
-        unreviewed_indices = [i for i, resp in enumerate(current_user["responses"]) if resp == 0]
-
-        if not unreviewed_indices:
-            return None  # Or some fallback if no products left
-
-        # Pick a random product index from unreviewed
-        random_idx = random.choice(unreviewed_indices)
-
-        # Reverse lookup to get product_id from product index
-        reverse_product_ids = {v: k for k, v in product_ids.items()}
-        product_id = reverse_product_ids[random_idx]
-
-        # Return the Product instance from DB
+    # If no liked products, recommend random unreviewed product
+    if len(liked_products) == 0:
+        unreviewed = np.where(current_user_responses == 0)[0]
+        if len(unreviewed) == 0:
+            return None
+        random_idx = random.choice(unreviewed)
+        product_id = list(product_ids.keys())[list(product_ids.values()).index(random_idx)]
         return Product.objects.get(id=product_id)
 
-    # Count how many times each product cluster is liked
+    # Count liked clusters
     product_cluster_counts = {}
-    for product in liked_products:
-        cluster = model.column_labels_[product]
+    for p_idx in liked_products:
+        cluster = model.column_labels_[p_idx]
         product_cluster_counts[cluster] = product_cluster_counts.get(cluster, 0) + 1
 
-        product_cluster_counts = {}
-        for product in liked_products:
-            cluster = model.column_labels_[product]
-            if cluster in product_cluster_counts:
-                product_cluster_counts[cluster] += 1
-            else:
-                product_cluster_counts[cluster] = 1
+    best_cluster = max(product_cluster_counts, key=product_cluster_counts.get)
 
-    # Find the most relevant product cluster
-    best_product_cluster = max(product_cluster_counts, key=product_cluster_counts.get)
+    # Find products in best cluster
+    cluster_product_indices = np.where(model.column_labels_ == best_cluster)[0]
 
-    # Find products in the best cluster that the majority of users liked
-    product_cluster_indices = np.where(model.column_labels_ == best_product_cluster)[0]
-    cluster_likes = {product_idx: 0 for product_idx in product_cluster_indices}
+    # Count likes in cluster by similar users (in same row cluster)
+    cluster_likes = {idx: 0 for idx in cluster_product_indices}
+    current_user_row_cluster = model.row_labels_[current_user_idx]
 
-    current_user_row = user_ids[current_user["user_id"]]  # Index of current_user in data
+    for u_idx, row_cluster in enumerate(model.row_labels_):
+        if row_cluster == current_user_row_cluster:
+            for p_idx in cluster_product_indices:
+                if data_np[u_idx, p_idx] == 1:
+                    cluster_likes[p_idx] += 1
 
-    for user_idx, user_label in enumerate(model.row_labels_):
-        if user_label == model.row_labels_[current_user_row]:
-            for product_idx in product_cluster_indices:
-                if users[user_idx]["responses"][product_idx] == 1:
-                    cluster_likes[product_idx] += 1
+    # Find unreviewed products in cluster
+    unreviewed_in_cluster = [idx for idx in cluster_product_indices if current_user_responses[idx] == 0]
 
-    # Recommend the most liked product in the cluster that the user has not reviewed
-    unreviewed_indices = [
-    idx for idx, response in enumerate(current_user["responses"]) if response == 0
-    ]
-
-    if unreviewed_indices:
-        # Pick a random index from the unreviewed ones
-        random_index = random.choice(unreviewed_indices)
-
-        # Get the actual product ID using reverse lookup
-        reverse_product_ids = {v: k for k, v in product_ids.items()}
-        product_id = reverse_product_ids[random_index]
-
-        # Fetch the Product object from DB
+    if unreviewed_in_cluster:
+        # Recommend the most liked unreviewed product in cluster
+        best_product_idx = max(unreviewed_in_cluster, key=lambda idx: cluster_likes.get(idx, 0))
+        product_id = list(product_ids.keys())[list(product_ids.values()).index(best_product_idx)]
         return Product.objects.get(id=product_id)
     else:
-        return None  # or fallback
+        return None
