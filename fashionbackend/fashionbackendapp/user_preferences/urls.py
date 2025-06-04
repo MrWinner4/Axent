@@ -10,6 +10,9 @@ urlpatterns = [
     
     # Product details
     path('product_detail/<int:product_id>/', views.product_detail, name='product_detail'),
+
+    #Update Bought Products
+    path('update_bought_products/', views.UserPreferenceViewSet.as_view({'post': 'update_bought_products'}), name='update_bought_products'),
     
     # User creation
     path('create_user/', views.UserPreferenceViewSet.as_view({'post': 'create_user'}), name='create_user'),

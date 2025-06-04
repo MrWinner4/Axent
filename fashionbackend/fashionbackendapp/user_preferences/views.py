@@ -6,6 +6,8 @@ from firebase_admin import auth
 from .models import Product, UserPreference, UserProfile
 from .serializer import ProductSerializer
 from django_q.tasks import async_task
+from .recombee_client import client
+from recombee_api_client.api_requests import AddUser, AddRating, AddDetailView, RecommendItemsToUser
 
 
 def get_user_profile_from_token(token):
@@ -31,6 +33,29 @@ class UserPreferenceViewSet(viewsets.ViewSet):
         
         token = auth_header.split(' ').pop()
         return get_user_profile_from_token(token)
+    def recommend_products(self, user_profile):
+        """Get product recommendations for a user"""
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return Response({"error": "Invalid authorization header"}, status=401)
+
+        token = auth_header.split(' ').pop()
+        user_profile = self.get_user_from_token(token)
+        if not user_profile:
+            return Response({"error": "Invalid or expired token"}, status=401)
+
+        try:
+            filters = request.data.get('filters', {})
+        except KeyError:
+            return Response({"error": "Filters not provided"}, status=400)
+
+        try:
+            recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, 10, ))
+            serializer = ProductSerializer(recommendations, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            print(f"Error getting recommendations: {e}")
+            return []
 
     @action(detail=False, methods=['post'])
     def handle_swipe(self, request):
@@ -54,9 +79,12 @@ class UserPreferenceViewSet(viewsets.ViewSet):
                 user_profile.liked_products.add(product)
             
             user_profile.save()
+
+            try:
+                client.send(AddRating(user_profile.firebase_uid, product_id, preference_value))
+            except Exception as recombee_error:
+                print(f"Recombee error: {recombee_error}")
             
-            #! UPDATE PREFERENCES FOR TRAINING AI
-            #async_task('yourapp.tasks.background_update_preferences', user_profile.id)
 
             return Response({'message': 'Preference updated successfully'})
 
@@ -66,13 +94,46 @@ class UserPreferenceViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def liked_products(self, request):
-        user_profile = self.get_user_from_request(request)
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return Response({"error": "Invalid authorization header"}, status=401)
+
+        token = auth_header.split(' ').pop()
+        user_profile = self.get_user_from_token(token)
         if not user_profile:
             return Response({"error": "Invalid or expired token"}, status=401)
         
         products = user_profile.liked_products.all()
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def bought_products(self, request):
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return Response({"error": "Invalid authorization header"}, status=401)
+
+        token = auth_header.split(' ').pop()
+        user_profile = get_user_profile_from_token(token)
+        if not user_profile:
+            return Response({"error": "Invalid or expired token"}, status=401)
+        
+        products = user_profile.bought_products.all()
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data)
+
+
+    @action(detail=False, methods=['post'])
+    def update_bought_product(self, request):
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return Response({"error": "Invalid authorization header"}, status=401)
+
+        token = auth_header.split(' ').pop()
+
+        user_profile = get_user_profile_from_token(token)
+
+        user_profile.bought_products.add(*request.data.get('product_ids', []))
 
     @action(detail=False, methods=['post'])
     def create_user(self, request):
@@ -103,6 +164,8 @@ class UserPreferenceViewSet(viewsets.ViewSet):
                 profile.firebase_uid = uid
                 profile.name = name
                 profile.save()
+            # Create Recombee user
+            client.send(AddUser(uid))
 
             return Response({
                 'message': 'User and profile created successfully' if profile_created else 'User already exists'
@@ -114,6 +177,29 @@ class UserPreferenceViewSet(viewsets.ViewSet):
             print(f"Error creating user: {e}")
             return Response({'error': 'Server error'}, status=500)
 
+    @action(detail=False, methods=['get'])
+    def get_detail_view(self, request):
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return Response({"error": "Invalid authorization header"}, status=401)
+
+        token = auth_header.split(' ').pop()
+        user_profile = get_user_profile_from_token(token)
+        if not user_profile:
+            return Response({"error": "Invalid or expired token"}, status=401)
+        
+        product_id = request.data.get('product_id')
+        if not product_id:
+            return Response({"error": "Product ID is required"}, status=400)
+
+        try:
+            client.send(AddDetailView(user_profile.firebase_uid, product_id))
+            return Response({"message": "Detail view recorded successfully"})
+        except Exception as e:
+            print(f"Error sending detail view: {e}")
+            return Response({"error": "Failed to record detail view"}, status=500)
+
+
 
 
 
@@ -122,6 +208,7 @@ def product_detail(request, product_id):
     try:
         product = Product.objects.get(id=product_id)
         serializer = ProductSerializer(product)
+        client.send(AddDetailView())
         return Response(serializer.data)
     except Product.DoesNotExist:
         return Response({"error": "Product not found"}, status=404)
