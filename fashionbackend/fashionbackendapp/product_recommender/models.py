@@ -34,19 +34,15 @@ class Product(models.Model):
     slug = models.SlugField(unique=True, null=True, blank=True)
     category = models.CharField(max_length=100, null=True, blank=True)
     secondary_category = models.CharField(max_length=100, null=True, blank=True)
+    #Would be gallery - I think this is like a gallery of photos and i'll just use product Image for that
     upcoming = models.BooleanField(default=False, help_text="Indicates if the product is upcoming")
-    colorway = models.CharField(max_length=255, null=True, blank=True)
-    gender = models.CharField(max_length=50, null=True, blank=True)
+    #Again with gallery 360 - i might check for this later tho, maybe not a day 1 feature
+    updated_at = models.DateTimeField(auto_now=False)
+    link = models.URLField()
+    colorway = models.JSONField(default=list)
+    trait = models.BooleanField(default=False)
     release_date = models.DateField(null=True, blank=True)
     retailprice = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    estimatedMarketValue = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    story = models.TextField(null=True, blank=True)
-    urls = models.JSONField(
-        default=dict,
-        blank=True,
-        help_text="Dictionary of store URLs with platform as key",
-        validators=[validate_urls],
-    )
 
     def __str__(self):
         return self.title
@@ -60,3 +56,16 @@ class ProductImage(models.Model): #Future versions, would like to utilize all im
     def __str__(self):
         return f"{self.product.title} - Image"
 
+class ProductVariant(models.Model): #This is for the variants recieved from the API
+    product = models.ForeignKey(Product, related_name="variants", on_delete=models.CASCADE)
+    size = models.DecimalField(max_digits=3, decimal_places=1)
+    sizeMen = models.BooleanField(default=True) #True = men, False = women
+    lowest_ask = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    total_asks = models.IntegerField(default=0)
+    previous_lowest_ask: models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    subtotal = models.JSONField(
+        default=dict,
+        help_text="Dictionary of shipping options and their prices"
+    )
+    updated_at = models.DateTimeField(auto_now=False)
+    
