@@ -6,7 +6,7 @@ from firebase_admin import auth
 from .models import Product, UserPreference, UserProfile
 from .serializer import ProductSerializer
 from django_q.tasks import async_task
-from .recombee_client import client
+from .recombee import client
 from recombee_api_client.api_requests import AddUser, AddRating, AddDetailView, RecommendItemsToUser
 
 
@@ -33,29 +33,7 @@ class UserPreferenceViewSet(viewsets.ViewSet):
         
         token = auth_header.split(' ').pop()
         return get_user_profile_from_token(token)
-    def recommend_products(self, user_profile):
-        """Get product recommendations for a user"""
-        auth_header = request.headers.get('Authorization', '')
-        if not auth_header.startswith('Bearer '):
-            return Response({"error": "Invalid authorization header"}, status=401)
 
-        token = auth_header.split(' ').pop()
-        user_profile = self.get_user_from_token(token)
-        if not user_profile:
-            return Response({"error": "Invalid or expired token"}, status=401)
-
-        try:
-            filters = request.data.get('filters', {})
-        except KeyError:
-            return Response({"error": "Filters not provided"}, status=400)
-
-        try:
-            recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, 10, ))
-            serializer = ProductSerializer(recommendations, many=True)
-            return Response(serializer.data)
-        except Exception as e:
-            print(f"Error getting recommendations: {e}")
-            return []
 
     @action(detail=False, methods=['post'])
     def handle_swipe(self, request):

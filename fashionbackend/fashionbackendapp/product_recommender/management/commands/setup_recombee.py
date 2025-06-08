@@ -1,0 +1,26 @@
+from django.core.management.base import BaseCommand
+from ...recombee import client
+from recombee_api_client.api_requests import AddItemProperty
+
+class Command(BaseCommand):
+    help = 'Setup Recombee client and add initial data'
+
+    def handle(self, *args, **kwargs):
+        
+
+        """client.send(AddItemProperty('title', 'string')) #Yes
+        client.send(AddItemProperty('brand', 'string')) #Yes
+        client.send(AddItemProperty('model', 'string'))  # Yes
+        client.send(AddItemProperty('description', 'string'))  # Yes
+        client.send(AddItemProperty('sku', 'string')) #Yes
+        client.send(AddItemProperty('slug', 'string')) #Yes
+        client.send(AddItemProperty('category', 'string')) #Yes
+        client.send(AddItemProperty('secondary_category', 'string')) #Yes
+        client.send(AddItemProperty('upcoming', 'boolean')) #Yes
+        client.send(AddItemProperty('updated_at', 'timestamp')) #Yes
+        client.send(AddItemProperty('link', 'string')) #Yes
+        client.send(AddItemProperty('colorway', 'set'))  # Yes 
+        client.send(AddItemProperty('trait', 'boolean')) #Yes - means featured
+        client.send(AddItemProperty('release_date', 'timestamp'))  # Yes
+        client.send(AddItemProperty('retailprice', 'double')) # Yes"""
+        client.send(AddItemProperty('Image', 'image')) 

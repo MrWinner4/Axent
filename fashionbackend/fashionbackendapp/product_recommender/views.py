@@ -1,16 +1,11 @@
-from django.http import JsonResponse
 from .models import Product, User
 from rest_framework.decorators import action, authentication_classes
 from rest_framework.response import Response
 from rest_framework import viewsets, status
-from rest_framework.authentication import TokenAuthentication, SessionAuthentication
-from rest_framework.permissions import IsAuthenticated
-import numpy as np
-import random
-from sklearn.cluster import SpectralBiclustering
 from .serializer import ProductSerializer, ProductImageSerializer
 from firebase_admin import auth as firebase_auth
 from user_preferences.models import UserProfile
+from user_preferences.recombee import client
 
 # In user_preferences/utils.py or at the top of views.py
 from firebase_admin import auth as firebase_auth
@@ -47,19 +42,25 @@ class ProductViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def recommend(self, request):
-        token = request.headers.get('Authorization', '').replace('Token', '').strip()
-        if not token:
-            return Response({"error": "No token provided"}, status=status.HTTP_401_UNAUTHORIZED)
+        """Get product recommendations for a user"""
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return Response({"error": "Invalid authorization header"}, status=401)
 
-        user_profile = get_user_from_token(token)
+        token = auth_header.split(' ').pop()
+        user_profile = self.get_user_from_token(token)
         if not user_profile:
-            return Response({"error": "Invalid or expired token"}, status=status.HTTP_401_UNAUTHORIZED)
-        
-        model, user_id_map, product_id_map, users, products, user_product_csr = train_als_model()
-        recommendations = recommend_product_for_user(model, user_profile.id, user_id_map, product_id_map, products, user_product_csr)
-        
-        if not recommendations:
-            return Response({"error": "No recommendations available"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Invalid or expired token"}, status=401)
 
-        serializer = ProductSerializer(recommendations, many=True)
-        return Response(serializer.data)
+        try:
+            filters = request.data.get('filters', {})
+        except KeyError:
+            return Response({"error": "Filters not provided"}, status=400)
+
+        try:
+            recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, 10, ))
+            serializer = ProductSerializer(recommendations, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            print(f"Error getting recommendations: {e}")
+            return []

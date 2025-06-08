@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='product',
             name='urls',
-            field=models.JSONField(blank=True, default=dict, help_text='Dictionary of store URLs with platform as key', validators=[product_recommender.models.validate_urls]),
+            field=models.JSONField(blank=True, default=dict, help_text='Dictionary of store URLs with platform as key'),
         ),
     ]
