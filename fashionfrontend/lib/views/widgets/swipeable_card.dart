@@ -713,9 +713,14 @@ class SwipeableCardState extends State<SwipeableCard>
 
   // Calls API
   Future<List<dynamic>> getProduct() async {
+
+    final filters = "'brand' in [\"Nike\", \"Adidas\"] AND 'retailPrice' <= 200'";
+
     final String baseURL =
         ('https://axentbackend.onrender.com/products/recommend/');
-    final url = Uri.parse(baseURL);
+    final url = Uri.parse(baseURL).replace(queryParameters: {
+      'filters': filters,
+    });
     final Dio dio = Dio();
 
     try {

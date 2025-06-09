@@ -53,14 +53,16 @@ class ProductViewSet(viewsets.ViewSet):
             return Response({"error": "Invalid or expired token"}, status=401)
 
         try:
-            filters = request.data.get('filters', {})
+            filters = request.query_params.get('filters', {})
         except KeyError:
             return Response({"error": "Filters not provided"}, status=400)
 
         try:
-            recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, 10, ))
-            serializer = ProductSerializer(recommendations, many=True)
+            recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, 10, filter=filters))
+            product_ids = [rec['id'] for rec in recommendations.recomms ]
+            products = Product.objects.filter(id__in=product_ids)
+            serializer = ProductSerializer(products, many=True)
             return Response(serializer.data)
         except Exception as e:
             print(f"Error getting recommendations: {e}")
-            return []
+            return Response([], status=status.HTTP_500_INTERNAL_SERVER_ERROR)
