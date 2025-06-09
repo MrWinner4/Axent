@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
@@ -10,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:dio/dio.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /*
   Biggest todos right now:
@@ -90,6 +92,8 @@ class SwipeableCardState extends State<SwipeableCard>
   late AnimationController transitionController;
   late Animation<double> scaleAnimation;
   late Animation<double> blurAnimation;
+
+
 
   @override
   void initState() {
@@ -663,58 +667,60 @@ class SwipeableCardState extends State<SwipeableCard>
   }
 
   Future<void> getProductData(CardQueueModel cardQueue) async {
-  try {
-    final data = await getProduct();
+    try {
+      final data = await getProduct();
 
-    // Parse JSON if data is a string
-    final parsedData = data is String ? jsonDecode(data as String) : data;
+      // Parse JSON if data is a string
+      final parsedData = data is String ? jsonDecode(data as String) : data;
 
-    if (parsedData is List && parsedData.isNotEmpty) {
-      List<CardData> newCards = parsedData.map<CardData>((product) {
-        return CardData(
-          title: product['title'] ?? 'No Name',
-          brand: product['brand'] ?? '',
-          colorway: product['colorway'] ?? '',
-          gender: product['gender'] ?? '',
-          silhouette: product['silhouette'] ?? '',
-          releaseDate: product['release_date'] != null
-              ? DateTime.tryParse(product['release_date'])
-              : null,
-          retailPrice: double.tryParse(product['retailprice'].toString()) ?? 0.0,
-          estimatedMarketValue: double.tryParse(product['estimatedMarketValue'].toString()) ?? 0.0,
-          story: product['story'] ?? '',
-          urls: List<String>.from(product['urls'] ?? []),
-          images: (product['images'] is List)
-              ? (product['images'] as List)
-                  .map((e) => e['image_url'] ?? '')
-                  .toList()
-                  .cast<String>()
-              : ['assets/images/Shoes1.jpg'],
-          id: product['id'] ?? '',
-          likedAt: DateTime.now(),
-        );
-      }).toList();
+      if (parsedData is List && parsedData.isNotEmpty) {
+        List<CardData> newCards = parsedData.map<CardData>((product) {
+          return CardData(
+            title: product['title'] ?? 'No Name',
+            brand: product['brand'] ?? '',
+            colorway: product['colorway'] ?? '',
+            gender: product['gender'] ?? '',
+            silhouette: product['silhouette'] ?? '',
+            releaseDate: product['release_date'] != null
+                ? DateTime.tryParse(product['release_date'])
+                : null,
+            retailPrice:
+                double.tryParse(product['retailprice'].toString()) ?? 0.0,
+            estimatedMarketValue:
+                double.tryParse(product['estimatedMarketValue'].toString()) ??
+                    0.0,
+            story: product['story'] ?? '',
+            urls: List<String>.from(product['urls'] ?? []),
+            images: (product['images'] is List)
+                ? (product['images'] as List)
+                    .map((e) => e['image_url'] ?? '')
+                    .toList()
+                    .cast<String>()
+                : ['assets/images/Shoes1.jpg'],
+            id: product['id'] ?? '',
+            likedAt: DateTime.now(),
+          );
+        }).toList();
 
-      if (!mounted) return;
-      setState(() {
-        // Add all new cards to the card queue
-        newCards.forEach(cardQueue.addCard);
-      });
+        if (!mounted) return;
+        setState(() {
+          // Add all new cards to the card queue
+          newCards.forEach(cardQueue.addCard);
+        });
 
-      updateCardWidgets(cardQueue);
-    } else {
-      print('No products found in response');
+        updateCardWidgets(cardQueue);
+      } else {
+        print('No products found in response');
+      }
+    } catch (e) {
+      print('Error fetching shoe data: $e');
     }
-  } catch (e) {
-    print('Error fetching shoe data: $e');
   }
-}
-
 
   // Calls API
   Future<List<dynamic>> getProduct() async {
-
-    final filters = "'brand' in [\"Nike\", \"Adidas\"] AND 'retailPrice' <= 200'";
+    final filters =
+        "'brand' in [\"Nike\", \"Adidas\"] AND 'retailPrice' <= 200'";
 
     final String baseURL =
         ('https://axentbackend.onrender.com/products/recommend/');
@@ -733,8 +739,6 @@ class SwipeableCardState extends State<SwipeableCard>
 
         // If the data is a string, parse it as JSON
         final parsedData = data is String ? jsonDecode(data) : data;
-
-        
 
         return parsedData;
       } else {
@@ -815,7 +819,6 @@ Future<Map<String, String>> getAuthHeaders() async {
   }
 }
 
-
 class Filters extends StatefulWidget {
   const Filters({super.key});
 
@@ -826,146 +829,194 @@ class Filters extends StatefulWidget {
 class _FiltersState extends State<Filters> {
   RangeValues _currentRangeValues = const RangeValues(20, 80);
 
-  String selectedGender = 'Male';
+  final Completer<void> preferencesReady = Completer<void>();
+
+  final Future<SharedPreferencesWithCache> filterPrefs =
+    SharedPreferencesWithCache.create(
+        cacheOptions: const SharedPreferencesWithCacheOptions(
+            allowList: <String>{'gender'}));
+
+  String gender = filterPrefs.getString('gender') ?? 'Male';
+
+  Future<void> setGender(String newGender) async {
+    final SharedPreferencesWithCache prefs = await filterPrefs;
+    setState(() {
+      prefs.setString('gender', newGender);
+    });
+
+  @override
+  void initState() {
+    super.initState();
+    preferencesReady.complete();
+  }
 
   @override
   Widget build(BuildContext context) {
     RangeValues currentRangeValues = _currentRangeValues;
-    return StatefulBuilder(
-      builder: (context, setModalState) => Container(
-        height: MediaQuery.of(context).size.height * .9,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          children: [
-            // header
-            Container(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("Filters",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      )),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    color: Theme.of(context).colorScheme.onSurface,
-                    onPressed: () => Navigator.pop(context),
-                  )
-                ],
-              ),
-            ),
-            // body
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return _WaitForInitialization(
+      initialized: preferencesReady.future,
+      builder: (BuildContext context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          height: MediaQuery.of(context).size.height * .9,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // header
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Gender',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    SizedBox(
-                      height: 16,
-                    ),
-                    Wrap(
-                      spacing: 12,
-                      children: ['Men', 'Women', 'Unisex'].map((gender) {
-                        final isSelected = selectedGender == gender;
-                        return ChoiceChip(
-                          label: Text(
-                            gender,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: isSelected
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Colors.black87,
-                            ),
-                          ),
-                          selected: isSelected,
-                          onSelected: (_) {
-                            setState(() {
-                              selectedGender = gender;
-                            });
-                          },
-                          selectedColor: Theme.of(context)
-                              .colorScheme
-                              .primaryContainer, // light filled background
-                          backgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: isSelected
-                                ? BorderSide(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primaryContainer,
-                                    width: 1.5,
-                                    strokeAlign: BorderSide.strokeAlignInside)
-                                : BorderSide(
-                                    color: Colors.grey.shade300,
-                                    width: 1.5,
-                                    strokeAlign: BorderSide.strokeAlignInside),
-                          ),
-                          elevation: 0,
-                          pressElevation: 0,
-                          showCheckmark: false,
-                          labelPadding:
-                              EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                        );
-                      }).toList(),
-                    ),
-                    SizedBox(height: 32),
-                    Text(
-                      'Price',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    Column(children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('\$${_currentRangeValues.start.round()}',
-                              style: TextStyle(fontSize: 20)),
-                          Text('\$${_currentRangeValues.end.round()}',
-                              style: TextStyle(fontSize: 20)),
-                        ],
-                      ),
-                      RangeSlider(
-                        values: currentRangeValues,
-                        min: 0,
-                        max: 200,
-                        activeColor: Theme.of(context).colorScheme.primary,
-                        onChanged: (RangeValues values) {
-                          setModalState(() {
-                            currentRangeValues = values;
-                          });
-                          setState(() {
-                            _currentRangeValues = values;
-                          });
-                        },
-                      ),
-                    ]),
+                    Text("Filters",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        )),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      color: Theme.of(context).colorScheme.onSurface,
+                      onPressed: () => Navigator.pop(context),
+                    )
                   ],
                 ),
               ),
-            ),
-          ],
+              // body
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Gender',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      SizedBox(
+                        height: 16,
+                      ),
+                      Wrap(
+                        spacing: 12,
+                        children: ['Men', 'Women', 'Unisex'].map((gender) {
+                          final isSelected = (prefs.getString('gender') ?? 'Men') == gender;
+                          return ChoiceChip(
+                            label: Text(
+                              gender,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: isSelected
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Colors.black87,
+                              ),
+                            ),
+                            selected: isSelected,
+                            onSelected: (_) {
+                              setState(() {
+                                setGender(gender);
+                              });
+                            },
+                            selectedColor: Theme.of(context)
+                                .colorScheme
+                                .primaryContainer, // light filled background
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: isSelected
+                                  ? BorderSide(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primaryContainer,
+                                      width: 1.5,
+                                      strokeAlign: BorderSide.strokeAlignInside)
+                                  : BorderSide(
+                                      color: Colors.grey.shade300,
+                                      width: 1.5,
+                                      strokeAlign: BorderSide.strokeAlignInside),
+                            ),
+                            elevation: 0,
+                            pressElevation: 0,
+                            showCheckmark: false,
+                            labelPadding:
+                                EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                          );
+                        }).toList(),
+                      ),
+                      SizedBox(height: 32),
+                      Text(
+                        'Price',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Column(children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('\$${_currentRangeValues.start.round()}',
+                                style: TextStyle(fontSize: 20)),
+                            Text('\$${_currentRangeValues.end.round()}',
+                                style: TextStyle(fontSize: 20)),
+                          ],
+                        ),
+                        RangeSlider(
+                          values: currentRangeValues,
+                          min: 0,
+                          max: 200,
+                          activeColor: Theme.of(context).colorScheme.primary,
+                          onChanged: (RangeValues values) {
+                            setModalState(() {
+                              currentRangeValues = values;
+                            });
+                            setState(() {
+                              _currentRangeValues = values;
+                            });
+                          },
+                        ),
+                      ]),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+}
+}
+
+/// Waits for the [initialized] future to complete before rendering [builder].
+class _WaitForInitialization extends StatelessWidget {
+  const _WaitForInitialization({
+    required this.initialized,
+    required this.builder,
+  });
+
+  final Future<void> initialized;
+  final WidgetBuilder builder;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<void>(
+      future: initialized,
+      builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting ||
+            snapshot.connectionState == ConnectionState.none) {
+          return const CircularProgressIndicator();
+        }
+        return builder(context);
+      },
     );
   }
 }
