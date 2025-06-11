@@ -61,6 +61,8 @@ class ProductViewSet(viewsets.ViewSet):
         except KeyError:
             return Response({"error": "Filters not provided"}, status=400)
         
+        print(user_profile.firebase_uid, 10, filters)
+        
 
         try:
             recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, 10, filter=filters))
