@@ -143,6 +143,7 @@ class UserPreferenceViewSet(viewsets.ViewSet):
                 profile.name = name
                 profile.save()
             # Create Recombee user
+            print("lebronza")
             client.send(AddUser(uid))
 
             return Response({
