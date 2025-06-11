@@ -144,7 +144,10 @@ class UserPreferenceViewSet(viewsets.ViewSet):
                 profile.save()
             # Create Recombee user
             print("lebronza")
-            client.send(AddUser(uid))
+            try:
+                client.send(AddUser(uid))
+            except Exception as e:
+                print(f"Error creating user: {e}")
 
             return Response({
                 'message': 'User and profile created successfully' if profile_created else 'User already exists'
