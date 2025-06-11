@@ -14,10 +14,12 @@ class ProductImage360Serializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)  # Nested serializer
+    images360 = ProductImage360Serializer(many=True, read_only=True)
+    variants = ProductVariantSerializer(many=True, read_only=True)
 
     class Meta:
         model = Product
-        fields = ['id','title','brand','model','description','sku','slug','category','secondary_category','upcoming','updated_at','link','colorway','trait','release_date','retailprice',]
+        fields = ['id','title','brand','model','description','sku','slug','category','secondary_category','upcoming','updated_at','link','colorway','trait','release_date','retailprice', 'images', 'images360', 'variants']
         
 class ProductVariantSerializer(serializers.ModelSerializer):
     class Meta:
