@@ -49,6 +49,7 @@ class ProductViewSet(viewsets.ViewSet):
 
         token = auth_header.split(' ').pop()
         user_profile = get_user_from_token(token)
+        print(user_profile)
         if not user_profile:
             return Response({"error": "Invalid or expired token"}, status=401)
 

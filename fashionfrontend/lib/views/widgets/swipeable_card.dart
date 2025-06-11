@@ -698,6 +698,7 @@ class SwipeableCardState extends State<SwipeableCard>
       'filters': filters,
     });
     final Dio dio = Dio();
+    print(await getAuthHeaders());
 
     try {
       final response = await dio.getUri(url,
@@ -780,7 +781,7 @@ Future<Map<String, String>> getAuthHeaders() async {
       print('No authenticated user');
       throw Exception("User not authenticated");
     }
-    final token = await user.getIdToken();
+    final token = await user.getIdToken(true);
     return {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
