@@ -54,11 +54,13 @@ class ProductViewSet(viewsets.ViewSet):
             return Response({"error": "Invalid or expired token"}, status=401)
 
         try:
-            filters = request.query_params.get('filters', '')
+            filters = request.query_params.get('filters')
+            print(filters)
+            if not isinstance(filters, str):
+                filters = ''
         except KeyError:
             return Response({"error": "Filters not provided"}, status=400)
         
-        print(user_profile.firebase_uid)
 
         try:
             recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, 10, filter=filters))
