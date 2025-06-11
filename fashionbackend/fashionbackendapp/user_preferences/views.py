@@ -8,6 +8,7 @@ from .serializer import ProductSerializer
 from django_q.tasks import async_task
 from .recombee import client
 from recombee_api_client.api_requests import AddUser, AddRating, AddDetailView
+import os
 
 
 def get_user_profile_from_token(token):
@@ -144,6 +145,9 @@ class UserPreferenceViewSet(viewsets.ViewSet):
                 profile.save()
             # Create Recombee user
             print("lebronza")
+            
+            print("RECOMBEE_DATABASE_ID:", os.getenv('RECOMBEE_DATABASE_ID'))
+            print("RECOMBEE_PRIVATE_TOKEN:", os.getenv('RECOMBEE_PRIVATE_TOKEN'))
             try:
                 client.send(AddUser(uid))
             except Exception as e:

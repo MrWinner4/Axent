@@ -66,7 +66,7 @@ class ProductViewSet(viewsets.ViewSet):
 
         try:
             recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, 10, filter=filters))
-            product_ids = [rec['id'] for rec in recommendations.recomms]
+            product_ids = [rec['id'] for rec in recommendations['recomms']]
             print(product_ids)
             products = Product.objects.filter(id__in=product_ids)
             serializer = ProductSerializer(products, many=True)
