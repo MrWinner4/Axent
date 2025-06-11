@@ -713,10 +713,12 @@ class SwipeableCardState extends State<SwipeableCard>
         return parsedData;
       } else {
         throw Exception(
-            'Failed to load recommended shoe: ${response.statusCode}');
+            'Failed to load recommended shoe: ${response.statusMessage}');
       }
-    } catch (e) {
-      print('Error in getProduct: $e');
+    } on DioException catch (e) {
+      print('Status code: ${e.response?.statusCode}');
+      print('Response body: ${e.response?.data}');
+      print('Error message: ${e.message}');
       throw Exception('Failed to load recommended shoe');
     }
   }
@@ -781,7 +783,7 @@ Future<Map<String, String>> getAuthHeaders() async {
     final token = await user.getIdToken();
     return {
       'Content-Type': 'application/json',
-      'Authorization': 'Token $token',
+      'Authorization': 'Bearer $token',
     };
   } catch (e) {
     print('Error in getAuthHeaders: $e');

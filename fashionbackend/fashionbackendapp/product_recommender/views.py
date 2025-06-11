@@ -48,7 +48,7 @@ class ProductViewSet(viewsets.ViewSet):
             return Response({"error": "Invalid authorization header"}, status=401)
 
         token = auth_header.split(' ').pop()
-        user_profile = self.get_user_from_token(token)
+        user_profile = get_user_from_token(token)
         if not user_profile:
             return Response({"error": "Invalid or expired token"}, status=401)
 
