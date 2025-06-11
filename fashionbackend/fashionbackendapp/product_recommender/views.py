@@ -6,6 +6,7 @@ from .serializer import ProductSerializer, ProductImageSerializer
 from firebase_admin import auth as firebase_auth
 from user_preferences.models import UserProfile
 from user_preferences.recombee import client
+from recombee_api_client.api_requests import RecommendItemsToUser
 
 # In user_preferences/utils.py or at the top of views.py
 from firebase_admin import auth as firebase_auth

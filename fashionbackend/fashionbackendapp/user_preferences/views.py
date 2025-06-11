@@ -7,7 +7,7 @@ from .models import Product, UserPreference, UserProfile
 from .serializer import ProductSerializer
 from django_q.tasks import async_task
 from .recombee import client
-from recombee_api_client.api_requests import AddUser, AddRating, AddDetailView, RecommendItemsToUser
+from recombee_api_client.api_requests import AddUser, AddRating, AddDetailView
 
 
 def get_user_profile_from_token(token):
