@@ -13,37 +13,7 @@ import 'package:dio/dio.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/*
-  Biggest todos right now:
-  - Currently working on backend and updating userpreferences every so often using djangoq
-  - Back button
-  - Header fleshed out
-  - Settings done
-  - Finish swipe card stuff, make it look nice
-  - Getting Images running
-*/
-
-//TODOS: get favorites/saved/profile page working, Get back button to work
-//TODOS: Finish connecting front and backend, flesh out liked & settings page, make ios look like ios(material vs. ios) figure out account setup & authentication, monitization
 //! FIX: I need to have an "updateCardWidgets()" method along with some widgets for current and next card and only call that method to update the cards and instead call buildcard there
-//! FIX: I need to make everything relative to screen size so stuff doesn't start going everywhere
-
-/* 
-  import 'package:flutter_svg/flutter_svg.dart';
-  Code for Back Button
-  CircleAvatar(
-    backgroundColor: Color.fromRGBO(56, 75, 85, 1),
-    maxRadius: 15,
-    child: SvgPicture.asset(
-      'assets/icons/backbutton.svg',
-        colorFilter: ColorFilter.mode(
-          Color.fromARGB(255, 246, 248, 249),
-          BlendMode.srcIn,
-        ),
-      ),
-  ),
-  Makes the most sense to go in the home_page somwewhere
- */
 class SwipeableCard extends StatefulWidget {
   final SwipeableCardController controller;
 
@@ -831,27 +801,33 @@ class _FiltersState extends State<Filters> {
 
   final Completer<void> preferencesReady = Completer<void>();
 
-  final Future<SharedPreferencesWithCache> filterPrefs =
-    SharedPreferencesWithCache.create(
-        cacheOptions: const SharedPreferencesWithCacheOptions(
-            allowList: <String>{'gender'}));
+  String gender = "Men";
 
-  String gender = filterPrefs.getString('gender') ?? 'Male';
-
-  Future<void> setGender(String newGender) async {
-    final SharedPreferencesWithCache prefs = await filterPrefs;
+  Future<void> onGenderButtonPress(String newGender) async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('gender', newGender);
     setState(() {
-      prefs.setString('gender', newGender);
+      gender = newGender;
     });
+  }
+
+  Future<void> loadSelectedGender() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      gender = prefs.getString('gender') ?? 'Male';
+    });
+  }
 
   @override
   void initState() {
     super.initState();
+    loadSelectedGender();
     preferencesReady.complete();
   }
+  
 
   @override
-  Widget build(BuildContext context) {
+  Widget build  (BuildContext context) {
     RangeValues currentRangeValues = _currentRangeValues;
     return _WaitForInitialization(
       initialized: preferencesReady.future,
@@ -904,11 +880,11 @@ class _FiltersState extends State<Filters> {
                       ),
                       Wrap(
                         spacing: 12,
-                        children: ['Men', 'Women', 'Unisex'].map((gender) {
-                          final isSelected = (prefs.getString('gender') ?? 'Men') == gender;
+                        children: ['Men', 'Women', 'Unisex'].map((genderMap) {
+                          final isSelected = gender == genderMap;
                           return ChoiceChip(
                             label: Text(
-                              gender,
+                              genderMap,
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 color: isSelected
@@ -919,7 +895,7 @@ class _FiltersState extends State<Filters> {
                             selected: isSelected,
                             onSelected: (_) {
                               setState(() {
-                                setGender(gender);
+                                onGenderButtonPress(genderMap);
                               });
                             },
                             selectedColor: Theme.of(context)
@@ -993,7 +969,6 @@ class _FiltersState extends State<Filters> {
       ),
     );
   }
-}
 }
 
 /// Waits for the [initialized] future to complete before rendering [builder].

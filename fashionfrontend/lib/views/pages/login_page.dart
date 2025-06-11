@@ -24,6 +24,14 @@ class _LogInPageState extends State<LogInPage> {
       _errorMessage = null;
     });
 
+    // if(_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+    //   setState(() {
+    //     _errorMessage = 'Please fill out all fields.';
+    //   });
+    //   _isLoading = false;
+    //   return;
+    // }
+
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
@@ -37,9 +45,17 @@ class _LogInPageState extends State<LogInPage> {
         (route) => false,
       );
     } on FirebaseAuthException catch (e) {
-      setState(() {
+      print('FirebaseAuth Error Code: ${e.code}'); //TODO!: More elegant handling of errors
+      if(e.code == 'invalid-credential') {
+        _errorMessage = 'Invalid email or password. Please try again.';
+      }
+      else if(e.code == 'invalid-email') {
+        _errorMessage = 'Please enter a valid email.';
+      }
+      else {setState(() {
         _errorMessage = e.message;
       });
+      }
     } catch (e) {
       setState(() {
         _errorMessage = 'Something went wrong. Please try again.';
