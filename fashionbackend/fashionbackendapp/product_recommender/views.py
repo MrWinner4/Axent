@@ -42,6 +42,7 @@ class ProductViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def recommend(self, request):
+        print("recommend")
         """Get product recommendations for a user"""
         auth_header = request.headers.get('Authorization', '')
         if not auth_header.startswith('Bearer '):
@@ -49,6 +50,7 @@ class ProductViewSet(viewsets.ViewSet):
 
         token = auth_header.split(' ').pop()
         user_profile = get_user_from_token(token)
+        print("user profile?")
         print(user_profile)
         if not user_profile:
             return Response({"error": "Invalid or expired token"}, status=401)
