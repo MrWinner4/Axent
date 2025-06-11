@@ -13,7 +13,11 @@ from firebase_admin import auth as firebase_auth
 def get_user_from_token(token):
     try:
         decoded_token = firebase_auth.verify_id_token(token)
+        print("decoded_token")
+        print(decoded_token)
         firebase_uid = decoded_token['uid']
+        print("firebase_uid")
+        print(firebase_uid)
         return UserProfile.objects.get(firebase_uid=firebase_uid)
     except Exception as e:
         print(f"Error getting user from token: {e}")
