@@ -1,10 +1,12 @@
-from .models import Product, ProductImage
+from fashionbackend.fashionbackendapp.product_recommender.models import Product, ProductImage, ProductImage360, ProductVariant
 from rest_framework import serializers
 
-class ProductImageSerializer(serializers.ModelSerializer):
+
+        
+class ProductImage360Serializer(serializers.ModelSerializer):
     class Meta:
-        model = ProductImage
-        fields = ['image_url']
+        model = ProductImage360
+        fields = ['image_url', 'order']
 
 class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
@@ -15,12 +17,17 @@ class ProductSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'brand',
+            'model',
+            'description',
+            'sku',
+            'slug',
+            'category',
+            'secondary_category',
+            'upcoming',
+            'updated_at',
+            'link',
             'colorway',
-            'gender',
-            'silhouette',
+            'trait',
             'release_date',
             'retailprice',
-            'estimatedMarketValue',
-            'story',
-            'images'
         ]
