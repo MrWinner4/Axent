@@ -61,7 +61,9 @@ class ProductViewSet(viewsets.ViewSet):
             return Response({"error": "Invalid or expired token"}, status=401)
 
         try:
-            filters = request.query_params.get('filters', {})
+            print("filters")
+            print(request.query_params.get('filters'))
+            filters = request.query_params.get('filters', '')
         except KeyError:
             return Response({"error": "Filters not provided"}, status=400)
 
