@@ -1,4 +1,5 @@
 import 'package:fashionfrontend/app_colors.dart';
+import 'package:fashionfrontend/providers/filters_provider.dart';
 import 'package:fashionfrontend/views/pages/auth_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -21,6 +22,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => CardQueueModel()),
         ChangeNotifierProvider(create: (_) => PreviousProductModel()),
         ChangeNotifierProvider(create: (_) => SearchProvider()),
+        ChangeNotifierProvider(create: (_) => FiltersProvider()),
       ],
       child: const MainPage(),
     ),

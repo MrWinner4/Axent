@@ -4,6 +4,7 @@ import 'dart:math';
 import 'dart:ui';
 import 'dart:convert';
 import 'package:fashionfrontend/models/card_queue_model.dart';
+import 'package:fashionfrontend/providers/filters_provider.dart';
 import 'package:fashionfrontend/views/pages/heart_page.dart';
 import 'package:fashionfrontend/views/pages/home_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -853,8 +854,11 @@ class SwipeableCardState extends State<SwipeableCard>
   // Calls API
   Future<List<dynamic>> getProduct() async {
     final String filters =
-        "'brand' in [\"Nike\", \"Adidas\"] AND 'retailprice' <= 200";
-
+        Provider.of<FiltersProvider>(context, listen: false).getFiltersString();
+    print("filters");
+    print(filters);
+    
+        
     final String baseURL =
         ('https://axentbackend.onrender.com/products/recommend/');
     final url = Uri.parse(baseURL).replace(queryParameters: {
@@ -973,6 +977,27 @@ class _FiltersState extends State<Filters> {
 
   final Completer<void> preferencesReady = Completer<void>();
 
+  String getFiltersString() {
+    final buffer = StringBuffer();
+
+    if (gender != null && gender!.isNotEmpty) {
+      buffer.write("'gender' == \"$gender\"");
+    }
+
+    if (_currentRangeValues != null) {
+      if (buffer.isNotEmpty) buffer.write(" AND ");
+      buffer.write(
+          "'retailprice' >= ${_currentRangeValues!.start} AND 'retailprice' <= ${_currentRangeValues!.end}");
+    }
+
+    if (_selectedSizes.isNotEmpty) {
+      if (buffer.isNotEmpty) buffer.write(" AND ");
+      buffer.write("'sizes' ANY [${_selectedSizes.join(', ')}]");
+    }
+
+    return buffer.toString();
+  }
+
   void filterChange() {
     final hasGenderChanged = _previousGender != gender;
     final hasPriceChanged = _previousRangeValues != _currentRangeValues;
@@ -991,15 +1016,16 @@ class _FiltersState extends State<Filters> {
     }
   }
 
-  Future<void> onGenderButtonPress(String newGender) async {
+  Future<void> onGenderButtonPress(String newGender, FiltersProvider provider) async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setString('gender', newGender);
     setState(() {
       gender = newGender;
     });
+    provider.updateFilters(gender: newGender);
   }
 
-  Future<void> _toggleSize(double size) async {
+  Future<void> _toggleSize(double size, FiltersProvider provider) async {
     final newSizes = Set<double>.from(_selectedSizes);
     if (newSizes.contains(size)) {
       newSizes.remove(size);
@@ -1016,15 +1042,17 @@ class _FiltersState extends State<Filters> {
     setState(() {
       _selectedSizes = newSizes;
     });
+    provider.updateFilters(selectedSizes: newSizes);
   }
 
-  Future<void> onPriceRangeChange(RangeValues newValues) async {
+  Future<void> onPriceRangeChange(RangeValues newValues, FiltersProvider provider) async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setDouble('minPrice', newValues.start);
     prefs.setDouble('maxPrice', newValues.end);
     setState(() {
       _currentRangeValues = newValues;
     });
+    provider.updateFilters(priceRange: newValues);
   }
 
   Future<void> loadSelectedGender() async {
@@ -1052,7 +1080,7 @@ class _FiltersState extends State<Filters> {
     });
   }
 
-  List<Widget> generateSizeOptions() {
+  List<Widget> generateSizeOptions(FiltersProvider provider) {
     final sizes = <double>[];
 
     // Define size ranges based on gender
@@ -1068,6 +1096,7 @@ class _FiltersState extends State<Filters> {
     return sizes.map((size) {
       final isSelected = _selectedSizes.contains(size);
       return FilterChip(
+        key: ValueKey(size),
         label: Text(
           size == size.toInt() ? size.toInt().toString() : size.toString(),
           style: TextStyle(
@@ -1077,7 +1106,7 @@ class _FiltersState extends State<Filters> {
           ),
         ),
         selected: isSelected,
-        onSelected: (_) => _toggleSize(size),
+        onSelected: (_) => _toggleSize(size, provider),
         backgroundColor: Theme.of(context).colorScheme.surface,
         selectedColor: Theme.of(context).colorScheme.primary,
         shape: RoundedRectangleBorder(
@@ -1133,165 +1162,169 @@ class _FiltersState extends State<Filters> {
     if (_currentRangeValues == null || gender == null) {
       return const Center(child: CircularProgressIndicator());
     }
+    final filtersProvider = Provider.of<FiltersProvider>(context);
     RangeValues currentRangeValues = _currentRangeValues!;
-    return _WaitForInitialization(
-      initialized: preferencesReady.future,
-      builder: (BuildContext context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          height: MediaQuery.of(context).size.height * .9,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              // header
-              Container(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("Filters",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        )),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      color: Theme.of(context).colorScheme.onSurface,
-                      onPressed: () {
-                        closeFilters(context);
-                      },
-                    )
-                  ],
-                ),
-              ),
-              // body
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+    return Provider<FiltersProvider>(
+      create: (_) => filtersProvider,
+      child: _WaitForInitialization(
+        initialized: preferencesReady.future,
+        builder: (BuildContext context) => StatefulBuilder(
+          builder: (context, setModalState) => Container(
+            height: MediaQuery.of(context).size.height * .9,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                // header
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Gender',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      SizedBox(
-                        height: 16,
-                      ),
-                      Wrap(
-                        spacing: 12,
-                        children:
-                            ['Men', 'Women', 'Unisex', 'Kids'].map((genderMap) {
-                          final isSelected = gender == genderMap;
-                          return ChoiceChip(
-                            label: Text(
-                              genderMap,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: isSelected
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Colors.black87,
-                              ),
-                            ),
-                            selected: isSelected,
-                            onSelected: (_) {
-                              setState(() {
-                                onGenderButtonPress(genderMap);
-                              });
-                            },
-                            selectedColor: Theme.of(context)
-                                .colorScheme
-                                .primaryContainer, // light filled background
-                            backgroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              side: isSelected
-                                  ? BorderSide(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primaryContainer,
-                                      width: 1.5,
-                                      strokeAlign: BorderSide.strokeAlignInside)
-                                  : BorderSide(
-                                      color: Colors.grey.shade300,
-                                      width: 1.5,
-                                      strokeAlign:
-                                          BorderSide.strokeAlignInside),
-                            ),
-                            elevation: 0,
-                            pressElevation: 0,
-                            showCheckmark: false,
-                            labelPadding: EdgeInsets.symmetric(
-                                vertical: 4, horizontal: 8),
-                          );
-                        }).toList(),
-                      ),
-                      SizedBox(height: 32),
-                      Text(
-                        'Size',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Container(
-                          height: 300, // Fixed height with scrolling
-                          child: SingleChildScrollView(
-                              child: Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: generateSizeOptions(),
-                          ))),
-                      SizedBox(height: 16),
-                      Text(
-                        'Price',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      Column(children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('\$${_currentRangeValues!.start.round()}',
-                                style: TextStyle(fontSize: 20)),
-                            Text('\$${_currentRangeValues!.end.round()}',
-                                style: TextStyle(fontSize: 20)),
-                          ],
-                        ),
-                        RangeSlider(
-                          values: currentRangeValues,
-                          min: 0,
-                          max: 200,
-                          activeColor: Theme.of(context).colorScheme.primary,
-                          onChanged: (RangeValues values) {
-                            setModalState(() {
-                              currentRangeValues = values;
-                            });
-                            setState(() {
-                              _currentRangeValues = values;
-                              onPriceRangeChange(values);
-                            });
-                          },
-                        ),
-                      ]),
+                      Text("Filters",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          )),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        color: Theme.of(context).colorScheme.onSurface,
+                        onPressed: () {
+                          closeFilters(context);
+                        },
+                      )
                     ],
                   ),
                 ),
-              ),
-            ],
+                // body
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Gender',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        SizedBox(
+                          height: 16,
+                        ),
+                        Wrap(
+                          spacing: 12,
+                          children:
+                              ['Men', 'Women', 'Unisex', 'Kids'].map((genderMap) {
+                            final isSelected = gender == genderMap;
+                            return ChoiceChip(
+                              label: Text(
+                                genderMap,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: isSelected
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Colors.black87,
+                                ),
+                              ),
+                              selected: isSelected,
+                              onSelected: (_) {
+                                setState(() {
+                                  onGenderButtonPress(genderMap, filtersProvider);
+                                });
+                              },
+                              selectedColor: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer, // light filled background
+                              backgroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                side: isSelected
+                                    ? BorderSide(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primaryContainer,
+                                        width: 1.5,
+                                        strokeAlign: BorderSide.strokeAlignInside)
+                                    : BorderSide(
+                                        color: Colors.grey.shade300,
+                                        width: 1.5,
+                                        strokeAlign:
+                                            BorderSide.strokeAlignInside),
+                              ),
+                              elevation: 0,
+                              pressElevation: 0,
+                              showCheckmark: false,
+                              labelPadding: EdgeInsets.symmetric(
+                                  vertical: 4, horizontal: 8),
+                            );
+                          }).toList(),
+                        ),
+                        SizedBox(height: 32),
+                        Text(
+                          'Size',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Container(
+                            height: 300, // Fixed height with scrolling
+                            child: SingleChildScrollView(
+                                child: Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: generateSizeOptions(filtersProvider),
+                            ))),
+                        SizedBox(height: 16),
+                        Text(
+                          'Price',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        Column(children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('\$${_currentRangeValues!.start.round()}',
+                                  style: TextStyle(fontSize: 20)),
+                              Text('\$${_currentRangeValues!.end.round()}',
+                                  style: TextStyle(fontSize: 20)),
+                            ],
+                          ),
+                          RangeSlider(
+                            values: currentRangeValues,
+                            min: 0,
+                            max: 200,
+                            activeColor: Theme.of(context).colorScheme.primary,
+                            onChanged: (RangeValues values) {
+                              setModalState(() {
+                                currentRangeValues = values;
+                              });
+                              setState(() {
+                                _currentRangeValues = values;
+                                onPriceRangeChange(values, filtersProvider);
+                              });
+                            },
+                          ),
+                        ]),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
