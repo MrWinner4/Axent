@@ -2,41 +2,53 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 
 class CardData {
+  final String id;
   final String title;
   final String brand;
-  final String colorway;
-  final String gender;
-  final String silhouette;
+  final String? model;
+  final String? description;
+  final String? sku;
+  final String? slug;
+  final String? category;
+  final String? secondaryCategory;
+  final bool upcoming;
+  final DateTime? updatedAt;
+  final String? link;
+  final List<String> colorway;
+  final bool trait;
   final DateTime? releaseDate;
   final double retailPrice;
-  final double estimatedMarketValue;
-  final String story;
-  final List<String> urls;
   final List<String> images;
-  final String id;
+  final List<String> images360;
   final DateTime likedAt;
 
   CardData({
+    required this.id,
     required this.title,
     required this.brand,
+    this.model,
+    this.description,
+    this.sku,
+    this.slug,
+    this.category,
+    this.secondaryCategory,
+    required this.upcoming,
+    this.updatedAt,
+    this.link,
     required this.colorway,
-    required this.gender,
-    required this.silhouette,
+    required this.trait,
     this.releaseDate,
     required this.retailPrice,
-    required this.estimatedMarketValue,
-    required this.story,
-    required this.urls,
     required this.images,
-    required this.id,
     required this.likedAt,
+    required this.images360
   });
 
   factory CardData.fromJson(Map<String, dynamic> json) {
-    double parsePrice(String? priceStr) {
-      if (priceStr == null) return 0.0;
+    double parsePrice(dynamic value) {
+      if (value == null) return 0.0;
       try {
-        return double.parse(priceStr.replaceAll(',', ''));
+        return double.parse(value.toString().replaceAll(',', ''));
       } catch (e) {
         print('Error parsing price: $e');
         return 0.0;
@@ -44,25 +56,43 @@ class CardData {
     }
 
     return CardData(
-      title: json['title'],
-      brand: json['brand'],
-      colorway: json['colorway'],
-      gender: json['gender'],
-      silhouette: json['silhouette'],
-      releaseDate: json['release_date'] != null ? DateTime.parse(json['release_date']) : null,
-      retailPrice: parsePrice(json['retailprice'].toString()),
-      estimatedMarketValue: parsePrice(json['estimatedMarketValue'].toString()),
-      story: json['story'],
-      urls: List<String>.from(json['urls']),
-      images: json['images'].map((e) => e['image_url'].toString()).toList(),
-      id: json['id'],
+      id: json['id'] ?? '',
+      title: json['title'] ?? '',
+      brand: json['brand'] ?? '',
+      model: json['model'],
+      description: json['description'],
+      sku: json['sku'],
+      slug: json['slug'],
+      category: json['category'],
+      secondaryCategory: json['secondary_category'],
+      upcoming: json['upcoming'] ?? false,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.tryParse(json['updated_at'])
+          : null,
+      link: json['link'],
+      colorway: json['colorway'] is List
+          ? List<String>.from(json['colorway'])
+          : [],
+      trait: json['trait'] ?? false,
+      releaseDate: json['release_date'] != null
+          ? DateTime.tryParse(json['release_date'])
+          : null,
+      retailPrice: parsePrice(json['retailprice']),
+      images: json['images'] is List
+          ? (json['images'] as List)
+              .map((e) => e['image_url'].toString())
+              .toList()
+          : ['assets/images/Shoes1.jpg'],
       likedAt: DateTime.now(),
+      images360: json['360images'] is List
+          ? (json['images360'] as List)
+            .map((e) => e['image360_url'].toString())
+            .toList()
+          : ['assets/images/Shoes1.jpg']
     );
   }
 
-  String get formattedPrice {
-    return '\$${retailPrice.toStringAsFixed(2)}';
-  }
+  String get formattedPrice => '\$${retailPrice.toStringAsFixed(2)}';
 }
 
 class CardQueueModel with ChangeNotifier {
@@ -76,9 +106,6 @@ class CardQueueModel with ChangeNotifier {
 
   void addCard(CardData data) {
     // Always keep 3 cards in the queue
-    if (_queue.length >= 3) {
-      _queue.removeLast();
-    }
     _queue.addLast(data);
     notifyListeners();
   }

@@ -42,19 +42,7 @@ class SearchResultsPage extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                             builder: (context) => ProductDetailPage(product: 
-                            {
-                          'title': product.title,
-                          'brand': product.brand,
-                          'colorway': product.colorway,
-                          'gender': product.gender,
-                          'silhouette': product.silhouette,
-                          'releaseDate': product.releaseDate,
-                          'retailprice': product.retailPrice,
-                          'estimatedMarketValue': product.estimatedMarketValue,
-                          'story': product.story,
-                          'urls': product.urls,
-                          'images': product.images,
-                          'likedAt': product.likedAt,
+                            {//DO later
                         },),
                           ),
                         );
