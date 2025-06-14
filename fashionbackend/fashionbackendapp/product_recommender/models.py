@@ -23,6 +23,7 @@ class Product(models.Model):
     updated_at = models.DateTimeField(auto_now=False, default = timezone.now, null = True)
     link = models.URLField(default="", blank=True, help_text="Link to the product page", max_length=500)
     colorway = models.JSONField(default=list)
+    normalized_colorway = models.JSONField(default=list)
     trait = models.BooleanField(default=False) #MEANS FEATURED?
     release_date = models.DateField(null=True, blank=True)
     retailprice = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

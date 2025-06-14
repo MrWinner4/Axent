@@ -120,6 +120,7 @@ class Command(BaseCommand):
                             updated_at=safe_parse_datetime(product_data.get("updated_at")),
                             link=product_data.get("link"),
                             colorway=parse_colorway(traits.get("Colorway")),
+                            normalized_colorway=parse_normalized_colorway(traits.get("Colorway")),
                             trait=traits.get("Featured", "false").lower() == "true",
                             release_date=safe_parse_datetime(traits.get("Release Date")),
                             retailprice=safe_decimal(traits.get("Retail Price")),
@@ -140,6 +141,7 @@ class Command(BaseCommand):
                             "updated_at": product.updated_at.isoformat() if product.updated_at else None,
                             "link": product.link,
                             "colorway": product.colorway,
+                            "normalized_colorway": product.normalized_colorway,
                             "trait": product.trait,
                             "release_date": product.release_date.isoformat() if product.release_date else None,
                             "retailprice": float(product.retailprice) if product.retailprice else None,
@@ -278,6 +280,65 @@ def safe_parse_datetime(value):
 
 import re
 
+color_keywords = {
+    "red": [
+        "red", "crimson", "carmine", "burgundy", "cardinal", "fire", "habanero", "gym red", "team red",
+        "infrared", "ember", "hyper crimson", "dragon", "challenge", "deep red", "chili", "maroon"
+    ],
+    "orange": [
+        "orange", "lava", "mango", "citrus", "solar", "max", "burnt", "ember glow", "terra", "dune red",
+        "canyon", "cinnamon", "safety orange"
+    ],
+    "yellow": [
+        "yellow", "maize", "lemon", "gold", "flax", "ochre", "wheat", "mustard", "amber", "halo gold",
+        "aurora", "saffron", "citrine", "lucent yellow"
+    ],
+    "green": [
+        "green", "forest", "pine", "mint", "sage", "olive", "jade", "fir", "volt", "chlorophyll", "army",
+        "seafoam", "lucky green", "kinetic", "malachite", "gecko", "kyanite", "pistachio", "kale"
+    ],
+    "blue": [
+        "blue", "navy", "cobalt", "royal", "hyper blue", "azure", "indigo", "game royal", "lagoon",
+        "glacier", "marina", "powder blue", "sport royal", "lucid blue", "photo blue"
+    ],
+    "purple": [
+        "purple", "violet", "lilac", "plum", "concord", "grape", "amethyst", "deep orchid", "club purple",
+        "psychic purple"
+    ],
+    "black": [
+        "black", "core black", "iron", "anthracite", "obsidian", "dark smoke", "graphite", "onyx",
+        "pitch", "phantom", "stealth"
+    ],
+    "white": [
+        "white", "bone", "ivory", "sail", "chalk", "light cream", "egret", "summit", "off white", "cloud",
+        "pale ivory", "snow"
+    ],
+    "brown": [
+        "brown", "chocolate", "mocha", "fossil", "hemp", "taupe", "bronze", "caramel", "clay", "flax",
+        "earth", "mesa", "ironstone", "peanut", "dust"
+    ],
+    "grey": [
+        "grey", "gray", "ash", "cement", "ore", "pewter", "platinum", "flint", "steel", "lead", "smoke",
+        "stone", "fossilized", "gravel"
+    ],
+    "pink": [
+        "pink", "blush", "rose", "punch", "coral", "lotus", "bubblegum", "digital pink", "flamingo",
+        "vivid pink", "soft pink", "barely rose", "hyper pink"
+    ],
+    "teal_aqua": [
+        "aqua", "teal", "turquoise", "arctic", "jade", "icy", "lagoon", "clear jade", "celestine"
+    ],
+    "metallic": [
+        "metallic", "chrome", "silver", "copper", "bronze", "gold", "pewter", "hematite"
+    ],
+    "multicolor": [
+        "multicolor", "rainbow", "tie-dye", "gradient", "mashup", "mix", "print", "color"
+    ],
+    "glow_neon": [
+        "volt", "glow", "hyper", "neon"
+    ]
+}
+
 def parse_colorway(raw_value):
     if not raw_value:
         return []
@@ -288,4 +349,24 @@ def parse_colorway(raw_value):
 
     except Exception as e:
         print(f"Error parsing colorway: {e}")
+        return []
+
+def parse_normalized_colorway(raw_value):
+    if not raw_value:
+        return []
+    try:
+        cleaned = re.sub(r'[\/\-]', ',', raw_value)
+        parts = [part.strip().lower() for part in cleaned.split(',') if part.strip()]
+        found_colors = set()
+
+        for part in parts:
+            for core_color, keywords in color_keywords.items():
+                # Check if any keyword is in this part
+                if any(keyword in part for keyword in keywords):
+                    found_colors.add(core_color)
+                    break  # stop checking other keywords for this part
+
+        return list(found_colors)
+    except Exception as e:
+        print(f"Error parsing normalized colorway: {e}")
         return []

@@ -22,5 +22,6 @@ class Command(BaseCommand):
         client.send(AddItemProperty('colorway', 'set'))  # Yes 
         client.send(AddItemProperty('trait', 'boolean')) #Yes - means featured
         client.send(AddItemProperty('release_date', 'timestamp'))  # Yes
-        client.send(AddItemProperty('retailprice', 'double')) # Yes"""
+        client.send(AddItemProperty('retailprice', 'double')) # Yes
         client.send(AddItemProperty('Image', 'image')) 
+        client.send(AddItemProperty('normalized_colorway', 'set'))"""
