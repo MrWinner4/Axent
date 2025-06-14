@@ -12,6 +12,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:dio/dio.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:collection/collection.dart';
 
 //! FIX: I need to have an "updateCardWidgets()" method along with some widgets for current and next card and only call that method to update the cards and instead call buildcard there
 class SwipeableCard extends StatefulWidget {
@@ -55,6 +56,8 @@ class SwipeableCardState extends State<SwipeableCard>
 
   double undoLeft = 0;
   bool isUndoing = false;
+
+  bool isButtonAnimating = false;
 
   late AnimationController undoController;
   late Animation<double> undoPositionAnimation;
@@ -174,51 +177,20 @@ class SwipeableCardState extends State<SwipeableCard>
                           ),
                         ],
                         color: Color.fromRGBO(255, 255, 255, 1),
-                        borderRadius: BorderRadius.all(Radius.elliptical(60, 60)),
+                        borderRadius:
+                            BorderRadius.all(Radius.elliptical(60, 60)),
                       ),
-                      child: Icon(
-                        Icons.close_outlined,
-                        size: 32,
+                      child: IconButton(
+                        icon: const Icon(Icons.close_outlined),
+                        iconSize: 32,
                         color: Colors.red,
-                        shadows: [
-                          BoxShadow(
-                              color: Colors.red.withValues(alpha: 1.0),
-                              blurRadius: 100,
-                              offset: Offset(-10, -10))
-                        ],
-                      ),
-                    ),
-                    Material(
-                      color: Colors.white, //MAKE PRETTY?
-                      borderRadius: BorderRadius.circular(30),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(30),
-                        onTap: () {
-                          print('Bolt!');
-                        },
-                        child: Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                            ],
-                            borderRadius: BorderRadius.all(Radius.elliptical(60, 60)),
-                          ),
-                          child: Icon(
-                            Icons.bolt,
-                            size: 32,
-                            color: ColorScheme.of(context).primary,
-                            shadows: [
-                              BoxShadow(
-                                  color: ColorScheme.of(context)
-                                      .primary
-                                      .withValues(alpha: 1.0),
-                                  blurRadius: 100,
-                                  offset: Offset(-10, -10))
-                            ],
-                          ),
-                          
-                        ),
+                        onPressed: isButtonAnimating
+                            ? null
+                            : () {
+                                _triggerNextCardButton(
+                                    cardQueue.firstCard!.id, cardQueue, -1);
+                                print("red");
+                              },
                       ),
                     ),
                     Container(
@@ -233,18 +205,44 @@ class SwipeableCardState extends State<SwipeableCard>
                           ),
                         ],
                         color: Color.fromRGBO(255, 255, 255, 1),
-                        borderRadius: BorderRadius.all(Radius.elliptical(60, 60)),
+                        borderRadius:
+                            BorderRadius.all(Radius.elliptical(60, 60)),
                       ),
-                      child: Icon(
-                        Icons.thumb_up,
-                        size: 28,
-                        color: Colors.green,
-                        shadows: [
+                      child: IconButton(
+                        icon: const Icon(Icons.bolt),
+                        iconSize: 32,
+                        color: ColorScheme.of(context).primary,
+                        onPressed: () {
+                          print("bolt");
+                        },
+                      ),
+                    ),
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        boxShadow: [
                           BoxShadow(
-                              color: Colors.green.withValues(alpha: 1.0),
-                              blurRadius: 100,
-                              offset: Offset(-10, -10))
+                            color: Color.fromRGBO(0, 0, 0, 0.25),
+                            offset: Offset(2, 2),
+                            blurRadius: 10,
+                          ),
                         ],
+                        color: Color.fromRGBO(255, 255, 255, 1),
+                        borderRadius:
+                            BorderRadius.all(Radius.elliptical(60, 60)),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.thumb_up),
+                        iconSize: 28,
+                        color: Colors.green,
+                        onPressed: isButtonAnimating
+                            ? null
+                            : () {
+                                _triggerNextCardButton(
+                                    cardQueue.firstCard!.id, cardQueue, 1);
+                                print("Green");
+                              },
                       ),
                     )
                   ],
@@ -542,8 +540,7 @@ class SwipeableCardState extends State<SwipeableCard>
                             children: [
                               Expanded(
                                 child: Image.network(
-                                  data.images360[
-                                      10],
+                                  data.images360[10],
                                   fit: BoxFit.contain,
                                   errorBuilder: (context, error, stackTrace) {
                                     return const Center(
@@ -554,8 +551,7 @@ class SwipeableCardState extends State<SwipeableCard>
                               ),
                               Expanded(
                                 child: Image.network(
-                                  data.images360[
-                                      20],
+                                  data.images360[20],
                                   fit: BoxFit.contain,
                                   errorBuilder: (context, error, stackTrace) {
                                     return const Center(
@@ -568,20 +564,21 @@ class SwipeableCardState extends State<SwipeableCard>
                           )
                         : data.images.isNotEmpty
                             ? Row(
-                              children: [
-                                Expanded(
+                                children: [
+                                  Expanded(
                                     child: Image.network(
                                       data.images[0],
                                       fit: BoxFit.contain,
-                                      errorBuilder: (context, error, stackTrace) {
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
                                         return const Center(
                                           child: Icon(Icons.error),
                                         );
                                       },
                                     ),
                                   ),
-                              ],
-                            )
+                                ],
+                              )
                             : Image.network(
                                 data.images.first,
                                 fit: BoxFit.contain,
@@ -635,6 +632,32 @@ class SwipeableCardState extends State<SwipeableCard>
     );
   }
 
+  void _triggerNextCardButton(
+      String currentCardID, CardQueueModel cardQueue, int preference) {
+    if (isButtonAnimating) return;
+
+    setState(() {
+      isButtonAnimating = true;
+    });
+    final screenWidth = MediaQuery.of(context).size.width;
+    final targetLeft = preference > 0
+        ? screenWidth + 200 //Right for like
+        : -screenWidth - 200; //Left for dislike
+
+    //Animate
+    setState(() {
+      _left = targetLeft;
+
+      rotationAngle = preference.toDouble() * .5; //change if it looks off
+    });
+
+    //After animation trigger next card
+
+    Future.delayed(const Duration(milliseconds: 300), () {
+      _triggerNextCard(currentCardID, cardQueue);
+    });
+  }
+
   /// Called when the swipe passes the threshold.
   /// This version first animates the current card off-screen,
   /// then triggers the "pop-up" of the next card from its blurred position.
@@ -682,6 +705,7 @@ class SwipeableCardState extends State<SwipeableCard>
           _top = centerTop;
           rotationAngle = 0.0;
           _popUp = false;
+          isButtonAnimating = false;
         });
       });
     });
@@ -704,9 +728,16 @@ class SwipeableCardState extends State<SwipeableCard>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
-        return Filters();
+        return Filters(onFilterChanged: newCards);
       },
     );
+  }
+
+  void newCards() {
+    print("yoo hoo");
+    final cardQueue = Provider.of<CardQueueModel>(context, listen: false);
+    cardQueue.resetQueue();
+    getProductData(cardQueue);
   }
 
   void undo() {
@@ -842,7 +873,6 @@ class SwipeableCardState extends State<SwipeableCard>
         // If the data is a string, parse it as JSON
         final parsedData = data is String ? jsonDecode(data) : data;
 
-
         return parsedData;
       } else {
         throw Exception(
@@ -925,24 +955,75 @@ Future<Map<String, String>> getAuthHeaders() async {
 }
 
 class Filters extends StatefulWidget {
-  const Filters({super.key});
+  final VoidCallback onFilterChanged;
+
+  const Filters({super.key, required this.onFilterChanged});
 
   @override
   State<Filters> createState() => _FiltersState();
 }
 
 class _FiltersState extends State<Filters> {
-  RangeValues _currentRangeValues = const RangeValues(20, 80);
+  RangeValues? _currentRangeValues;
+  Set<double> _selectedSizes = {};
+  String? gender;
+  String? _previousGender;
+  RangeValues? _previousRangeValues;
+  Set<double> _previousSizes = {};
 
   final Completer<void> preferencesReady = Completer<void>();
 
-  String gender = "Men";
+  void filterChange() {
+    final hasGenderChanged = _previousGender != gender;
+    final hasPriceChanged = _previousRangeValues != _currentRangeValues;
+    final hasSizesChanged =
+        !SetEquality().equals(_previousSizes, _selectedSizes);
+    if (hasGenderChanged || hasPriceChanged || hasSizesChanged) {
+      print("Filters changed - refreshing cards");
+
+      // Update the previous values
+      _previousGender = gender;
+      _previousRangeValues = _currentRangeValues;
+      _previousSizes = Set.from(_selectedSizes);
+
+      // Refresh cards
+      widget.onFilterChanged();
+    }
+  }
 
   Future<void> onGenderButtonPress(String newGender) async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setString('gender', newGender);
     setState(() {
       gender = newGender;
+    });
+  }
+
+  Future<void> _toggleSize(double size) async {
+    final newSizes = Set<double>.from(_selectedSizes);
+    if (newSizes.contains(size)) {
+      newSizes.remove(size);
+    } else {
+      newSizes.add(size);
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+      'selectedSizes',
+      newSizes.map((e) => e.toString()).toList(),
+    );
+
+    setState(() {
+      _selectedSizes = newSizes;
+    });
+  }
+
+  Future<void> onPriceRangeChange(RangeValues newValues) async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setDouble('minPrice', newValues.start);
+    prefs.setDouble('maxPrice', newValues.end);
+    setState(() {
+      _currentRangeValues = newValues;
     });
   }
 
@@ -953,16 +1034,106 @@ class _FiltersState extends State<Filters> {
     });
   }
 
+  Future<void> loadSelectedSizes() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedSizes = prefs.getStringList('selectedSizes') ?? [];
+    setState(() {
+      _selectedSizes = savedSizes.map((e) => double.parse(e)).toSet();
+    });
+  }
+
+  Future<void> loadSelectedPriceRange() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _currentRangeValues = RangeValues(
+        prefs.getDouble('minPrice') ?? 20,
+        prefs.getDouble('maxPrice') ?? 80,
+      );
+    });
+  }
+
+  List<Widget> generateSizeOptions() {
+    final sizes = <double>[];
+
+    // Define size ranges based on gender
+    final isKids = gender?.toLowerCase() == 'kids';
+    final startSize = isKids ? 1.0 : 6.0;
+    final endSize = 16.0;
+    final step = 0.5;
+
+    for (double i = startSize; i <= endSize; i += step) {
+      sizes.add(i);
+    }
+
+    return sizes.map((size) {
+      final isSelected = _selectedSizes.contains(size);
+      return FilterChip(
+        label: Text(
+          size == size.toInt() ? size.toInt().toString() : size.toString(),
+          style: TextStyle(
+            color: isSelected
+                ? Theme.of(context).colorScheme.onPrimary
+                : Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        selected: isSelected,
+        onSelected: (_) => _toggleSize(size),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        selectedColor: Theme.of(context).colorScheme.primary,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: isSelected
+                ? Colors.transparent
+                : Theme.of(context).colorScheme.outline,
+          ),
+        ),
+        showCheckmark: false,
+      );
+    }).toList();
+  }
+
+  closeFilters(context) {
+    Navigator.pop(context);
+    filterChange();
+  }
+
   @override
   void initState() {
     super.initState();
-    loadSelectedGender();
-    preferencesReady.complete();
+    loadPreferences();
+  }
+
+  Future<void> loadPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final savedGender = prefs.getString('gender') ?? 'Men';
+    final minPrice = prefs.getDouble('minPrice') ?? 20.0;
+    final maxPrice = prefs.getDouble('maxPrice') ?? 80.0;
+    final savedSizes = prefs.getStringList('selectedSizes') ?? [];
+
+    setState(() {
+      gender = savedGender;
+      _currentRangeValues = RangeValues(minPrice, maxPrice);
+      _selectedSizes = savedSizes.map((e) => double.parse(e)).toSet();
+
+      // Initialize previous values
+      _previousGender = gender;
+      _previousRangeValues = _currentRangeValues;
+      _previousSizes = Set.from(_selectedSizes);
+    });
+
+    if (!preferencesReady.isCompleted) {
+      preferencesReady.complete();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    RangeValues currentRangeValues = _currentRangeValues;
+    if (_currentRangeValues == null || gender == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    RangeValues currentRangeValues = _currentRangeValues!;
     return _WaitForInitialization(
       initialized: preferencesReady.future,
       builder: (BuildContext context) => StatefulBuilder(
@@ -989,7 +1160,9 @@ class _FiltersState extends State<Filters> {
                     IconButton(
                       icon: const Icon(Icons.close),
                       color: Theme.of(context).colorScheme.onSurface,
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        closeFilters(context);
+                      },
                     )
                   ],
                 ),
@@ -1014,7 +1187,8 @@ class _FiltersState extends State<Filters> {
                       ),
                       Wrap(
                         spacing: 12,
-                        children: ['Men', 'Women', 'Unisex'].map((genderMap) {
+                        children:
+                            ['Men', 'Women', 'Unisex', 'Kids'].map((genderMap) {
                           final isSelected = gender == genderMap;
                           return ChoiceChip(
                             label: Text(
@@ -1061,6 +1235,24 @@ class _FiltersState extends State<Filters> {
                       ),
                       SizedBox(height: 32),
                       Text(
+                        'Size',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Container(
+                          height: 300, // Fixed height with scrolling
+                          child: SingleChildScrollView(
+                              child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: generateSizeOptions(),
+                          ))),
+                      SizedBox(height: 16),
+                      Text(
                         'Price',
                         style: TextStyle(
                           fontSize: 20,
@@ -1073,9 +1265,9 @@ class _FiltersState extends State<Filters> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('\$${_currentRangeValues.start.round()}',
+                            Text('\$${_currentRangeValues!.start.round()}',
                                 style: TextStyle(fontSize: 20)),
-                            Text('\$${_currentRangeValues.end.round()}',
+                            Text('\$${_currentRangeValues!.end.round()}',
                                 style: TextStyle(fontSize: 20)),
                           ],
                         ),
@@ -1090,6 +1282,7 @@ class _FiltersState extends State<Filters> {
                             });
                             setState(() {
                               _currentRangeValues = values;
+                              onPriceRangeChange(values);
                             });
                           },
                         ),

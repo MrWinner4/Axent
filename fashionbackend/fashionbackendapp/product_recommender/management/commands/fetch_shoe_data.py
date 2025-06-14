@@ -276,14 +276,16 @@ def safe_parse_datetime(value):
         return parse_datetime(value)
     return None
 
-import json
+import re
 
 def parse_colorway(raw_value):
     if not raw_value:
         return []
     try:
-        colors = raw_value.split('/')
-        return [c.strip() for c in colors if c.strip()]
+        cleaned = re.sub(r'[\/\-]', ',', raw_value)
+        parts = [part.strip().title() for part in cleaned.split(',') if part.strip()]
+        return list(dict.fromkeys(parts))
+
     except Exception as e:
         print(f"Error parsing colorway: {e}")
         return []
