@@ -218,7 +218,6 @@ class Command(BaseCommand):
 
             # Save all at once
             Product.objects.bulk_create(products_to_create)
-            
             ProductImage.objects.bulk_create(product_images)
             ProductImage360.objects.bulk_create(product_images_360)
             ProductVariant.objects.bulk_create(variant_creates)

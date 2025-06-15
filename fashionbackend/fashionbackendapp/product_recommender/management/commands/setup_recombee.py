@@ -25,3 +25,8 @@ class Command(BaseCommand):
         client.send(AddItemProperty('retailprice', 'double')) # Yes
         client.send(AddItemProperty('Image', 'image')) 
         client.send(AddItemProperty('normalized_colorway', 'set'))"""
+        client.send(AddItemProperty('hasmen', 'boolean'))
+        client.send(AddItemProperty('haswomen', 'boolean'))
+        client.send(AddItemProperty('hasyouth', 'boolean'))
+        client.send(AddItemProperty('haskids', 'boolean'))
+        client.send(AddItemProperty('sizes', 'set'))
