@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from ...recombee import client
-from recombee_api_client.api_requests import AddItemProperty
+from recombee_api_client.api_requests import AddItemProperty, DeleteItemProperty
 
 class Command(BaseCommand):
     help = 'Setup Recombee client and add initial data'
@@ -25,8 +25,6 @@ class Command(BaseCommand):
         client.send(AddItemProperty('retailprice', 'double')) # Yes
         client.send(AddItemProperty('Image', 'image')) 
         client.send(AddItemProperty('normalized_colorway', 'set'))"""
-        client.send(AddItemProperty('hasmen', 'boolean'))
-        client.send(AddItemProperty('haswomen', 'boolean'))
-        client.send(AddItemProperty('hasyouth', 'boolean'))
-        client.send(AddItemProperty('haskids', 'boolean'))
-        client.send(AddItemProperty('sizes', 'set'))
+        client.send(AddItemProperty('sizes_available', 'set'))
+        client.send(AddItemProperty('lowest_ask', 'set'))
+        client.send(AddItemProperty('total_asks', 'set'))

@@ -27,11 +27,6 @@ class Product(models.Model):
     trait = models.BooleanField(default=False) #MEANS FEATURED?
     release_date = models.DateField(null=True, blank=True)
     retailprice = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    hasmen = models.BooleanField(default=False)
-    haswomen = models.BooleanField(default=False)
-    hasyouth = models.BooleanField(default=False)
-    haskids = models.BooleanField(default=False)
-    sizes = models.JSONField(default=list)
 
     def __str__(self):
         return self.title

@@ -83,6 +83,9 @@ class Command(BaseCommand):
                     continue
 
                 try:
+                    product_sizes = []  # To track unique sizes across products
+                    product_lowest_asks = []  # To track unique lowest asks across products
+                    product_total_asks = []  # To track unique total asks across products
                     # -- product core data
                     title = product_data.get("title", "Unnamed Sneaker")
                     traits = {trait["trait"]: trait["value"] for trait in product_data.get("traits", [])}
@@ -127,28 +130,7 @@ class Command(BaseCommand):
                             retailprice=safe_decimal(traits.get("Retail Price")),
                         )
                         products_to_create.append(product)
-                    recombee_list.append(SetItemValues(
-                        item_id=str(product.id),
-                        values={
-                            "title": product.title,
-                            "brand": product.brand,
-                            "model":  product.model,
-                            "description": product.description,
-                            "sku": product.sku,
-                            "slug": product.slug,
-                            "category": product.category,
-                            "secondary_category": product.secondary_category,
-                            "upcoming": product.upcoming,
-                            "updated_at": product.updated_at.isoformat() if product.updated_at else None,
-                            "link": product.link,
-                            "colorway": product.colorway,
-                            "normalized_colorway": product.normalized_colorway,
-                            "trait": product.trait,
-                            "release_date": product.release_date.isoformat() if product.release_date else None,
-                            "retailprice": float(product.retailprice) if product.retailprice else None,
-                        },
-                        cascade_create=True
-                    ))
+                    
 
 
                     # -- image (original)
@@ -206,6 +188,35 @@ class Command(BaseCommand):
                                 subtotal=variant.get("subtotal", {}),
                                 updated_at=safe_parse_datetime(variant.get("updated_at")),
                             ))
+                        product_sizes.append(float(variant_size))
+                        product_lowest_asks.append(float(variant.get("lowest_ask") or 0))
+                        product_total_asks.append(int(variant.get("total_asks") or 0))
+                    
+                    recombee_list.append(SetItemValues(
+                        item_id=str(product.id),
+                        values={
+                            "title": product.title,
+                            "brand": product.brand,
+                            "model":  product.model,
+                            "description": product.description,
+                            "sku": product.sku,
+                            "slug": product.slug,
+                            "category": product.category,
+                            "secondary_category": product.secondary_category,
+                            "upcoming": product.upcoming,
+                            "updated_at": product.updated_at.isoformat() if product.updated_at else None,
+                            "link": product.link,
+                            "colorway": product.colorway,
+                            "normalized_colorway": product.normalized_colorway,
+                            "trait": product.trait,
+                            "release_date": product.release_date.isoformat() if product.release_date else None,
+                            "retailprice": float(product.retailprice) if product.retailprice else None,
+                            "sizes_available": product_sizes,
+                            "lowest_ask": product_lowest_asks,
+                            "total_asks": product_total_asks,
+                        },
+                        cascade_create=True
+                    ))
 
 
                     total_imported += 1
@@ -355,7 +366,6 @@ def parse_normalized_colorway(raw_value):
                 if any(keyword in part.lower() for keyword in keywords):
                     found_colors.add(core_color)
                     break  # stop checking other keywords for this part
-        print(found_colors)
         return list(found_colors)
     except Exception as e:
         print(f"Error parsing normalized colorway: {e}")

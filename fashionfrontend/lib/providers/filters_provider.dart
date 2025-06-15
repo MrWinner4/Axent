@@ -31,7 +31,8 @@ class FiltersProvider extends ChangeNotifier {
 
     if (selectedSizes.isNotEmpty) {
       if (buffer.isNotEmpty) buffer.write(" AND ");
-      buffer.write("'sizes' ANY [${selectedSizes.join(', ')}]");
+      buffer.write("'sizes_available' ANY [${selectedSizes.join(' OR ')}]");
+      buffer.write("[\"${selectedSizes.join('" OR "')}\"] in sizes_available");
     }
 
     return buffer.toString();
