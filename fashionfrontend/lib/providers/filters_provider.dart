@@ -20,7 +20,16 @@ class FiltersProvider extends ChangeNotifier {
     final buffer = StringBuffer();
 
     if (gender != null && gender!.isNotEmpty) {
-      buffer.write("'gender' == \"$gender\"");
+      if (gender == "men"){
+        buffer.write("isMen == true");
+      }
+      else if (gender == "women"){
+        buffer.write("isWomen == true");
+      }
+      else if (gender == "youth"){
+        buffer.write("isYouth == true OR isKids == true");
+      }
+      
     }
 
     if (priceRange != null) {
