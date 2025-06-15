@@ -146,9 +146,10 @@ class Command(BaseCommand):
                     # -- variants
                     for variant in product_data.get("variants", []):
                         size_type = variant.get("size_type", "").lower()
-                        is_men = "m" in size_type
-                        is_youth = "y" in size_type
-                        is_kids = "k" in size_type or "c" in size_type
+                        is_men = "m" in size_type or "men" in title.lower()
+                        is_women = "w" in size_type or "women" in title.lower()
+                        is_youth = "y" in size_type or "youth" in title.lower()
+                        is_kids = "k" in size_type or "c" in size_type or "kids" in title.lower() or "children" in title.lower()
                         raw_size = variant.get("size", "").lower().strip()
 
                         if "w" in raw_size:

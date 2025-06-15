@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand
+"""from django.core.management.base import BaseCommand
 from recombee_api_client.api_requests import ListItems, DeleteItem, Batch
 from ...recombee import client
 
@@ -24,3 +24,5 @@ class Command(BaseCommand):
 
         except Exception as e:
             self.stderr.write(f"⚠️ Error: {e}")
+"""
+#! ONLY UNDO THIS UNDER VERY SPECIAL CIRCUMSTANCES- DO NOT WANNA DELETE THE DATABASE 🥀

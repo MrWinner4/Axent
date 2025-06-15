@@ -52,9 +52,10 @@ class ProductImage360(models.Model):
 class ProductVariant(models.Model): #This is for the variants recieved from the API
     product = models.ForeignKey(Product, related_name="variants", on_delete=models.CASCADE)
     size = models.DecimalField(max_digits=3, decimal_places=1)
-    sizeMen = models.BooleanField(default=True) #True = men, False = women
-    sizeYouth = models.BooleanField(default=False) #True = youth, False = adult
-    sizeKids = models.BooleanField(default=False) #True = kids, False = adult
+    isMen = models.BooleanField(default=True)
+    isWomen = models.BooleanField(default=False)
+    isYouth = models.BooleanField(default=False)
+    isKids = models.BooleanField(default=False)
     lowest_ask = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     total_asks = models.IntegerField(default=0)
     previous_lowest_ask = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Previous lowest ask price")

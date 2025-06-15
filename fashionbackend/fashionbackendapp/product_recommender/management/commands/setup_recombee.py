@@ -24,7 +24,12 @@ class Command(BaseCommand):
         client.send(AddItemProperty('release_date', 'timestamp'))  # Yes
         client.send(AddItemProperty('retailprice', 'double')) # Yes
         client.send(AddItemProperty('Image', 'image')) 
-        client.send(AddItemProperty('normalized_colorway', 'set'))"""
+        client.send(AddItemProperty('normalized_colorway', 'set'))
         client.send(AddItemProperty('sizes_available', 'set'))
         client.send(AddItemProperty('lowest_ask', 'set'))
-        client.send(AddItemProperty('total_asks', 'set'))
+        client.send(AddItemProperty('total_asks', 'set'))"""
+        client.send(AddItemProperty('isMen', 'boolean'))
+        client.send(AddItemProperty('isWomen', 'boolean'))
+        client.send(AddItemProperty('isYouth', 'boolean'))
+        client.send(AddItemProperty('isKids', 'boolean'))
+        
