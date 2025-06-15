@@ -27,9 +27,8 @@ class Command(BaseCommand):
         client.send(AddItemProperty('normalized_colorway', 'set'))
         client.send(AddItemProperty('sizes_available', 'set'))
         client.send(AddItemProperty('lowest_ask', 'set'))
-        client.send(AddItemProperty('total_asks', 'set'))"""
+        client.send(AddItemProperty('total_asks', 'set'))
         client.send(AddItemProperty('isMen', 'boolean'))
         client.send(AddItemProperty('isWomen', 'boolean'))
         client.send(AddItemProperty('isYouth', 'boolean'))
-        client.send(AddItemProperty('isKids', 'boolean'))
-        
+        client.send(AddItemProperty('isKids', 'boolean'))"""

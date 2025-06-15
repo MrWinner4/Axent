@@ -64,7 +64,7 @@ class Command(BaseCommand):
             existing_ids = set(str(p.id) for p in existing_products)
             existing_map = {str(p.id): p for p in existing_products}
             existing_variants_map = {
-                (v.product_id, v.size, v.sizeMen): v
+                (v.product_id, v.size, v.isMen): v
                 for v in ProductVariant.objects.filter(product_id__in=[p.id for p in existing_products])
             }
 
@@ -154,6 +154,7 @@ class Command(BaseCommand):
 
                         if "w" in raw_size:
                             cleaned_size = raw_size.replace("w", "")
+                            is_women = True
                         elif "y" in raw_size:
                             cleaned_size = raw_size.replace("y", "")
                             is_youth = True
@@ -180,9 +181,10 @@ class Command(BaseCommand):
                             variant_creates.append(ProductVariant(
                                 product=product,
                                 size=variant_size,
-                                sizeMen=is_men,
-                                sizeYouth=is_youth,
-                                sizeKids=is_kids,
+                                isMen=is_men,
+                                isWomen=is_women,
+                                isYouth=is_youth,
+                                isKids=is_kids,
                                 lowest_ask=safe_decimal(variant.get("lowest_ask")),
                                 total_asks=variant.get("total_asks") or 0,
                                 previous_lowest_ask=safe_decimal(variant.get("previous_lowest_ask")),
@@ -215,6 +217,10 @@ class Command(BaseCommand):
                             "sizes_available": product_sizes,
                             "lowest_ask": product_lowest_asks,
                             "total_asks": product_total_asks,
+                            "isMen": is_men,
+                            "isWomen": is_women,
+                            "isYouth": is_youth,
+                            "isKids": is_kids,
                         },
                         cascade_create=True
                     ))
