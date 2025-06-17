@@ -67,6 +67,31 @@ class SwipeableCardState extends State<SwipeableCard>
   late Animation<double> scaleAnimation;
   late Animation<double> blurAnimation;
 
+  Random randnum = Random();
+  
+  int range = 3;
+
+  bool isValidImage(String? url) {
+    return url != null && url.trim().isNotEmpty && url != "null";
+  }
+
+  Widget buildImage(String? url) {
+    print(url);
+    return isValidImage(url)
+        ? Transform.scale(
+          scale: 1.1,
+          child: Image.network(
+              url!,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                print("❌ Failed to load: $url");
+                return const Icon(Icons.error);
+              },
+            ),
+        )
+        : const Icon(Icons.error);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -536,33 +561,13 @@ class SwipeableCardState extends State<SwipeableCard>
                     width: cardWidth * .9,
                     height: cardHeight * (25 / 40),
                     // Replace the current image section with:
-                    child: data.images360[0] != "null"
+                    child: data.images360.isNotEmpty && data.images360[0] != "null"
                         ? Column(
-                            children: [
-                              Expanded(
-                                child: Image.network(
-                                  data.images360[10],
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Center(
-                                      child: Icon(Icons.error),
-                                    );
-                                  },
-                                ),
-                              ),
-                              Expanded(
-                                child: Image.network(
-                                  data.images360[20],
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Center(
-                                      child: Icon(Icons.error),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          )
+                          children: [
+                            Expanded(child: buildImage(data.images360[(3 + (randnum.nextInt(range)) - ((range/2).toInt()) as int)])),
+                            Expanded(child: buildImage(data.images360[(23 + (randnum.nextInt(range)) - ((range/2).toInt()) as int)])),
+                          ],
+                        )
                         : data.images.isNotEmpty
                             ? Row(
                                 children: [
@@ -735,7 +740,6 @@ class SwipeableCardState extends State<SwipeableCard>
   }
 
   void newCards() {
-    print("yoo hoo");
     final cardQueue = Provider.of<CardQueueModel>(context, listen: false);
     cardQueue.resetQueue();
     getProductData(cardQueue);
@@ -832,7 +836,9 @@ class SwipeableCardState extends State<SwipeableCard>
             likedAt: DateTime.now(),
             images360: product['images360'] is List
                 ? (product['images360'] as List)
-                    .map((e) => e['image360_url'].toString())
+                    .map((e) => e['image_url'])
+                    .where((url) => url != null)
+                    .map((url) => url.toString())
                     .toList()
                 : ['assets/images/Shoes1.jpg'],
           );
@@ -857,8 +863,7 @@ class SwipeableCardState extends State<SwipeableCard>
         Provider.of<FiltersProvider>(context, listen: false).getFiltersString();
     print("filters");
     print(filters);
-    
-        
+
     final String baseURL =
         ('https://axentbackend.onrender.com/products/recommend/');
     final url = Uri.parse(baseURL).replace(queryParameters: {
@@ -1016,7 +1021,8 @@ class _FiltersState extends State<Filters> {
     }
   }
 
-  Future<void> onGenderButtonPress(String newGender, FiltersProvider provider) async {
+  Future<void> onGenderButtonPress(
+      String newGender, FiltersProvider provider) async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setString('gender', newGender);
     setState(() {
@@ -1045,7 +1051,8 @@ class _FiltersState extends State<Filters> {
     provider.updateFilters(selectedSizes: newSizes);
   }
 
-  Future<void> onPriceRangeChange(RangeValues newValues, FiltersProvider provider) async {
+  Future<void> onPriceRangeChange(
+      RangeValues newValues, FiltersProvider provider) async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setDouble('minPrice', newValues.start);
     prefs.setDouble('maxPrice', newValues.end);
@@ -1173,7 +1180,8 @@ class _FiltersState extends State<Filters> {
             height: MediaQuery.of(context).size.height * .9,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Column(
               children: [
@@ -1219,8 +1227,8 @@ class _FiltersState extends State<Filters> {
                         ),
                         Wrap(
                           spacing: 12,
-                          children:
-                              ['Men', 'Women', 'Unisex', 'Kids'].map((genderMap) {
+                          children: ['Men', 'Women', 'Unisex', 'Kids']
+                              .map((genderMap) {
                             final isSelected = gender == genderMap;
                             return ChoiceChip(
                               label: Text(
@@ -1235,7 +1243,8 @@ class _FiltersState extends State<Filters> {
                               selected: isSelected,
                               onSelected: (_) {
                                 setState(() {
-                                  onGenderButtonPress(genderMap, filtersProvider);
+                                  onGenderButtonPress(
+                                      genderMap, filtersProvider);
                                 });
                               },
                               selectedColor: Theme.of(context)
@@ -1250,7 +1259,8 @@ class _FiltersState extends State<Filters> {
                                             .colorScheme
                                             .primaryContainer,
                                         width: 1.5,
-                                        strokeAlign: BorderSide.strokeAlignInside)
+                                        strokeAlign:
+                                            BorderSide.strokeAlignInside)
                                     : BorderSide(
                                         color: Colors.grey.shade300,
                                         width: 1.5,
