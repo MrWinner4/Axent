@@ -16,19 +16,19 @@ class AuthWrapper extends StatefulWidget {
 
 class _AuthWrapperState extends State<AuthWrapper> {
   User? user;
-
-  final List<Widget> pages =  [
-      const HomePage(),
-      const HeartPage(),
-      //CollectionsPage(), //!THIS IS A COMING FEATURE, NOT IN VERSION 1.0
-      SettingsPage(),
-    ];
+  late final List<Widget> pages;
 
   @override
   void initState() {
     super.initState();
-    
+    // Initialize pages once in initState
+    pages = const [
+      HomePage(key: PageStorageKey('home')),
+      HeartPage(key: PageStorageKey('heart')),
+      SettingsPage(key: PageStorageKey('settings')),
+    ];
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +79,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
               body: ValueListenableBuilder(
                   valueListenable: selectedPageNotifier,
                   builder: (context, selectedPage, child) {
-                    return pages[selectedPage];
+                    return IndexedStack(
+                      index: selectedPage,
+                      children: pages,
+                    );
                   }),
               bottomNavigationBar: NavbarWidget(),
             );

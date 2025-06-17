@@ -353,6 +353,7 @@ class HeartPageState extends State<HeartPage>
   Widget build(BuildContext context) {
     super.build(context); // Call super.build to ensure keepAlive works
     return DefaultTabController(
+      key: PageStorageKey('heart'),
       length: 2,
       child: Scaffold(
         backgroundColor: Colors.white,

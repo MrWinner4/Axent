@@ -68,8 +68,11 @@ class SwipeableCardState extends State<SwipeableCard>
   late Animation<double> blurAnimation;
 
   Random randnum = Random();
-  
+
   int range = 3;
+
+  CardData? _currentCardData;
+  CardData? _nextCardData;
 
   bool isValidImage(String? url) {
     return url != null && url.trim().isNotEmpty && url != "null";
@@ -79,8 +82,8 @@ class SwipeableCardState extends State<SwipeableCard>
     print(url);
     return isValidImage(url)
         ? Transform.scale(
-          scale: 1.1,
-          child: Image.network(
+            scale: 1.1,
+            child: Image.network(
               url!,
               fit: BoxFit.contain,
               errorBuilder: (context, error, stackTrace) {
@@ -88,7 +91,7 @@ class SwipeableCardState extends State<SwipeableCard>
                 return const Icon(Icons.error);
               },
             ),
-        )
+          )
         : const Icon(Icons.error);
   }
 
@@ -132,21 +135,34 @@ class SwipeableCardState extends State<SwipeableCard>
     super.dispose();
   }
 
-  void updateCardWidgets(CardQueueModel cardQueue) {
-    // Get the current cards from the queue
-    final currentCard = cardQueue.firstCard;
-    final nextCard = cardQueue.secondCard;
+  void updateCardWidgets(CardQueueModel cardQueue,
+      {bool forceRebuild = false}) {
+    // Only rebuild if forced/if card data has changed
+
+    if (_nextCardData?.id == cardQueue.firstCard?.id) {
+      // Promote next card to current
+      _currentCardWidget = _nextCardWidget;
+      _currentCardData = _nextCardData;
+    }
+    else if (forceRebuild ||
+        _currentCardWidget == null ||
+        _currentCardData?.id != cardQueue.firstCard?.id) {
+      _currentCardData = cardQueue.firstCard;
+      _currentCardWidget = _currentCardData != null
+          ? _buildCard(data: _currentCardData!)
+          : const Center(child: CircularProgressIndicator());
+    }
+    // Update Next Card
+    if (forceRebuild ||
+        _nextCardWidget == null ||
+        _nextCardData?.id != cardQueue.secondCard?.id) {
+      _nextCardData = cardQueue.secondCard;
+      _nextCardWidget =
+          _nextCardData != null ? _buildCard(data: _nextCardData!) : null;
+    }
 
     // Update the widgets
-    setState(() {
-      // Current card should be the first card in the queue
-      _currentCardWidget = currentCard != null
-          ? _buildCard(data: currentCard)
-          : const Center(child: CircularProgressIndicator());
-
-      // Next card should be the second card in the queue
-      _nextCardWidget = nextCard != null ? _buildCard(data: nextCard) : null;
-    });
+    setState(() {});
   }
 
   @override
@@ -310,9 +326,9 @@ class SwipeableCardState extends State<SwipeableCard>
                                     child: SizedBox(
                                       width: cardWidth,
                                       height: cardHeight,
-                                      child: _buildCard(
-                                        data: cardQueue.secondCard,
-                                      ),
+                                      child: _nextCardWidget ??
+                                          _buildCard(
+                                              data: cardQueue.secondCard),
                                     ),
                                   ),
                                 ),
@@ -484,31 +500,29 @@ class SwipeableCardState extends State<SwipeableCard>
   Widget _buildNextCard(CardQueueModel cardQueue) {
     if (_popUp) {
       return TweenAnimationBuilder<double>(
-        tween: Tween<double>(begin: 0, end: 1),
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-        builder: (
-          context,
-          value,
-          child,
-        ) {
-          final double scale = .95 + 0.05 * value;
-          final double blur = 5.0 * (1 - value);
-          return Align(
-            alignment: Alignment.center,
-            child: Transform.scale(
-              scale: scale,
+          tween: Tween<double>(begin: 0, end: 1),
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+          builder: (
+            context,
+            value,
+            child,
+          ) {
+            final double scale = .95 + 0.05 * value;
+            final double blur = 5.0 * (1 - value);
+            return Align(
               alignment: Alignment.center,
-              child: ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-                child: child,
+              child: Transform.scale(
+                scale: scale,
+                alignment: Alignment.center,
+                child: ImageFiltered(
+                  imageFilter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+                  child: _currentCardWidget ?? _buildCard(data: null),
+                ),
               ),
-            ),
-          );
-        },
-        child:
-            cardQueue.isNotEmpty ? _currentCardWidget : _buildCard(data: null),
-      );
+            );
+          },
+          child: _currentCardWidget);
     } else {
       // Preview state: blurred and slightly scaled down.
       return Transform.scale(
@@ -516,7 +530,7 @@ class SwipeableCardState extends State<SwipeableCard>
         child: ClipRRect(
           child: ImageFiltered(
             imageFilter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-            child: _nextCardWidget,
+            child: _nextCardWidget ?? _buildCard(data: null),
           ),
         ),
       );
@@ -530,6 +544,7 @@ class SwipeableCardState extends State<SwipeableCard>
     if (data == null) {
       return const Center(child: CircularProgressIndicator());
     }
+    print("buildcard");
     return SizedBox(
       width: cardWidth,
       height: cardHeight,
@@ -561,39 +576,46 @@ class SwipeableCardState extends State<SwipeableCard>
                     width: cardWidth * .9,
                     height: cardHeight * (25 / 40),
                     // Replace the current image section with:
-                    child: data.images360.isNotEmpty && data.images360[0] != "null"
-                        ? Column(
-                          children: [
-                            Expanded(child: buildImage(data.images360[(3 + (randnum.nextInt(range)) - ((range/2).toInt()) as int)])),
-                            Expanded(child: buildImage(data.images360[(23 + (randnum.nextInt(range)) - ((range/2).toInt()) as int)])),
-                          ],
-                        )
-                        : data.images.isNotEmpty
-                            ? Row(
+                    child:
+                        data.images360.isNotEmpty && data.images360[0] != "null"
+                            ? Column(
                                 children: [
                                   Expanded(
-                                    child: Image.network(
-                                      data.images[0],
-                                      fit: BoxFit.contain,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                        return const Center(
-                                          child: Icon(Icons.error),
-                                        );
-                                      },
-                                    ),
-                                  ),
+                                      child: buildImage(data.images360[3 +
+                                          (randnum.nextInt(range)) -
+                                          ((range / 2).toInt())])),
+                                  Expanded(
+                                      child: buildImage(data.images360[23 +
+                                          (randnum.nextInt(range)) -
+                                          ((range / 2).toInt())])),
                                 ],
                               )
-                            : Image.network(
-                                data.images.first,
-                                fit: BoxFit.contain,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Center(
-                                    child: Icon(Icons.error),
-                                  );
-                                },
-                              ),
+                            : data.images.isNotEmpty
+                                ? Row(
+                                    children: [
+                                      Expanded(
+                                        child: Image.network(
+                                          data.images[0],
+                                          fit: BoxFit.contain,
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
+                                            return const Center(
+                                              child: Icon(Icons.error),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Image.network(
+                                    data.images.first,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Center(
+                                        child: Icon(Icons.error),
+                                      );
+                                    },
+                                  ),
                   ),
                 ),
               ),

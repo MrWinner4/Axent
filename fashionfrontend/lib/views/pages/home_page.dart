@@ -20,6 +20,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: PageStorageKey('home'),
       body: Column(
         children: [
           SecondHeader(
