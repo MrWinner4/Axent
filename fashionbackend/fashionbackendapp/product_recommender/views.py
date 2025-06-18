@@ -1,4 +1,4 @@
-from .models import Product, User
+from .models import Product, ProductVariant, User
 from rest_framework.decorators import action, authentication_classes
 from rest_framework.response import Response
 from rest_framework import viewsets, status
@@ -69,10 +69,54 @@ class ProductViewSet(viewsets.ViewSet):
             else:  
                 recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, 10))
             product_ids = [rec['id'] for rec in recommendations['recomms']]
-            print(product_ids)
+            sizes = extract_sizes(filters)
+            if sizes:
+                price_range = extract_price_range(filters)
+                valid_product_ids = []
+                
+                for id in product_ids:
+                    for size in sizes:
+                        try:
+                            product = ProductVariant.objects.get(id=id, size=size)
+                            if price_range['min'] <= product.previous_lowest_ask <= price_range['max']:
+                                valid_product_ids.append(id)
+                        except ProductVariant.DoesNotExist:
+                            continue
+                product_ids = valid_product_ids
             products = Product.objects.filter(id__in=product_ids)
             serializer = ProductSerializer(products, many=True)
             return Response(serializer.data)
         except Exception as e:
             print(f"Error getting recommendations: {e}")
             return Response([], status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+import re
+
+def extract_sizes(filters):
+    sizes = []
+    if not filters:
+        return sizes
+    
+    # Look for patterns like: 'sizes_available' ANY [8 OR 9 OR 10]
+    match = re.search(r"'sizes_available'\s*ANY\s*\[([\d\sOR]+)\]", filters)
+    if match:
+        # Extract the numbers from the match
+        sizes_str = match.group(1)
+        # Split by 'OR' and clean up the values
+        sizes = [s.strip() for s in sizes_str.split('OR') if s.strip()]
+    
+    return sizes
+
+def extract_price_range(filters):
+    price_range = {'min': None, 'max': None}
+    if not filters:
+        return price_range
+    
+    # Look for patterns like: 'retailprice' >= 20 AND 'retailprice' <= 80
+    match = re.search(r"'retailprice'\s*>=\s*([\d.]+)\s*AND\s*'retailprice'\s*<=\s*([\d.]+)", filters)
+    if match:
+        price_range['min'] = float(match.group(1))
+        price_range['max'] = float(match.group(2))
+    
+    return price_range
