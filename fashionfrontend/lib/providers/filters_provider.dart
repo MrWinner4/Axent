@@ -41,13 +41,13 @@ class FiltersProvider extends ChangeNotifier {
 
     if (selectedSizes.isNotEmpty) {
       if (buffer.isNotEmpty) buffer.write(" AND ");
-      buffer.write("[\"${selectedSizes.join('" OR "')}\"] in sizes_available");
+      buffer.write("[\"${selectedSizes.join('" OR "')}\"] in 'sizes_available'");
     }
 
     if (selectedColors.isNotEmpty) {
       if (buffer.isNotEmpty) buffer.write(" AND ");
       buffer.write(
-          "[\"${selectedColors.map((c) => c.label).join('" OR "')}\"] in 'normalized_colorway'");
+          "[\"${selectedColors.map((c) => c.label.toLowerCase()).join('" OR "')}\"] in 'normalized_colorway'");
     }
 
     return buffer.toString();

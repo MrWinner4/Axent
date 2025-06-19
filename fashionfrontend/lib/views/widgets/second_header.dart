@@ -50,6 +50,7 @@ class SecondHeader extends StatelessWidget {
                 height: 48,
                 width: MediaQuery.of(context).size.width * .6,
               child: CustomSearchBar(),
+              
             ),
             // Filter button
             Container(
