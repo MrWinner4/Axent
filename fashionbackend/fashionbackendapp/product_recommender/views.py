@@ -11,6 +11,8 @@ from recombee_api_client.api_requests import RecommendItemsToUser
 # In user_preferences/utils.py or at the top of views.py
 from firebase_admin import auth as firebase_auth
 
+RECOMMENDATION_AMOUNT = 5
+
 def get_user_from_token(token):
     try:
         decoded_token = firebase_auth.verify_id_token(token)
@@ -65,9 +67,9 @@ class ProductViewSet(viewsets.ViewSet):
         
         try:
             if filters != '':
-                recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, 10, filter=filters))
+                recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, RECOMMENDATION_AMOUNT, filter=filters))
             else:  
-                recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, 10))
+                recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, RECOMMENDATION_AMOUNT))
             product_ids = [rec['id'] for rec in recommendations['recomms']]
             sizes = extract_sizes(filters)
             if sizes:

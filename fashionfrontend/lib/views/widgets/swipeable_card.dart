@@ -79,7 +79,6 @@ class SwipeableCardState extends State<SwipeableCard>
   }
 
   Widget buildImage(String? url) {
-    print(url);
     return isValidImage(url)
         ? Transform.scale(
             scale: 1.1,
@@ -231,7 +230,6 @@ class SwipeableCardState extends State<SwipeableCard>
                             : () {
                                 _triggerNextCardButton(
                                     cardQueue.firstCard!.id, cardQueue, -1);
-                                print("red");
                               },
                       ),
                     ),
@@ -283,7 +281,6 @@ class SwipeableCardState extends State<SwipeableCard>
                             : () {
                                 _triggerNextCardButton(
                                     cardQueue.firstCard!.id, cardQueue, 1);
-                                print("Green");
                               },
                       ),
                     )
