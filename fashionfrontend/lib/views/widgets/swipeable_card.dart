@@ -80,8 +80,8 @@ class SwipeableCardState extends State<SwipeableCard>
 
   Widget buildImage(String? url) {
     return isValidImage(url)
-        ? Transform.scale(
-            scale: 1.1,
+        ? Container(
+            margin: const EdgeInsets.all(4),
             child: Image.network(
               url!,
               fit: BoxFit.contain,
@@ -142,8 +142,7 @@ class SwipeableCardState extends State<SwipeableCard>
       // Promote next card to current
       _currentCardWidget = _nextCardWidget;
       _currentCardData = _nextCardData;
-    }
-    else if (forceRebuild ||
+    } else if (forceRebuild ||
         _currentCardWidget == null ||
         _currentCardData?.id != cardQueue.firstCard?.id) {
       _currentCardData = cardQueue.firstCard;
@@ -549,7 +548,7 @@ class SwipeableCardState extends State<SwipeableCard>
       child: Container(
         //If not
         decoration: BoxDecoration(
-            color: ColorScheme.of(context).surfaceBright,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
@@ -563,59 +562,53 @@ class SwipeableCardState extends State<SwipeableCard>
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Align(
-                alignment: Alignment.center,
-                child: ColoredBox(
-                  color: Colors.white,
-                  child: SizedBox(
-                    width: cardWidth * .9,
-                    height: cardHeight * (25 / 40),
-                    // Replace the current image section with:
-                    child:
-                        data.images360.isNotEmpty && data.images360[0] != "null"
-                            ? Column(
-                                children: [
-                                  Expanded(
-                                      child: buildImage(data.images360[3 +
-                                          (randnum.nextInt(range)) -
-                                          ((range / 2).toInt())])),
-                                  Expanded(
-                                      child: buildImage(data.images360[23 +
-                                          (randnum.nextInt(range)) -
-                                          ((range / 2).toInt())])),
-                                ],
-                              )
-                            : data.images.isNotEmpty
-                                ? Row(
-                                    children: [
-                                      Expanded(
-                                        child: Image.network(
-                                          data.images[0],
-                                          fit: BoxFit.contain,
-                                          errorBuilder:
-                                              (context, error, stackTrace) {
-                                            return const Center(
-                                              child: Icon(Icons.error),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                : Image.network(
-                                    data.images.first,
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const Center(
-                                        child: Icon(Icons.error),
-                                      );
-                                    },
-                                  ),
-                  ),
-                ),
-              ),
+              data.images360.isNotEmpty && data.images360[0] != "null"
+                  ? SizedBox(
+                      height: cardHeight * .8,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Expanded(
+                            child: buildImage(data.images360[3 +
+                                (randnum.nextInt(range)) -
+                                ((range / 2).toInt())]),
+                          ),
+                          Expanded(
+                            child: buildImage(data.images360[23 +
+                                (randnum.nextInt(range)) -
+                                ((range / 2).toInt())]),
+                          ),
+                        ],
+                      ),
+                    )
+                  : data.images.isNotEmpty
+                      ? Row(
+                          children: [
+                            Expanded(
+                              child: Image.network(
+                                data.images[0],
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Center(
+                                    child: Icon(Icons.error),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        )
+                      : Image.network(
+                          data.images.first,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Center(
+                              child: Icon(Icons.error),
+                            );
+                          },
+                        ),
               // Image, Defines bounds and stuff
               // Product Info
               Expanded(
@@ -982,6 +975,20 @@ Future<Map<String, String>> getAuthHeaders() async {
   }
 }
 
+class FilterColor {
+  final Color? color;
+  final String label;
+  final Gradient? gradient;
+  final bool isSpecial;
+
+  FilterColor({
+    this.color,
+    required this.label,
+    this.gradient,
+    this.isSpecial = false,
+  });
+}
+
 class Filters extends StatefulWidget {
   final VoidCallback onFilterChanged;
 
@@ -994,6 +1001,8 @@ class Filters extends StatefulWidget {
 class _FiltersState extends State<Filters> {
   RangeValues? _currentRangeValues;
   Set<double> _selectedSizes = {};
+  Set<FilterColor> selectedColors = {};
+  Set<FilterColor> _previousColors = {};
   String? gender;
   String? _previousGender;
   RangeValues? _previousRangeValues;
@@ -1001,39 +1010,73 @@ class _FiltersState extends State<Filters> {
 
   final Completer<void> preferencesReady = Completer<void>();
 
-  String getFiltersString() {
-    final buffer = StringBuffer();
-
-    if (gender != null && gender!.isNotEmpty) {
-      buffer.write("'gender' == \"$gender\"");
-    }
-
-    if (_currentRangeValues != null) {
-      if (buffer.isNotEmpty) buffer.write(" AND ");
-      buffer.write(
-          "'retailprice' >= ${_currentRangeValues!.start} AND 'retailprice' <= ${_currentRangeValues!.end}");
-    }
-
-    if (_selectedSizes.isNotEmpty) {
-      if (buffer.isNotEmpty) buffer.write(" AND ");
-      buffer.write("'sizes' ANY [${_selectedSizes.join(', ')}]");
-    }
-
-    return buffer.toString();
-  }
-
+  final List<FilterColor> colorOptions = [
+    FilterColor(color: Colors.red, label: 'Red'),
+    FilterColor(color: Colors.orange, label: 'Orange'),
+    FilterColor(color: Colors.yellow, label: 'Yellow'),
+    FilterColor(color: Colors.green, label: 'Green'),
+    FilterColor(color: Colors.blue, label: 'Blue'),
+    FilterColor(color: Colors.purple, label: 'Purple'),
+    FilterColor(color: Colors.black, label: 'Black'),
+    FilterColor(color: Colors.white, label: 'White'),
+    FilterColor(color: Colors.brown, label: 'Brown'),
+    FilterColor(color: Colors.grey, label: 'Grey'),
+    FilterColor(color: Colors.pink, label: 'Pink'),
+    FilterColor(color: Colors.teal, label: 'Teal'),
+    // 🥇 Metallic
+    FilterColor(
+      label: 'Metallic',
+      isSpecial: true,
+      gradient: LinearGradient(
+        colors: [
+          Colors.grey.shade800,
+          Colors.grey.shade400,
+          Colors.grey.shade100
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    ),
+    // 🌈 Multicolor
+    FilterColor(
+      label: 'Multicolor',
+      isSpecial: true,
+      gradient: LinearGradient(
+        colors: [
+          Colors.red,
+          Colors.orange,
+          Colors.yellow,
+          Colors.green,
+          Colors.blue,
+          Colors.purple,
+        ],
+      ),
+    ),
+    // 💡 Neon Glow
+    FilterColor(
+      label: 'Neon',
+      isSpecial: true,
+      color: Colors.cyanAccent, // base color
+    ),
+  ];
   void filterChange() {
     final hasGenderChanged = _previousGender != gender;
     final hasPriceChanged = _previousRangeValues != _currentRangeValues;
     final hasSizesChanged =
         !SetEquality().equals(_previousSizes, _selectedSizes);
-    if (hasGenderChanged || hasPriceChanged || hasSizesChanged) {
+    final hasColorsChanged =
+        !SetEquality().equals(_previousColors, selectedColors);
+    if (hasGenderChanged ||
+        hasPriceChanged ||
+        hasSizesChanged ||
+        hasColorsChanged) {
       print("Filters changed - refreshing cards");
 
       // Update the previous values
       _previousGender = gender;
       _previousRangeValues = _currentRangeValues;
       _previousSizes = Set.from(_selectedSizes);
+      _previousColors = Set.from(selectedColors);
 
       // Refresh cards
       widget.onFilterChanged();
@@ -1081,29 +1124,24 @@ class _FiltersState extends State<Filters> {
     provider.updateFilters(priceRange: newValues);
   }
 
-  Future<void> loadSelectedGender() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      gender = prefs.getString('gender') ?? 'Male';
-    });
-  }
+  Future<void> toggleColor(
+      FilterColor newColor, FiltersProvider provider) async {
+    final newColors = Set<FilterColor>.from(selectedColors);
+    if (newColors.contains(newColor)) {
+      newColors.remove(newColor);
+    } else {
+      newColors.add(newColor);
+    }
 
-  Future<void> loadSelectedSizes() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedSizes = prefs.getStringList('selectedSizes') ?? [];
+    prefs.setStringList(
+      'selectedColors',
+      newColors.map((color) => color.label).toList(),
+    );
     setState(() {
-      _selectedSizes = savedSizes.map((e) => double.parse(e)).toSet();
+      selectedColors = newColors;
     });
-  }
-
-  Future<void> loadSelectedPriceRange() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _currentRangeValues = RangeValues(
-        prefs.getDouble('minPrice') ?? 20,
-        prefs.getDouble('maxPrice') ?? 80,
-      );
-    });
+    provider.updateFilters(selectedColors: newColors);
   }
 
   List<Widget> generateSizeOptions(FiltersProvider provider) {
@@ -1166,16 +1204,24 @@ class _FiltersState extends State<Filters> {
     final minPrice = prefs.getDouble('minPrice') ?? 20.0;
     final maxPrice = prefs.getDouble('maxPrice') ?? 80.0;
     final savedSizes = prefs.getStringList('selectedSizes') ?? [];
+    final savedColorLabels = prefs.getStringList('selectedColors') ?? [];
+
+    // Map the saved color labels back to FilterColor objects
+    final savedColors = colorOptions
+        .where((color) => savedColorLabels.contains(color.label))
+        .toSet();
 
     setState(() {
       gender = savedGender;
       _currentRangeValues = RangeValues(minPrice, maxPrice);
       _selectedSizes = savedSizes.map((e) => double.parse(e)).toSet();
+      selectedColors = savedColors;
 
       // Initialize previous values
       _previousGender = gender;
       _previousRangeValues = _currentRangeValues;
       _previousSizes = Set.from(_selectedSizes);
+      _previousColors = Set.from(selectedColors);
     });
 
     if (!preferencesReady.isCompleted) {
@@ -1304,14 +1350,11 @@ class _FiltersState extends State<Filters> {
                           ),
                         ),
                         SizedBox(height: 8),
-                        Container(
-                            height: 300, // Fixed height with scrolling
-                            child: SingleChildScrollView(
-                                child: Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: generateSizeOptions(filtersProvider),
-                            ))),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: generateSizeOptions(filtersProvider),
+                        ),
                         SizedBox(height: 16),
                         Text(
                           'Price',
@@ -1348,6 +1391,70 @@ class _FiltersState extends State<Filters> {
                             },
                           ),
                         ]),
+                        SizedBox(height: 16),
+                        Text(
+                          'Color',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 8,
+                            mainAxisSpacing: 10,
+                            crossAxisSpacing: 10,
+                          ),
+                          itemCount: colorOptions.length,
+                          itemBuilder: (context, index) {
+                            final filterColor = colorOptions[index];
+                            final isSelected =
+                                selectedColors.contains(filterColor);
+
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  toggleColor(filterColor, filtersProvider);
+                                });
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: filterColor.gradient,
+                                  color: filterColor.gradient == null
+                                      ? filterColor.color
+                                      : null,
+                                  boxShadow: filterColor.label == 'Neon'
+                                      ? [
+                                          BoxShadow(
+                                            color: (filterColor.color ??
+                                                    Colors.cyanAccent)
+                                                .withAlpha(128),
+                                            blurRadius: 15,
+                                            spreadRadius: 3,
+                                          )
+                                        ]
+                                      : [],
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? ColorScheme.of(context).primary
+                                        : Colors.grey.shade400,
+                                    width: isSelected ? 3 : 1,
+                                  ),
+                                ),
+                                child: isSelected
+                                    ? const Icon(Icons.check,
+                                        color: Colors.white, size: 18)
+                                    : null,
+                              ),
+                            );
+                          },
+                        )
                       ],
                     ),
                   ),

@@ -71,6 +71,9 @@ class ProductViewSet(viewsets.ViewSet):
             else:  
                 recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, RECOMMENDATION_AMOUNT))
             product_ids = [rec['id'] for rec in recommendations['recomms']]
+            if not product_ids:
+                print("⚠️ No valid product variants matched filter criteria or Recombee returned unknown IDs.")
+                return Response([], status=200)
             sizes = extract_sizes(filters)
             if sizes:
                 price_range = extract_price_range(filters)
