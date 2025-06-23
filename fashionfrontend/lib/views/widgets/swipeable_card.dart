@@ -540,7 +540,6 @@ class SwipeableCardState extends State<SwipeableCard>
     if (data == null) {
       return const Center(child: CircularProgressIndicator());
     }
-    print("buildcard");
     return SizedBox(
       width: cardWidth,
       height: cardHeight,
@@ -1010,7 +1009,7 @@ class _FiltersState extends State<Filters> {
 
   final Completer<void> preferencesReady = Completer<void>();
 
-  final List<FilterColor> colorOptions = [
+  static final List<FilterColor> colorOptions = [
     FilterColor(color: Colors.red, label: 'Red'),
     FilterColor(color: Colors.orange, label: 'Orange'),
     FilterColor(color: Colors.yellow, label: 'Yellow'),

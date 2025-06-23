@@ -43,7 +43,7 @@ class ProductViewSet(viewsets.ViewSet):
         serializer = ProductSerializer(results, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=[''])
     def recommend(self, request):
         """Get product recommendations for a user"""
         auth_header = request.headers.get('Authorization', '')
