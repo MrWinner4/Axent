@@ -561,7 +561,7 @@ class SwipeableCardState extends State<SwipeableCard>
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: MainAxisSize.max,
             children: [
               data.images360.isNotEmpty && data.images360[0] != "null"
                   ? SizedBox(
@@ -587,15 +587,7 @@ class SwipeableCardState extends State<SwipeableCard>
                       ? Row(
                           children: [
                             Expanded(
-                              child: Image.network(
-                                data.images[0],
-                                fit: BoxFit.contain,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Center(
-                                    child: Icon(Icons.error),
-                                  );
-                                },
-                              ),
+                              child: buildImage(data.images.first),
                             ),
                           ],
                         )
@@ -613,29 +605,33 @@ class SwipeableCardState extends State<SwipeableCard>
               Expanded(
                 // or Flexible
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Row(
                     children: [
-                      Flexible(
-                        child: Text(
-                          data.model!,
-                          style: TextStyle(
-                            fontSize: 36,
-                            fontWeight: FontWeight.w800,
-                            height: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          maxLines:
-                              3, // limit so it doesn't take over the screen
-                        ),
-                      ),
-                      Text(
-                        '\$${data.retailPrice.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w600,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              data.model!,
+                              style: TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.w800,
+                                height: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              maxLines:
+                                  3, // limit so it doesn't take over the screen
+                            ),
+                            Text(
+                              '\$${data.retailPrice.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
