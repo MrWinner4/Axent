@@ -61,7 +61,7 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
           controller: controller,
           hintText: 'Find your fashion...',
           hintStyle: WidgetStateProperty.all<TextStyle>(
-            TextStyle(color: Theme.of(context).colorScheme.onSurface,),
+            const TextStyle(color: Colors.black),
           ),
           onTap: () {
             controller.openView();

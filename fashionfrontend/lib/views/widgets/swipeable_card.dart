@@ -602,40 +602,33 @@ class SwipeableCardState extends State<SwipeableCard>
                         ),
               // Image, Defines bounds and stuff
               // Product Info
-              Expanded(
-                // or Flexible
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Text(
-                              data.model!,
-                              style: TextStyle(
-                                fontSize: 36,
-                                fontWeight: FontWeight.w800,
-                                height: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              maxLines:
-                                  3, // limit so it doesn't take over the screen
-                            ),
-                            Text(
-                              '\$${data.retailPrice.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      data.model!,
+                      style: TextStyle(
+                        fontSize: cardHeight * 0.045, // Responsive font size
+                        fontWeight: FontWeight.w800,
+                        height: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                  ),
+                      maxLines: 2,
+                    ),
+                    SizedBox(height: cardHeight * 0.01), // Responsive spacing
+                    Text(
+                      '\$${data.retailPrice.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: cardHeight * 0.04, // Responsive font size
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ],
                 ),
               ),
             ],
