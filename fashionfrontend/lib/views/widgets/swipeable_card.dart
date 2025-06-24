@@ -540,6 +540,7 @@ class SwipeableCardState extends State<SwipeableCard>
     if (data == null) {
       return const Center(child: CircularProgressIndicator());
     }
+    print("buildcard");
     return SizedBox(
       width: cardWidth,
       height: cardHeight,
@@ -602,33 +603,40 @@ class SwipeableCardState extends State<SwipeableCard>
                         ),
               // Image, Defines bounds and stuff
               // Product Info
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      data.model!,
-                      style: TextStyle(
-                        fontSize: cardHeight * 0.045, // Responsive font size
-                        fontWeight: FontWeight.w800,
-                        height: 1,
-                        overflow: TextOverflow.ellipsis,
+              Expanded(
+                // or Flexible
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              data.model!,
+                              style: TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.w800,
+                                height: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              maxLines:
+                                  3, // limit so it doesn't take over the screen
+                            ),
+                            Text(
+                              '\$${data.retailPrice.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      maxLines: 2,
-                    ),
-                    SizedBox(height: cardHeight * 0.01), // Responsive spacing
-                    Text(
-                      '\$${data.retailPrice.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        fontSize: cardHeight * 0.04, // Responsive font size
-                        fontWeight: FontWeight.w600,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -998,7 +1006,7 @@ class _FiltersState extends State<Filters> {
 
   final Completer<void> preferencesReady = Completer<void>();
 
-  static final List<FilterColor> colorOptions = [
+  final List<FilterColor> colorOptions = [
     FilterColor(color: Colors.red, label: 'Red'),
     FilterColor(color: Colors.orange, label: 'Orange'),
     FilterColor(color: Colors.yellow, label: 'Yellow'),
