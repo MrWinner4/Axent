@@ -14,6 +14,7 @@ import 'package:dio/dio.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter/rendering.dart';
 
 //! FIX: I need to have an "updateCardWidgets()" method along with some widgets for current and next card and only call that method to update the cards and instead call buildcard there
 class SwipeableCard extends StatefulWidget {
@@ -26,7 +27,7 @@ class SwipeableCard extends StatefulWidget {
 }
 
 class SwipeableCardState extends State<SwipeableCard>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   final int CARDSTACKSIZE = 5; // How many cards to load at once
   //Position for Card
   double _left = 0;
@@ -74,6 +75,9 @@ class SwipeableCardState extends State<SwipeableCard>
   CardData? _currentCardData;
   CardData? _nextCardData;
 
+  late CardQueueModel _cardQueue;
+  late FiltersProvider _filtersProvider;
+
   bool isValidImage(String? url) {
     return url != null && url.trim().isNotEmpty && url != "null";
   }
@@ -92,6 +96,29 @@ class SwipeableCardState extends State<SwipeableCard>
             ),
           )
         : const Icon(Icons.error);
+  }
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Store references safely
+    _cardQueue = Provider.of<CardQueueModel>(context, listen: false);
+    _filtersProvider = Provider.of<FiltersProvider>(context, listen: false);
+    
+    // ADD THIS: Initialize data after providers are available
+    if (_cardQueue.isEmpty) {
+      getProductData(_cardQueue);
+    }
+    
+    // ADD THIS: Update widgets if needed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _cardQueue.isNotEmpty) {
+        updateCardWidgets(_cardQueue);
+      }
+    });
   }
 
   @override
@@ -118,19 +145,19 @@ class SwipeableCardState extends State<SwipeableCard>
 
     greenOpacity = sittingOpacity;
     redOpacity = sittingOpacity;
-    final cardQueue = Provider.of<CardQueueModel>(context, listen: false);
-    if (cardQueue.isEmpty) {
-      getProductData(cardQueue);
-    }
+    
+    // MOVE THIS TO didChangeDependencies
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && cardQueue.isNotEmpty) {
-        updateCardWidgets(cardQueue);
+      if (mounted) {
+        // This will be handled in didChangeDependencies
       }
     });
   }
 
   @override
   void dispose() {
+    undoController.dispose();
+    transitionController.dispose();
     super.dispose();
   }
 
@@ -717,7 +744,7 @@ class SwipeableCardState extends State<SwipeableCard>
     });
   }
 
-  /// Resets the interactive card's position and rotation if the swipe wasn’t far enough.
+  /// Resets the interactive card's position and rotation if the swipe wasn't far enough.
   void _resetCard() {
     setState(() {
       _left = centerLeft;
@@ -859,8 +886,8 @@ class SwipeableCardState extends State<SwipeableCard>
 
   // Calls API
   Future<List<dynamic>> getProduct() async {
-    final String filters =
-        Provider.of<FiltersProvider>(context, listen: false).getFiltersString();
+    // Use stored reference instead of Provider.of
+    final String filters = _filtersProvider.getFiltersString();
     print("filters");
     print(filters);
 

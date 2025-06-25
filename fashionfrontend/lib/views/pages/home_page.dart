@@ -10,7 +10,6 @@ class SwipeableCardController {
   VoidCallback? filter;
 }
 
-
 class HomePage extends StatelessWidget {
   static final GlobalKey<SwipeableCardState> _swipeableCardKey = GlobalKey();
   static final _cardController = SwipeableCardController();
