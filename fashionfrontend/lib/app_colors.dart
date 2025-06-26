@@ -14,7 +14,7 @@ class AppColors {
   static const Color onSecondaryContainer = Color(0xFF101C2B);
 
   // Tertiary colors
-  static const Color tertiary = Color(0xFF785000);
+  static const Color tertiary = Color.fromARGB(255, 4, 255, 0);
   static const Color tertiaryContainer = Color(0xFFFFDDB3);
   static const Color onTertiary = Color(0xFFFFFFFF);
   static const Color onTertiaryContainer = Color(0xFF261800);
@@ -75,7 +75,7 @@ class AppColors {
         onSecondary: Color(0xFF263140),
         secondaryContainer: Color(0xFF3C4858),
         onSecondaryContainer: Color(0xFFD7E3F7),
-        tertiary: Color(0xFFE6B871),
+        tertiary: tertiary,
         onTertiary: Color(0xFF422900),
         tertiaryContainer: Color(0xFF5B3F00),
         onTertiaryContainer: Color(0xFFFFDDB3),

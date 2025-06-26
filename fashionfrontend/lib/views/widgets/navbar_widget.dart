@@ -8,16 +8,6 @@ class NavbarWidget extends StatelessWidget {
   NavbarWidget({super.key});
 
   int currentPageIndex = 0;
-  final ColorScheme colorScheme = ColorScheme.fromSeed(
-    brightness: Brightness.light,
-    seedColor: const Color.fromARGB(255, 4, 62, 104), //Blue Color
-    primary: const Color.fromARGB(255, 255, 255, 255), //Cream Color
-    onPrimary: Color.fromARGB(255, 167, 184, 196),
-    secondary: const Color.fromARGB(255, 4, 62, 104), //Blue Color
-    tertiary: const Color.fromARGB(255, 207, 36, 36), //Red Color
-    surface: const Color.fromARGB(255, 255, 255, 255), //Background Color
-  );
-
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
@@ -26,22 +16,22 @@ class NavbarWidget extends StatelessWidget {
         return Container(
           height: 100,
           decoration: BoxDecoration(
-            color: colorScheme.surface,
+            color: AppColors.surface,
             boxShadow: [
               BoxShadow(
                 color: Colors.black
-                    .withAlpha(25), // Adjust opacity for intensity
+                    .withAlpha(64), // Adjust opacity for intensity
                 blurRadius: 10, // Adjust for spread
                 offset: const Offset(0, 2), // Adjust for direction
               ),
             ],
           ),
           child: NavigationBar(
-            backgroundColor: colorScheme.primary,
+            backgroundColor: AppColors.surface,
             onDestinationSelected: (int index) {
               selectedPageNotifier.value = index;
             },
-            indicatorColor: colorScheme.secondary,
+            indicatorColor: AppColors.primary,
             selectedIndex: selectedPage,
             destinations: <Widget>[
               NavigationDestination(
@@ -49,14 +39,14 @@ class NavbarWidget extends StatelessWidget {
                   'assets/icons/Home.svg',
                   width: 24, // Adjust size as needed
                   height: 24,
-                  colorFilter: ColorFilter.mode(colorScheme.primary,
+                  colorFilter: ColorFilter.mode(AppColors.surface,
                       BlendMode.srcIn), // Change color if necessary
                 ),
                 icon: SvgPicture.asset(
                   'assets/icons/Home.svg',
                   width: 24, // Adjust size as needed
                   height: 24,
-                  colorFilter: ColorFilter.mode(colorScheme.onPrimary,
+                  colorFilter: ColorFilter.mode(AppColors.primary,
                       BlendMode.srcIn), // Change color if necessary
                 ),
                 label: 'Home',
@@ -66,49 +56,31 @@ class NavbarWidget extends StatelessWidget {
                   'assets/icons/Heart.svg',
                   width: 24, // Adjust size as needed
                   height: 24,
-                  colorFilter: ColorFilter.mode(colorScheme.primary,
+                  colorFilter: ColorFilter.mode(AppColors.surface,
                       BlendMode.srcIn), // Change color if necessary
                 ),
                 icon: SvgPicture.asset(
                   'assets/icons/Heart.svg',
                   width: 24, // Adjust size as needed
                   height: 24,
-                  colorFilter: ColorFilter.mode(colorScheme.onPrimary,
+                  colorFilter: ColorFilter.mode(AppColors.primary,
                       BlendMode.srcIn), // Change color if necessary
                 ),
                 label: 'Liked',
               ),
-              //!THIS IS A COMING FEATURE, NOT IN VERSION 1.0
-              /* NavigationDestination(
-                selectedIcon: SvgPicture.asset(
-                  'assets/icons/Bookmark.svg',
-                  width: 24, // Adjust size as needed
-                  height: 24,
-                  colorFilter: ColorFilter.mode(colorScheme.primary,
-                      BlendMode.srcIn), // Change color if necessary
-                ),
-                icon: SvgPicture.asset(
-                  'assets/icons/Bookmark.svg',
-                  width: 24, // Adjust size as needed
-                  height: 24,
-                  colorFilter: ColorFilter.mode(colorScheme.onPrimary,
-                      BlendMode.srcIn), // Change color if necessary
-                ),
-                label: '',
-              ), */
               NavigationDestination(
                 selectedIcon: SvgPicture.asset(
                   'assets/icons/Settings1.svg',
                   width: 24, // Adjust size as needed
                   height: 24,
-                  colorFilter: ColorFilter.mode(colorScheme.primary,
+                  colorFilter: ColorFilter.mode(AppColors.surface,
                       BlendMode.srcIn), // Change color if necessary
                 ),
                 icon: SvgPicture.asset(
                   'assets/icons/Settings1.svg',
                   width: 24, // Adjust size as needed
                   height: 24,
-                  colorFilter: ColorFilter.mode(colorScheme.onPrimary,
+                  colorFilter: ColorFilter.mode(AppColors.primary,
                       BlendMode.srcIn), // Change color if necessary
                 ),
                 label: 'Settings',

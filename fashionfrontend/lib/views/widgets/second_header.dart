@@ -10,7 +10,7 @@ class SecondHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Color.fromARGB(255, 251, 252, 254),
+      color: AppColors.surface,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: Row(
@@ -24,7 +24,7 @@ class SecondHeader extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                   BoxShadow(
-                      color: Color.fromARGB(64, 0, 0, 0),
+                      color: Colors.black.withAlpha(64),
                       spreadRadius: 2,
                       blurStyle: BlurStyle.outer,
                       blurRadius: 10,
@@ -61,7 +61,7 @@ class SecondHeader extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                      color: Color.fromARGB(64, 0, 0, 0),
+                      color: Colors.black.withAlpha(64),
                       spreadRadius: 2,
                       blurStyle: BlurStyle.outer,
                       blurRadius: 10,
@@ -81,10 +81,6 @@ class SecondHeader extends StatelessWidget {
                     print('Error during filter: $e');
                   }
                 },
-                /* shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  side: const BorderSide(color: Colors.black12),
-                ), */
               ),
             ),
           ],

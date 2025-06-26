@@ -239,19 +239,19 @@ class SwipeableCardState extends State<SwipeableCard>
                       decoration: BoxDecoration(
                         boxShadow: [
                           BoxShadow(
-                            color: Color.fromRGBO(0, 0, 0, 0.25),
+                            color: AppColors.onSurface.withAlpha(64),
                             offset: Offset(2, 2),
                             blurRadius: 10,
                           ),
                         ],
-                        color: Color.fromRGBO(255, 255, 255, 1),
+                        color: AppColors.surface,
                         borderRadius:
                             BorderRadius.all(Radius.elliptical(60, 60)),
                       ),
                       child: IconButton(
                         icon: const Icon(Icons.close_outlined),
                         iconSize: 32,
-                        color: Colors.red,
+                        color: AppColors.error,
                         onPressed: isButtonAnimating
                             ? null
                             : () {
@@ -266,19 +266,19 @@ class SwipeableCardState extends State<SwipeableCard>
                       decoration: BoxDecoration(
                         boxShadow: [
                           BoxShadow(
-                            color: Color.fromRGBO(0, 0, 0, 0.25),
+                            color: AppColors.onSurface.withAlpha(64),
                             offset: Offset(2, 2),
                             blurRadius: 10,
                           ),
                         ],
-                        color: Color.fromRGBO(255, 255, 255, 1),
+                        color: AppColors.surface,
                         borderRadius:
                             BorderRadius.all(Radius.elliptical(60, 60)),
                       ),
                       child: IconButton(
                         icon: const Icon(Icons.bolt),
                         iconSize: 32,
-                        color: ColorScheme.of(context).primary,
+                        color: AppColors.primary,
                         onPressed: () {
                           print("bolt");
                         },
@@ -290,19 +290,19 @@ class SwipeableCardState extends State<SwipeableCard>
                       decoration: BoxDecoration(
                         boxShadow: [
                           BoxShadow(
-                            color: Color.fromRGBO(0, 0, 0, 0.25),
+                            color: AppColors.onSurface.withAlpha(64),
                             offset: Offset(2, 2),
                             blurRadius: 10,
                           ),
                         ],
-                        color: Color.fromRGBO(255, 255, 255, 1),
+                        color: AppColors.surface,
                         borderRadius:
                             BorderRadius.all(Radius.elliptical(60, 60)),
                       ),
                       child: IconButton(
                         icon: const Icon(Icons.thumb_up),
                         iconSize: 28,
-                        color: Colors.green,
+                        color: AppColors.tertiary,
                         onPressed: isButtonAnimating
                             ? null
                             : () {
@@ -466,7 +466,7 @@ class SwipeableCardState extends State<SwipeableCard>
                             decoration: BoxDecoration(
                               boxShadow: [
                                 BoxShadow(
-                                  color: Color.fromRGBO(237, 8, 8, 1).withValues(
+                                  color: AppColors.error.withValues(
                                       alpha:
                                           redOpacity), // Glow color with transparency
                                   blurRadius: redOpacity *
@@ -492,7 +492,7 @@ class SwipeableCardState extends State<SwipeableCard>
                             decoration: BoxDecoration(
                               boxShadow: [
                                 BoxShadow(
-                                  color: Color.fromRGBO(0, 255, 106, 1).withValues(
+                                  color: AppColors.tertiary.withValues(
                                       alpha:
                                           greenOpacity), // Glow color with transparency
                                   blurRadius: greenOpacity *
@@ -576,12 +576,11 @@ class SwipeableCardState extends State<SwipeableCard>
       child: Container(
         //If not
         decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: ColorScheme.of(context)
-                    .primary
+                color: AppColors.primary
                     .withAlpha(64), // about 25 % opacity
                 blurRadius: 20,
                 blurStyle: BlurStyle.outer,
@@ -649,7 +648,7 @@ class SwipeableCardState extends State<SwipeableCard>
                                 fontWeight: FontWeight.w800,
                                 height: 1,
                                 overflow: TextOverflow.ellipsis,
-                                color: Colors.black
+                                color: AppColors.onSurface
                               ),
                               maxLines:
                                   1, // limit so it doesn't take over the screen
@@ -659,7 +658,7 @@ class SwipeableCardState extends State<SwipeableCard>
                               style: TextStyle(
                                 fontSize: cardHeight * .04,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.black
+                                color: AppColors.onSurface
                               ),
                             ),
                           ],
@@ -1191,20 +1190,20 @@ class _FiltersState extends State<Filters> {
           size == size.toInt() ? size.toInt().toString() : size.toString(),
           style: TextStyle(
             color: isSelected
-                ? Theme.of(context).colorScheme.onPrimary
-                : Theme.of(context).colorScheme.onSurface,
+                ? AppColors.onPrimary
+                : AppColors.onSurface,
           ),
         ),
         selected: isSelected,
         onSelected: (_) => _toggleSize(size, provider),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        selectedColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: AppColors.surface,
+        selectedColor: AppColors.primary,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
             color: isSelected
                 ? Colors.transparent
-                : Theme.of(context).colorScheme.outline,
+                : AppColors.outline,
           ),
         ),
         showCheckmark: false,
@@ -1270,7 +1269,7 @@ class _FiltersState extends State<Filters> {
           builder: (context, setModalState) => Container(
             height: MediaQuery.of(context).size.height * .9,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
+              color: AppColors.surface,
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(20)),
             ),
@@ -1286,11 +1285,11 @@ class _FiltersState extends State<Filters> {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
+                            color: AppColors.onSurface,
                           )),
                       IconButton(
                         icon: const Icon(Icons.close),
-                        color: Theme.of(context).colorScheme.onSurface,
+                        color: AppColors.onSurface,
                         onPressed: () {
                           closeFilters(context);
                         },
@@ -1310,7 +1309,7 @@ class _FiltersState extends State<Filters> {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
+                            color: AppColors.onSurface,
                           ),
                         ),
                         SizedBox(
@@ -1327,8 +1326,8 @@ class _FiltersState extends State<Filters> {
                                 style: TextStyle(
                                   fontWeight: FontWeight.w600,
                                   color: isSelected
-                                      ? Theme.of(context).colorScheme.primary
-                                      : Colors.black87,
+                                      ? AppColors.primary
+                                      : AppColors.onSurface,
                                 ),
                               ),
                               selected: isSelected,
@@ -1338,22 +1337,19 @@ class _FiltersState extends State<Filters> {
                                       genderMap, filtersProvider);
                                 });
                               },
-                              selectedColor: Theme.of(context)
-                                  .colorScheme
-                                  .primaryContainer, // light filled background
-                              backgroundColor: Colors.white,
+                              selectedColor: AppColors.primaryContainer, // light filled background
+                              backgroundColor: AppColors.surface,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 side: isSelected
                                     ? BorderSide(
-                                        color: Theme.of(context)
-                                            .colorScheme
+                                        color: AppColors
                                             .primaryContainer,
                                         width: 1.5,
                                         strokeAlign:
                                             BorderSide.strokeAlignInside)
                                     : BorderSide(
-                                        color: Colors.grey.shade300,
+                                        color: AppColors.secondaryContainer,
                                         width: 1.5,
                                         strokeAlign:
                                             BorderSide.strokeAlignInside),
@@ -1372,7 +1368,7 @@ class _FiltersState extends State<Filters> {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
+                            color: AppColors.onSurface,
                           ),
                         ),
                         SizedBox(height: 8),
@@ -1387,7 +1383,7 @@ class _FiltersState extends State<Filters> {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
+                            color: AppColors.onSurface,
                           ),
                         ),
                         SizedBox(height: 16),
@@ -1405,7 +1401,7 @@ class _FiltersState extends State<Filters> {
                             values: currentRangeValues,
                             min: 0,
                             max: 200,
-                            activeColor: Theme.of(context).colorScheme.primary,
+                            activeColor: AppColors.primary,
                             onChanged: (RangeValues values) {
                               setModalState(() {
                                 currentRangeValues = values;
@@ -1423,7 +1419,7 @@ class _FiltersState extends State<Filters> {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
+                            color: AppColors.onSurface,
                           ),
                         ),
                         SizedBox(height: 16),
@@ -1468,14 +1464,14 @@ class _FiltersState extends State<Filters> {
                                       : [],
                                   border: Border.all(
                                     color: isSelected
-                                        ? ColorScheme.of(context).primary
-                                        : Colors.grey.shade400,
+                                        ? AppColors.primary
+                                        : AppColors.secondaryContainer,
                                     width: isSelected ? 3 : 1,
                                   ),
                                 ),
                                 child: isSelected
                                     ? const Icon(Icons.check,
-                                        color: Colors.white, size: 18)
+                                        color: AppColors.surface, size: 18)
                                     : null,
                               ),
                             );
