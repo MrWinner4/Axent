@@ -2,6 +2,7 @@ import 'package:fashionfrontend/providers/search_provider.dart';
 import 'package:fashionfrontend/views/pages/product_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:fashionfrontend/app_colors.dart';
 
 class SearchResultsPage extends StatelessWidget {
   const SearchResultsPage({super.key});

@@ -1,6 +1,7 @@
 import 'package:fashionfrontend/views/widgets/swipeable_card.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fashionfrontend/app_colors.dart';
 
 class FiltersProvider extends ChangeNotifier {
   String? gender;

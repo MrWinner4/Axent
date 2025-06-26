@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'package:flutter/material.dart';
+import 'package:fashionfrontend/app_colors.dart';
 
 class CardData {
   final String id;

@@ -1,6 +1,7 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:fashionfrontend/app_colors.dart';
 
 // Use the same base URL as before.
 const String apiBaseUrl = 'http://127.0.0.1:8000/api';

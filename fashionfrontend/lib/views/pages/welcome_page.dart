@@ -1,5 +1,6 @@
 import 'package:fashionfrontend/views/pages/signup_page.dart';
 import 'package:flutter/material.dart';
+import 'package:fashionfrontend/app_colors.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});

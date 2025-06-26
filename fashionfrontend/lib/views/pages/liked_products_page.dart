@@ -2,6 +2,7 @@ import 'package:fashionfrontend/views/pages/product_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fashionfrontend/app_colors.dart';
 
 class LikedProductsPage extends StatefulWidget {
   const LikedProductsPage({super.key});

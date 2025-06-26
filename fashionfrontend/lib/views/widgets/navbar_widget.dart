@@ -1,6 +1,7 @@
 import 'package:fashionfrontend/data/notifiers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:fashionfrontend/app_colors.dart';
 
 // ignore: must_be_immutable
 class NavbarWidget extends StatelessWidget {

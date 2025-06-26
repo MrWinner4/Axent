@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fashionfrontend/app_colors.dart';
 import 'custom_search_bar.dart';
 
 class SecondHeader extends StatelessWidget {

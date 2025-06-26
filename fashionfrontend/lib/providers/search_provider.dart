@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:fashionfrontend/models/card_queue_model.dart';
 import 'package:flutter/material.dart';
+import 'package:fashionfrontend/app_colors.dart';
 
 
 class SearchProvider with ChangeNotifier {

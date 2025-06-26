@@ -2,6 +2,7 @@ import 'package:fashionfrontend/views/pages/auth_wrapper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:fashionfrontend/app_colors.dart';
 
 class LogInPage extends StatefulWidget {
   const LogInPage({super.key});

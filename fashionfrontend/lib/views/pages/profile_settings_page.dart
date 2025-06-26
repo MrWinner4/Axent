@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fashionfrontend/app_colors.dart';
 
 class ProfileSettingsPage extends StatelessWidget {
   const ProfileSettingsPage({super.key});

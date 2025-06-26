@@ -1,5 +1,6 @@
 import 'package:fashionfrontend/views/widgets/collection_cell.dart';
 import 'package:flutter/material.dart';
+import 'package:fashionfrontend/app_colors.dart';
 
 
 class CollectionsPage extends StatelessWidget {

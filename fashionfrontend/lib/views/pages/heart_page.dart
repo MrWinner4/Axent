@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'trends_page.dart';
+import 'package:fashionfrontend/app_colors.dart';
 
 const String likedProductsBaseUrl =
     'https://axentbackend.onrender.com/preferences';

@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/rendering.dart';
+import 'package:fashionfrontend/app_colors.dart';
 
 //! FIX: I need to have an "updateCardWidgets()" method along with some widgets for current and next card and only call that method to update the cards and instead call buildcard there
 class SwipeableCard extends StatefulWidget {
@@ -644,19 +645,21 @@ class SwipeableCardState extends State<SwipeableCard>
                             Text(
                               data.model!,
                               style: TextStyle(
-                                fontSize: 36,
+                                fontSize: cardHeight * .07,
                                 fontWeight: FontWeight.w800,
                                 height: 1,
                                 overflow: TextOverflow.ellipsis,
+                                color: Colors.black
                               ),
                               maxLines:
-                                  3, // limit so it doesn't take over the screen
+                                  1, // limit so it doesn't take over the screen
                             ),
                             Text(
                               '\$${data.retailPrice.toStringAsFixed(2)}',
                               style: TextStyle(
-                                fontSize: 32,
+                                fontSize: cardHeight * .04,
                                 fontWeight: FontWeight.w600,
+                                color: Colors.black
                               ),
                             ),
                           ],

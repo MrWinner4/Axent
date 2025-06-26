@@ -6,6 +6,7 @@ import 'package:fashionfrontend/views/pages/welcome_page.dart';
 import 'package:fashionfrontend/views/widgets/navbar_widget.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fashionfrontend/app_colors.dart';
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});

@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+import 'package:fashionfrontend/app_colors.dart';
+
 class Wardrobe {
   final String id;
   final String name;

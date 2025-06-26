@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:fashionfrontend/app_colors.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});

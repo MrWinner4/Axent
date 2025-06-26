@@ -4,6 +4,7 @@ import 'package:fashionfrontend/views/widgets/second_header.dart';
 import 'package:fashionfrontend/views/widgets/swipeable_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:fashionfrontend/app_colors.dart';
 
 class SwipeableCardController {
   VoidCallback? undo;
@@ -37,7 +38,7 @@ class HomePage extends StatelessWidget {
                   return SearchResultsPage();
                 }
                 return Container(
-                  color: const Color.fromARGB(255, 251, 252, 254),
+                  color: AppColors.background,
                   child: SwipeableCard(
                     key: _swipeableCardKey,
                     controller: _cardController,
