@@ -9,11 +9,9 @@ import 'package:fashionfrontend/providers/search_provider.dart';
 import 'package:fashionfrontend/firebase_options.dart';
 
 void main() async {
-  WidgetsFlutterBinding
-      .ensureInitialized(); // Make sure Flutter is fully initialized
+  WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-    options: DefaultFirebaseOptions
-        .currentPlatform, // Use your firebase_options.dart
+    options: DefaultFirebaseOptions.currentPlatform,
   );
 
   runApp(
@@ -27,27 +25,14 @@ void main() async {
       child: const MainPage(),
     ),
   );
-}// Then in your MaterialApp:
-
-
-/*
-
-theme: ThemeData(
-    colorScheme: AppColors.lightScheme,
-    useMaterial3: true, // This is important for Material 3 compatibility
-  ),
-  darkTheme: ThemeData(
-    
-    useMaterial3: true,
-  ),
-  themeMode: ThemeMode.system, // Follows system theme
-*/
+}
 
 class MainPage extends StatelessWidget {
   const MainPage({super.key});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Fashion App',
       theme: ThemeData(
         fontFamily: 'Inter',
         colorScheme: AppColors.lightScheme,
@@ -58,37 +43,14 @@ class MainPage extends StatelessWidget {
               if (states.contains(WidgetState.selected)) {
                 return TextStyle(
                   fontSize: 12,
-                  color: Color.fromARGB(255, 254, 253, 251),
+                  color: AppColors.surface,
                   fontWeight: FontWeight.bold,
-                ); // For the selected item
+                );
               }
               return TextStyle(
                 fontSize: 12,
-                color: Color.fromARGB(255, 254, 253, 251),
-              ); // For unselected items
-            },
-          ),
-        ),
-        iconTheme: IconThemeData(),
-      ),
-      darkTheme: ThemeData(
-        fontFamily: 'Inter',
-        colorScheme: AppColors.darkScheme,
-        useMaterial3: true,
-        navigationBarTheme: NavigationBarThemeData(
-          labelTextStyle: WidgetStateProperty.resolveWith<TextStyle?>(
-            (Set<WidgetState> states) {
-              if (states.contains(WidgetState.selected)) {
-                return TextStyle(
-                  fontSize: 12,
-                  color: Color.fromARGB(255, 254, 253, 251),
-                  fontWeight: FontWeight.bold,
-                ); // For the selected item
-              }
-              return TextStyle(
-                fontSize: 12,
-                color: Color.fromARGB(255, 254, 253, 251),
-              ); // For unselected items
+                color: AppColors.surface,
+              );
             },
           ),
         ),

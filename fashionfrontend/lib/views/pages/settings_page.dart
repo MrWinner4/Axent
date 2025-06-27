@@ -8,25 +8,11 @@ import 'package:fashionfrontend/app_colors.dart';
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
-  static const colorScheme = ColorScheme(
-    brightness: Brightness.light,
-    primary: Color.fromRGBO(255, 246, 237, 1.0), //Cream Color
-    onPrimary: Color.fromARGB(255, 4, 62, 104), //Blue Color
-    secondary: Color.fromARGB(255, 4, 62, 104), //Blue Color
-    onSecondary: Colors.white,
-    error: Color.fromARGB(255, 207, 36, 36), //Red Color
-    onError: Colors.white,
-    background: Color.fromARGB(255, 254, 253, 251), //Background Color
-    onBackground: Colors.black87,
-    surface: Color.fromARGB(255, 254, 253, 251), //Background Color
-    onSurface: Colors.black87,
-  );
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: PageStorageKey('settings'),
-      backgroundColor: Color.fromARGB(255, 251, 252, 254),
+      backgroundColor: AppColors.surface,
       body: Padding(
         padding: const EdgeInsets.only(
           top: 50,
@@ -36,7 +22,7 @@ class SettingsPage extends StatelessWidget {
         child: Column(
           children: <Widget>[
             ListTile(
-              textColor: Colors.black,
+              textColor: AppColors.onSurface,
               title: const Text("Profile"),
               trailing: SvgPicture.asset(
                 'assets/icons/Person.svg',
@@ -52,24 +38,24 @@ class SettingsPage extends StatelessWidget {
               style: ListTileStyle.drawer,
             ),
             Divider(
-              color: Colors.black,
+              color: AppColors.onSurface,
               height: 1,
               thickness: 1,
             ),
             ListTile(
-              textColor: Colors.black,
-              trailing: Icon(Icons.leaderboard, color: Colors.black),
+              textColor: AppColors.onSurface,
+              trailing: Icon(Icons.leaderboard, color: AppColors.onSurface),
               title: const Text("Data"),
               onTap: () {},
             ),
             Divider(
-              color: Colors.black,
+              color: AppColors.onSurface,
               height: 1,
               thickness: 1,
             ),
             ListTile(
-              textColor: Colors.black,
-              trailing: Icon(Icons.logout, color: Colors.black),
+              textColor: AppColors.onSurface,
+              trailing: Icon(Icons.logout, color: AppColors.onSurface),
               title: const Text("Logout"),
               onTap: () async {
                 // Sign out the user
@@ -82,7 +68,7 @@ class SettingsPage extends StatelessWidget {
               },
             ),
             Divider(
-              color: Colors.black,
+              color: AppColors.onSurface,
               height: 1,
               thickness: 1,
             ),

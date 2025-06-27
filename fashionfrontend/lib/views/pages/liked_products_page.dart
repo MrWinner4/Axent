@@ -93,11 +93,11 @@ class _LikedProductsPageState extends State<LikedProductsPage> {
                 child: Container(
                   margin: EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black12,
+                        color: AppColors.onSurface,
                         offset: Offset(0, 2),
                         blurRadius: 4,
                       ),

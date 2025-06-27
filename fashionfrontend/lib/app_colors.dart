@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Primary colors
-  static const Color primary = Color(0xFF043E68); // Your brand color
-  static const Color primaryContainer = Color(0xFFCCE6FF);
+  static const Color primary = Color(0xFF043E68);
+  static const Color primaryContainer = Color.fromARGB(255, 161, 205, 247);
   static const Color onPrimary = Color(0xFFFFFFFF);
   static const Color onPrimaryContainer = Color(0xFF001D31);
 
@@ -52,8 +52,6 @@ class AppColors {
         errorContainer: errorContainer,
         onError: onError,
         onErrorContainer: onErrorContainer,
-        background: background,
-        onBackground: onSurface,
         surface: surface,
         onSurface: onSurface,
         surfaceContainerHighest: surfaceVariant,
@@ -61,37 +59,6 @@ class AppColors {
         surfaceContainer: surfaceVariant,
         outline: outline,
         outlineVariant: outline,
-        shadow: Colors.black,
-      );
-
-  // Dark theme color scheme
-  static ColorScheme get darkScheme => ColorScheme(
-        brightness: Brightness.dark,
-        primary: Color(0xFF9ACAFF),
-        onPrimary: Color(0xFF003152),
-        primaryContainer: Color(0xFF004879),
-        onPrimaryContainer: Color(0xFFCCE6FF),
-        secondary: Color(0xFFB7C7DC),
-        onSecondary: Color(0xFF263140),
-        secondaryContainer: Color(0xFF3C4858),
-        onSecondaryContainer: Color(0xFFD7E3F7),
-        tertiary: tertiary,
-        onTertiary: Color(0xFF422900),
-        tertiaryContainer: Color(0xFF5B3F00),
-        onTertiaryContainer: Color(0xFFFFDDB3),
-        error: Color(0xFFFFB4AB),
-        errorContainer: Color(0xFF93000A),
-        onError: Color(0xFF680003),
-        onErrorContainer: Color(0xFFFFDAD4),
-        background: Color(0xFF191C1E),
-        onBackground: Color(0xFFE2E2E5),
-        surface: Color(0xFF191C1E),
-        onSurface: Color(0xFFE2E2E5),
-        surfaceContainerHighest: Color(0xFF41474D),
-        onSurfaceVariant: Color(0xFFC1C7CE),
-        surfaceContainer: surfaceVariant,
-        outline: Color(0xFF8B9198),
-        outlineVariant: Color(0xFF8B9198),
         shadow: Colors.black,
       );
 
@@ -113,7 +80,7 @@ class AppColors {
   }
 
   static Color getBackground(BuildContext context) {
-    return Theme.of(context).colorScheme.background;
+    return Theme.of(context).colorScheme.surface;
   }
 
   static Color getError(BuildContext context) {

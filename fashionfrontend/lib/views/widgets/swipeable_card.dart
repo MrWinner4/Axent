@@ -576,7 +576,7 @@ class SwipeableCardState extends State<SwipeableCard>
       child: Container(
         //If not
         decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
@@ -1470,7 +1470,7 @@ class _FiltersState extends State<Filters> {
                                   ),
                                 ),
                                 child: isSelected
-                                    ? const Icon(Icons.check,
+                                    ? Icon(Icons.check,
                                         color: AppColors.surface, size: 18)
                                     : null,
                               ),

@@ -58,11 +58,11 @@ class _CustomSearchBarState extends State<CustomSearchBar> {
       searchController: _searchController,
       builder: (context, controller) {
         return SearchBar(
-          backgroundColor: WidgetStateProperty.all<Color>(Colors.white),
+          backgroundColor: WidgetStateProperty.all<Color>(AppColors.surface),
           controller: controller,
           hintText: 'Find your fashion...',
           hintStyle: WidgetStateProperty.all<TextStyle>(
-            const TextStyle(color: Colors.black),
+            TextStyle(color: AppColors.onSurface),
           ),
           onTap: () {
             controller.openView();

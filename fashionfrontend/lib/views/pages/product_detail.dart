@@ -25,8 +25,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Product Detail'),
-        backgroundColor: Colors.white,
-        iconTheme: IconThemeData(color: Colors.black),
+        backgroundColor: AppColors.surface,
+        iconTheme: IconThemeData(color: AppColors.onSurface),
         elevation: 1,
       ),
       body: Column(
@@ -91,14 +91,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               height: availableHeight,
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                  color: Color.fromARGB(255, 254, 251, 247),
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(24),
                     topRight: Radius.circular(24),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black12,
+                      color: AppColors.onSurface,
                       blurRadius: 10,
                       spreadRadius: 10,
                     )
@@ -171,7 +171,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Color.fromARGB(255, 8, 141, 237),
+                            backgroundColor: AppColors.primaryContainer,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -179,7 +179,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                           onPressed: () => _showBuyOptions(context),
                           child: Text(
                             'Buy Now',
-                            style: TextStyle(fontSize: 14, color: Colors.white),
+                            style: TextStyle(fontSize: 14, color: AppColors.surface),
                           ),
                         ),
                       ),

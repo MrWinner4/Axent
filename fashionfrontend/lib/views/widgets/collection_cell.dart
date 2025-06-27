@@ -11,7 +11,7 @@ class CollectionCell extends StatelessWidget {
         width: 350,
         height: 150,
         decoration: BoxDecoration(
-          color: Color.fromARGB(255, 252, 246, 237),
+          color: AppColors.surface,
           borderRadius: BorderRadius.all(Radius.circular(16)),
           border: Border.all(width: 2)
         ),

@@ -38,7 +38,7 @@ class HomePage extends StatelessWidget {
                   return SearchResultsPage();
                 }
                 return Container(
-                  color: AppColors.background,
+                  color: AppColors.surface,
                   child: SwipeableCard(
                     key: _swipeableCardKey,
                     controller: _cardController,

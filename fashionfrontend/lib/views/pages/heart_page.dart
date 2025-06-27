@@ -140,7 +140,7 @@ class HeartPageState extends State<HeartPage>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to load wardrobes: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -232,7 +232,7 @@ class HeartPageState extends State<HeartPage>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Wardrobe created successfully: $name'),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.tertiary,
             ),
           );
           refreshWardrobes();
@@ -243,7 +243,7 @@ class HeartPageState extends State<HeartPage>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Failed to create wardrobe: ${e.toString()}'),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
             ),
           );
         }
@@ -255,7 +255,7 @@ class HeartPageState extends State<HeartPage>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to create wardrobe: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -283,7 +283,7 @@ class HeartPageState extends State<HeartPage>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to delete wardrobe: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -313,7 +313,7 @@ class HeartPageState extends State<HeartPage>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to add to wardrobe: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -343,7 +343,7 @@ class HeartPageState extends State<HeartPage>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to remove from wardrobe: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -357,7 +357,7 @@ class HeartPageState extends State<HeartPage>
       key: PageStorageKey('heart'),
       length: 2,
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         appBar: AppBar(
           title: TabBar(
             tabs: const [
@@ -534,11 +534,11 @@ class _WardrobeWidgetState extends State<WardrobeWidget>
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.surface,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withAlpha(64),
+                          color: AppColors.onSurface.withAlpha(64),
                           offset: Offset(0, 0),
                           blurRadius: 10,
                         ),
@@ -558,7 +558,7 @@ class _WardrobeWidgetState extends State<WardrobeWidget>
                                 style: TextStyle(
                                   fontSize: 25,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.black,
+                                  color: AppColors.onSurface,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -582,14 +582,14 @@ class _WardrobeWidgetState extends State<WardrobeWidget>
           child: Container(),
           secondaryBackground: Container(
             decoration: BoxDecoration(
-              color: Colors.red,
+              color: AppColors.error,
               borderRadius: BorderRadius.circular(12),
             ),
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 20),
-            child: const Icon(
+            child: Icon(
               Icons.delete,
-              color: Colors.white,
+              color: AppColors.surface,
             ),
           ),
           movementDuration:
@@ -640,11 +640,11 @@ class LikedProductsSection extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(64),
+              color: AppColors.onSurface.withAlpha(64),
               offset: Offset(0, 0),
               blurRadius: 20,
             ),
@@ -662,9 +662,9 @@ class LikedProductsSection extends StatelessWidget {
                         fontFamily: 'Inter',
                         fontSize: 20,
                         fontWeight: FontWeight.w500,
-                        color: Colors.black),
+                        color: AppColors.onSurface),
                     children: [
-                      TextSpan(text: '❤ ', style: TextStyle(color: Colors.red)),
+                      TextSpan(text: '❤ ', style: TextStyle(color: AppColors.error)),
                       TextSpan(text: 'Liked Products'),
                     ],
                   ),
@@ -687,11 +687,11 @@ class LikedProductsSection extends StatelessWidget {
                           width: 70,
                           height: 60,
                           decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.surface,
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: [
                                 BoxShadow(
-                                    color: Colors.black.withAlpha(64),
+                                    color: AppColors.onSurface.withAlpha(64),
                                     blurRadius: 10,
                                     offset: Offset(4, 4))
                               ]),
@@ -704,11 +704,11 @@ class LikedProductsSection extends StatelessWidget {
                           width: 70,
                           height: 60,
                           decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.surface,
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: [
                                 BoxShadow(
-                                    color: Colors.black.withAlpha(64),
+                                    color: AppColors.onSurface.withAlpha(64),
                                     blurRadius: 10,
                                     offset: Offset(4, 4))
                               ]),
@@ -718,15 +718,15 @@ class LikedProductsSection extends StatelessWidget {
                         width: 70,
                         height: 60,
                         decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppColors.surface,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: Colors.white,
+                              color: AppColors.surface,
                               width: 4.0,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withAlpha(64),
+                                color: AppColors.onSurface.withAlpha(64),
                                 blurRadius: 10,
                                 offset: Offset(4, 4),
                               )
@@ -761,11 +761,11 @@ class LikedProductsSection extends StatelessWidget {
                           width: 70,
                           height: 60,
                           decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.surface,
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: [
                                 BoxShadow(
-                                    color: Colors.black.withAlpha(64),
+                                    color: AppColors.onSurface.withAlpha(64),
                                     blurRadius: 10,
                                     offset: Offset(4, 4))
                               ]),
@@ -778,11 +778,11 @@ class LikedProductsSection extends StatelessWidget {
                           width: 70,
                           height: 60,
                           decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.surface,
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: [
                                 BoxShadow(
-                                    color: Colors.black.withAlpha(64),
+                                    color: AppColors.onSurface.withAlpha(64),
                                     blurRadius: 10,
                                     offset: Offset(4, 4))
                               ]),
@@ -792,15 +792,15 @@ class LikedProductsSection extends StatelessWidget {
                         width: 70,
                         height: 60,
                         decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppColors.surface,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: Colors.white,
+                              color: AppColors.surface,
                               width: 4.0,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withAlpha(64),
+                                color: AppColors.onSurface.withAlpha(64),
                                 blurRadius: 10,
                                 offset: Offset(4, 4),
                               )
@@ -835,11 +835,11 @@ class LikedProductsSection extends StatelessWidget {
                           width: 70,
                           height: 60,
                           decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.surface,
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: [
                                 BoxShadow(
-                                    color: Colors.black.withAlpha(64),
+                                    color: AppColors.onSurface.withAlpha(64),
                                     blurRadius: 10,
                                     offset: Offset(4, 4))
                               ]),
@@ -852,11 +852,11 @@ class LikedProductsSection extends StatelessWidget {
                           width: 70,
                           height: 60,
                           decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.surface,
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: [
                                 BoxShadow(
-                                    color: Colors.black.withAlpha(64),
+                                    color: AppColors.onSurface.withAlpha(64),
                                     blurRadius: 10,
                                     offset: Offset(4, 4))
                               ]),
@@ -866,15 +866,15 @@ class LikedProductsSection extends StatelessWidget {
                         width: 70,
                         height: 60,
                         decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppColors.surface,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: Colors.white,
+                              color: AppColors.surface,
                               width: 4.0,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withAlpha(64),
+                                color: AppColors.onSurface.withAlpha(64),
                                 blurRadius: 10,
                                 offset: Offset(4, 4),
                               )
@@ -901,7 +901,7 @@ class LikedProductsSection extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Text("102 saved shoes", style: TextStyle(color: Colors.grey)),
+                Text("102 saved shoes", style: TextStyle(color: AppColors.secondary)),
               ],
             )
           ],
@@ -919,7 +919,7 @@ class WardrobeDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: Text(wardrobe.name),
         actions: [
@@ -1006,7 +1006,7 @@ class _WardrobeDetailsContentState extends State<WardrobeDetailsContent> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to load wardrobe products: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     }

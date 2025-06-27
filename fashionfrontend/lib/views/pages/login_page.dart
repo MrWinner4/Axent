@@ -79,7 +79,7 @@ class _LogInPageState extends State<LogInPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: AppColors.surface,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(32),
@@ -92,6 +92,7 @@ class _LogInPageState extends State<LogInPage> {
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Inter',
+                  color: AppColors.primary,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -100,28 +101,34 @@ class _LogInPageState extends State<LogInPage> {
               const SizedBox(height: 8),
               TextField(
                 controller: _emailController,
-                cursorColor: Theme.of(context).colorScheme.primary,
+                cursorColor: AppColors.primary,
+                style: TextStyle(
+                  color: AppColors.onSurface,
+                ),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fillColor: AppColors.onSurfaceVariant,
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
+                      color: AppColors.primary,
                       width: 1,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
+                      color: AppColors.primary,
                       width: 1,
                     ),
                   ),
                   labelText: 'johndoe@example.com',
-                  labelStyle: TextStyle(
-                    color: Theme.of(context).colorScheme.primary.withAlpha(128),
+                  hintStyle: TextStyle(
+                    color: AppColors.primary.withAlpha(128),
                   ),
+                labelStyle: TextStyle(
+                  color: AppColors.primary.withAlpha(128),
+                ),
                 floatingLabelBehavior: FloatingLabelBehavior.never),
                 ),
               const SizedBox(height: 16),
@@ -129,27 +136,30 @@ class _LogInPageState extends State<LogInPage> {
               const SizedBox(height: 8),
               TextField(
                 controller: _passwordController,
-                cursorColor: Theme.of(context).colorScheme.primary,
+                cursorColor: AppColors.primary,
+                style: TextStyle(
+                  color: AppColors.onSurface,
+                ),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fillColor: AppColors.onSurfaceVariant,
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
+                      color: AppColors.primary,
                       width: 1,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
+                      color: AppColors.primary,
                       width: 1,
                     ),
                   ),
                   labelText: '••••••••••',
                   labelStyle: TextStyle(
-                    color: Theme.of(context).colorScheme.primary.withAlpha(128),
+                    color: AppColors.primary.withAlpha(128),
                   ),
                 floatingLabelBehavior: FloatingLabelBehavior.never),
                 obscureText: true,
@@ -158,7 +168,7 @@ class _LogInPageState extends State<LogInPage> {
               if (_errorMessage != null)
                 Text(
                   _errorMessage!,
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(color: AppColors.error),
                   textAlign: TextAlign.center,
                 ),
               const SizedBox(height: 32),
@@ -168,16 +178,16 @@ class _LogInPageState extends State<LogInPage> {
                   onPressed: _isLoading ? null : _logIn,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                   child: _isLoading
-                      ? CircularProgressIndicator(color: Colors.white)
+                      ? CircularProgressIndicator(color: AppColors.surface)
                       : Text(
                           'Log In',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
+                          style: TextStyle(fontSize: 16, color: AppColors.surface),
                         ),
                 ),
               ),
@@ -188,13 +198,13 @@ class _LogInPageState extends State<LogInPage> {
                   TextSpan(
                     text: 'Don\'t have an account? ',
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
+                      color: AppColors.primary,
                     ),
                   ),
                   TextSpan(
                     text: 'Sign Up',
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
+                      color: AppColors.primary,
                       fontWeight: FontWeight.bold,
                     ),
                     recognizer: TapGestureRecognizer()
