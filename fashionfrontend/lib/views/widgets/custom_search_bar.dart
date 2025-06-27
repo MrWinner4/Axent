@@ -1,111 +1,61 @@
-import 'dart:convert';
-
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:fashionfrontend/app_colors.dart';
+import 'package:fashionfrontend/views/pages/search_page.dart';
 
-class CustomSearchBar extends StatefulWidget {
+class CustomSearchBar extends StatelessWidget {
   const CustomSearchBar({super.key});
 
   @override
-  State<CustomSearchBar> createState() => _CustomSearchBarState();
-}
-
-class _CustomSearchBarState extends State<CustomSearchBar> {
-  late final SearchController _searchController;
-
-  @override
-  void initState() {
-    super.initState();
-    _searchController = SearchController();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  List<String> _suggestions = [];
-  bool _loading = false;
-  String _lastQuery = '';
-
-  Future<void> _fetchSuggestions(String query) async {
-    if (query.isEmpty || query == _lastQuery) return;
-    setState(() {
-      _loading = true;
-      _lastQuery = query;
-    });
-    try {
-      final results = await fetchSuggestions(query);
-      if (mounted && query == _lastQuery) {
-        setState(() {
-          _suggestions = results;
-          _loading = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _suggestions = [];
-        _loading = false;
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return SearchAnchor(
-      searchController: _searchController,
-      builder: (context, controller) {
-        return SearchBar(
-          backgroundColor: WidgetStateProperty.all<Color>(AppColors.surface),
-          controller: controller,
-          hintText: 'Find your fashion...',
-          hintStyle: WidgetStateProperty.all<TextStyle>(
-            TextStyle(color: AppColors.onSurface),
+    return GestureDetector(
+      onTap: () {
+        // Navigate to dedicated search page
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const SearchPage(),
           ),
-          onTap: () {
-            controller.openView();
-          },
-          onChanged: (query) {
-            _fetchSuggestions(query);
-            controller.openView();
-          },
-          trailing: const [Icon(Icons.search)],
         );
       },
-      suggestionsBuilder: (context, controller) {
-        if (_loading) {
-          return [const Center(child: CircularProgressIndicator())];
-        }
-        return _suggestions.map((suggestion) {
-          return ListTile(
-            title: Text(suggestion),
-            onTap: () {
-              controller.closeView(suggestion);
-              debugPrint('Selected: $suggestion');
-            },
-          );
-        }).toList();
-      },
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(25), // Rounded rectangle
+          color: AppColors.surface,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(64),
+              spreadRadius: 2,
+              blurStyle: BlurStyle.outer,
+              blurRadius: 10,
+              offset: const Offset(0, 0),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Find your fashion...',
+                  style: TextStyle(
+                    color: AppColors.onSurface,
+                    fontSize: 16,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Icon(
+                Icons.search,
+                color: AppColors.onSurface,
+                size: 24,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
-
-  final String baseURL = ('https://axentbackend.onrender.com/'); //
-
-  Future<List<String>> fetchSuggestions(String query) async {
-    print('hi');
-    final Dio dio = Dio();
-    final url = Uri.parse('$baseURL/products/search?q=$query');
-    final response = await dio.getUri(url);
-    if (response.statusCode == 200) {
-      final List data = jsonDecode(response.data);
-      print(response.data);
-      return data.map<String>((item) => item['title'] as String).toList();
-    } else {
-      throw Exception('Failed to load suggestions');
-    }
-  }
 }
-
-// Remove _mockData; now using backend suggestions.

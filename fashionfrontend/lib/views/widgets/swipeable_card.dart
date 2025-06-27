@@ -7,6 +7,7 @@ import 'package:fashionfrontend/models/card_queue_model.dart';
 import 'package:fashionfrontend/providers/filters_provider.dart';
 import 'package:fashionfrontend/views/pages/heart_page.dart';
 import 'package:fashionfrontend/views/pages/home_page.dart';
+import 'package:fashionfrontend/views/pages/product_info_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -280,7 +281,14 @@ class SwipeableCardState extends State<SwipeableCard>
                         iconSize: 32,
                         color: AppColors.primary,
                         onPressed: () {
-                          print("bolt");
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProductInfoPage(
+                                product: cardQueue.firstCard!,
+                              ),
+                            ),
+                          );
                         },
                       ),
                     ),
