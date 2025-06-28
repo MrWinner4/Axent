@@ -25,7 +25,7 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
     
     // If user has preferred sizes and product has size-specific pricing
     if (userPreferredSizes.isNotEmpty && widget.product.sizeLowestAsks.isNotEmpty) {
-      // Find the lowest ask among user's preferred sizes
+      // Find the lowest ask among user's preferred sizes (ignore 0 values)
       double? lowestAskForUserSizes;
       
       for (double userSize in userPreferredSizes) {
@@ -35,14 +35,14 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
         // Check if this size exists in the product's size pricing
         if (widget.product.sizeLowestAsks.containsKey(sizeKey)) {
           double sizePrice = widget.product.sizeLowestAsks[sizeKey]!;
-          if (sizePrice > 0) {
-            if (lowestAskForUserSizes == null || sizePrice < lowestAskForUserSizes) {
-              lowestAskForUserSizes = sizePrice;
-            }
+          // Only consider prices > 0 (ignore unavailable sizes)
+          if (sizePrice > 0 && (lowestAskForUserSizes == null || sizePrice < lowestAskForUserSizes)) {
+            lowestAskForUserSizes = sizePrice;
           }
         }
       }
       
+      // Return the lowest ask for user's preferred sizes if found
       if (lowestAskForUserSizes != null) {
         return lowestAskForUserSizes;
       }
@@ -52,26 +52,54 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
     return widget.product.lowestAsk;
   }
 
-  // Get the size label for the displayed price
-  String? getSizeLabelForPrice() {
+  // Get size label for the displayed price
+  String getSizeLabelForPrice() {
     final filtersProvider = Provider.of<FiltersProvider>(context, listen: false);
     final userPreferredSizes = filtersProvider.selectedSizes;
-    final relevantPrice = getRelevantLowestAsk();
     
     if (userPreferredSizes.isNotEmpty && widget.product.sizeLowestAsks.isNotEmpty) {
-      // Find which user size corresponds to the displayed price
+      double? lowestAskForUserSizes;
+      String? sizeLabel;
+      
       for (double userSize in userPreferredSizes) {
         String sizeKey = userSize.toString();
         if (widget.product.sizeLowestAsks.containsKey(sizeKey)) {
           double sizePrice = widget.product.sizeLowestAsks[sizeKey]!;
-          if (sizePrice == relevantPrice) {
-            return sizeKey;
+          if (sizePrice > 0 && (lowestAskForUserSizes == null || sizePrice < lowestAskForUserSizes)) {
+            lowestAskForUserSizes = sizePrice;
+            sizeLabel = "Size ${userSize.toStringAsFixed(1)}";
           }
+        }
+      }
+      
+      if (sizeLabel != null) {
+        return sizeLabel;
+      }
+    }
+    
+    return "Lowest Ask";
+  }
+
+  // Check if user's preferred sizes are available
+  bool areUserSizesAvailable() {
+    final filtersProvider = Provider.of<FiltersProvider>(context, listen: false);
+    final userPreferredSizes = filtersProvider.selectedSizes;
+    
+    if (userPreferredSizes.isEmpty || widget.product.sizeLowestAsks.isEmpty) {
+      return false;
+    }
+    
+    for (double userSize in userPreferredSizes) {
+      String sizeKey = userSize.toString();
+      if (widget.product.sizeLowestAsks.containsKey(sizeKey)) {
+        double sizePrice = widget.product.sizeLowestAsks[sizeKey]!;
+        if (sizePrice > 0) {
+          return true; // At least one preferred size is available
         }
       }
     }
     
-    return null;
+    return false; // No preferred sizes are available
   }
 
   @override
@@ -230,6 +258,7 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
   Widget _buildPriceSection() {
     final relevantLowestAsk = getRelevantLowestAsk();
     final sizeLabel = getSizeLabelForPrice();
+    final userSizesAvailable = areUserSizesAvailable();
     
     return Container(
       padding: const EdgeInsets.all(20),
@@ -252,7 +281,7 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
                       'Retail Price',
                       style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.onSurface.withOpacity(0.7),
+                        color: AppColors.onSurface.withOpacity(0.6),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -261,65 +290,77 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
                       '\$${widget.product.retailPrice.toStringAsFixed(2)}',
                       style: TextStyle(
                         fontSize: 20,
+                        color: AppColors.onSurface,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.onSurface.withOpacity(0.8),
                       ),
                     ),
                   ],
                 ),
               ),
-              if (relevantLowestAsk != null)
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        sizeLabel != null 
-                            ? 'Lowest Ask (Size $sizeLabel)'
-                            : 'Lowest Ask',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.onSurface.withOpacity(0.7),
-                          fontWeight: FontWeight.w500,
-                        ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      sizeLabel,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.onSurface.withOpacity(0.6),
+                        fontWeight: FontWeight.w500,
                       ),
-                      const SizedBox(height: 4),
+                    ),
+                    const SizedBox(height: 4),
+                    if (relevantLowestAsk != null)
                       Text(
                         '\$${relevantLowestAsk.toStringAsFixed(2)}',
                         style: TextStyle(
                           fontSize: 28,
-                          fontWeight: FontWeight.bold,
                           color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    else
+                      Text(
+                        'No asks available',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppColors.error,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ],
-                  ),
+                  ],
                 ),
+              ),
             ],
           ),
-          if (widget.product.trait)
+          if (!userSizesAvailable && areUserSizesAvailable() == false)
             Container(
               margin: const EdgeInsets.only(top: 12),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.tertiaryContainer,
-                borderRadius: BorderRadius.circular(12),
+                color: AppColors.error.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.error.withOpacity(0.3),
+                ),
               ),
               child: Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.star,
+                    Icons.info_outline,
                     size: 16,
-                    color: AppColors.onTertiaryContainer,
+                    color: AppColors.error,
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Limited Edition',
-                    style: TextStyle(
-                      color: AppColors.onTertiaryContainer,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Your preferred sizes are not currently available',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.error,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],
@@ -590,6 +631,7 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
   Widget _buildBuyButton() {
     final relevantLowestAsk = getRelevantLowestAsk();
     final sizeLabel = getSizeLabelForPrice();
+    final userSizesAvailable = areUserSizesAvailable();
     
     // Determine display price: size-specific lowest ask > overall lowest ask > retail
     double displayPrice = widget.product.retailPrice;
@@ -597,23 +639,38 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
       displayPrice = relevantLowestAsk;
     }
     
+    // Determine button text and state
+    String buttonText;
+    bool isEnabled = true;
+    
+    if (relevantLowestAsk != null) {
+      buttonText = sizeLabel;
+    } else if (userSizesAvailable == false) {
+      buttonText = 'Sizes Not Available';
+      isEnabled = false;
+    } else {
+      buttonText = 'Buy Now';
+    }
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+          colors: isEnabled 
+              ? [AppColors.primary, AppColors.primary.withOpacity(0.8)]
+              : [AppColors.outline, AppColors.outline.withOpacity(0.8)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
+        boxShadow: isEnabled ? [
           BoxShadow(
             color: AppColors.primary.withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
-        ],
+        ] : null,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -622,34 +679,28 @@ class _ProductInfoPageState extends State<ProductInfoPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                sizeLabel != null ? 'Buy Size $sizeLabel' : 'Buy Now',
+                buttonText,
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
+                  color: isEnabled ? Colors.white : AppColors.onSurface.withOpacity(0.6),
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Text(
-                '\$${displayPrice.toStringAsFixed(2)}',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+              if (relevantLowestAsk != null)
+                Text(
+                  '\$${relevantLowestAsk.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    color: isEnabled ? Colors.white.withOpacity(0.9) : AppColors.onSurface.withOpacity(0.6),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
             ],
           ),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.shopping_cart_outlined,
-              color: Colors.white,
-              size: 24,
-            ),
+          Icon(
+            Icons.arrow_forward,
+            color: isEnabled ? Colors.white : AppColors.onSurface.withOpacity(0.6),
+            size: 24,
           ),
         ],
       ),

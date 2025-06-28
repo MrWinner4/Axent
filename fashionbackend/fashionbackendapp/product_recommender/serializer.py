@@ -37,23 +37,12 @@ class ProductSerializer(serializers.ModelSerializer):
         return None
     
     def get_size_lowest_asks(self, obj):
-        # Get size-specific lowest ask data
+        # Get size-specific lowest ask data (only include sizes with actual pricing)
         size_lowest_asks = {}
         variants = obj.variants.filter(lowest_ask__isnull=False).exclude(lowest_ask=0)
-        
-        print(f"=== DEBUG: Product {obj.id} ({obj.title}) ===")
-        print(f"Total variants: {obj.variants.count()}")
-        print(f"Variants with lowest_ask: {variants.count()}")
-        
-        # Debug: Show all variants and their lowest_ask values
-        all_variants = obj.variants.all()
-        for variant in all_variants:
-            print(f"  Variant {variant.id}: size={variant.size}, lowest_ask={variant.lowest_ask}, is_null={variant.lowest_ask is None}")
         
         for variant in variants:
             if variant.lowest_ask and variant.lowest_ask > 0:
                 size_lowest_asks[str(variant.size)] = float(variant.lowest_ask)
-                print(f"  Added size {variant.size}: ${variant.lowest_ask}")
         
-        print(f"Final size_lowest_asks: {size_lowest_asks}")
         return size_lowest_asks

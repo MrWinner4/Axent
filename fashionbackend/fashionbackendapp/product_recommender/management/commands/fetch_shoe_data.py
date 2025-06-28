@@ -191,8 +191,13 @@ class Command(BaseCommand):
                                 subtotal=variant.get("subtotal", {}),
                                 updated_at=safe_parse_datetime(variant.get("updated_at")),
                             ))
+                        
+                        # Send all sizes, with 0 for sizes that have no lowest ask data
+                        raw_lowest_ask = variant.get("lowest_ask")
+                        processed_lowest_ask = float(raw_lowest_ask or 0)
+                        
                         product_sizes.append(float(variant_size))
-                        product_lowest_asks.append(float(variant.get("lowest_ask") or 0))
+                        product_lowest_asks.append(processed_lowest_ask)
                         product_total_asks.append(int(variant.get("total_asks") or 0))
                     
                     recombee_list.append(SetItemValues(
