@@ -85,19 +85,36 @@ class SwipeableCardState extends State<SwipeableCard>
   }
 
   Widget buildImage(String? url) {
-    return isValidImage(url)
-        ? Container(
-            margin: const EdgeInsets.all(4),
-            child: Image.network(
-              url!,
+    if (!isValidImage(url)) {
+      return const Icon(Icons.error);
+    }
+    
+    return Container(
+      margin: const EdgeInsets.all(4),
+      child: _isAssetImage(url!)
+          ? Image.asset(
+              url,
               fit: BoxFit.contain,
               errorBuilder: (context, error, stackTrace) {
-                print("❌ Failed to load: $url");
+                print("❌ Failed to load asset: $url");
+                return const Icon(Icons.error);
+              },
+            )
+          : Image.network(
+              url,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                print("❌ Failed to load network image: $url");
                 return const Icon(Icons.error);
               },
             ),
-          )
-        : const Icon(Icons.error);
+    );
+  }
+
+  bool _isAssetImage(String url) {
+    return url.startsWith('assets/') || 
+           url.startsWith('asset:') || 
+           !url.startsWith('http') && !url.startsWith('https');
   }
 
   @override
@@ -253,7 +270,7 @@ class SwipeableCardState extends State<SwipeableCard>
                         icon: const Icon(Icons.close_outlined),
                         iconSize: 32,
                         color: AppColors.error,
-                        onPressed: isButtonAnimating
+                        onPressed: (isButtonAnimating || cardQueue.isEmpty || cardQueue.firstCard == null)
                             ? null
                             : () {
                                 _triggerNextCardButton(
@@ -280,16 +297,18 @@ class SwipeableCardState extends State<SwipeableCard>
                         icon: const Icon(Icons.bolt),
                         iconSize: 32,
                         color: AppColors.primary,
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ProductInfoPage(
-                                product: cardQueue.firstCard!,
-                              ),
-                            ),
-                          );
-                        },
+                        onPressed: (cardQueue.isEmpty || cardQueue.firstCard == null)
+                            ? null
+                            : () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ProductInfoPage(
+                                      product: cardQueue.firstCard!,
+                                    ),
+                                  ),
+                                );
+                              },
                       ),
                     ),
                     Container(
@@ -311,7 +330,7 @@ class SwipeableCardState extends State<SwipeableCard>
                         icon: const Icon(Icons.thumb_up),
                         iconSize: 28,
                         color: AppColors.tertiary,
-                        onPressed: isButtonAnimating
+                        onPressed: (isButtonAnimating || cardQueue.isEmpty || cardQueue.firstCard == null)
                             ? null
                             : () {
                                 _triggerNextCardButton(
@@ -334,7 +353,7 @@ class SwipeableCardState extends State<SwipeableCard>
                   currentCardCenterX = _left + cardWidth / 2;
                 }
                 if (cardQueue.isEmpty) {
-                  return Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator());
                 } else {
                   if (isUndoing) {
                     return Stack(
@@ -458,11 +477,7 @@ class SwipeableCardState extends State<SwipeableCard>
                                   duration: const Duration(milliseconds: 300),
                                   curve: Curves.easeOut,
                                   turns: rotationAngle / (2 * 3.14),
-                                  child: cardQueue.isEmpty
-                                      ? _buildCard(
-                                          data: null,
-                                        )
-                                      : _currentCardWidget),
+                                  child: _currentCardWidget ?? const SizedBox.shrink()),
                             ),
                           ),
                         Positioned(
@@ -549,7 +564,7 @@ class SwipeableCardState extends State<SwipeableCard>
                 alignment: Alignment.center,
                 child: ImageFiltered(
                   imageFilter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-                  child: _currentCardWidget ?? _buildCard(data: null),
+                  child: _currentCardWidget ?? const SizedBox.shrink(),
                 ),
               ),
             );
@@ -562,7 +577,7 @@ class SwipeableCardState extends State<SwipeableCard>
         child: ClipRRect(
           child: ImageFiltered(
             imageFilter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-            child: _nextCardWidget ?? _buildCard(data: null),
+            child: _nextCardWidget ?? const SizedBox.shrink(),
           ),
         ),
       );
@@ -574,7 +589,11 @@ class SwipeableCardState extends State<SwipeableCard>
     required CardData? data,
   }) {
     if (data == null) {
-      return const Center(child: CircularProgressIndicator());
+      return SizedBox(
+        width: cardWidth,
+        height: cardHeight,
+        child: const Center(child: CircularProgressIndicator()),
+      );
     }
     print("buildcard");
     return SizedBox(
@@ -607,35 +626,29 @@ class SwipeableCardState extends State<SwipeableCard>
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           Expanded(
-                            child: buildImage(data.images360[3 +
-                                (randnum.nextInt(range)) -
-                                ((range / 2).toInt())]),
+                            child: buildImage(_getSafeImageIndex(data.images360, 3)),
                           ),
                           Expanded(
-                            child: buildImage(data.images360[23 +
-                                (randnum.nextInt(range)) -
-                                ((range / 2).toInt())]),
+                            child: buildImage(_getSafeImageIndex(data.images360, 23)),
                           ),
                         ],
                       ),
                     )
-                  : data.images.isNotEmpty
-                      ? Row(
-                          children: [
-                            Expanded(
-                              child: buildImage(data.images.first),
-                            ),
-                          ],
-                        )
-                      : Image.network(
-                          data.images.first,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Center(
-                              child: Icon(Icons.error),
+                  : (() {
+                     
+                      
+                      return data.images.isNotEmpty
+                          ? Row(
+                              children: [
+                                Expanded(
+                                  child: buildImage(data.images.first),
+                                ),
+                              ],
+                            )
+                          : const Center(
+                              child: Icon(Icons.error, size: 50),
                             );
-                          },
-                        ),
+                    })(),
               // Image, Defines bounds and stuff
               // Product Info
               Expanded(
@@ -681,6 +694,39 @@ class SwipeableCardState extends State<SwipeableCard>
         ),
       ),
     );
+  }
+
+  String? _getSafeImageIndex(List<String?> images360, int baseIndex) {
+    print("🔍 _getSafeImageIndex called with baseIndex: $baseIndex, images360 length: ${images360.length}");
+    
+    if (images360.isEmpty) {
+      print("❌ images360 is empty");
+      return null;
+    }
+    
+    final range = 3;
+    final offset = randnum.nextInt(range) - ((range / 2).toInt());
+    final targetIndex = baseIndex + offset;
+    
+    print("🎯 Target index: $targetIndex (base: $baseIndex + offset: $offset)");
+    
+    // First try the calculated target index
+    if (targetIndex >= 0 && targetIndex < images360.length && images360[targetIndex] != null && images360[targetIndex] != "null") {
+      print("✅ Found image at target index $targetIndex: ${images360[targetIndex]}");
+      return images360[targetIndex];
+    }
+    
+    // Fallback: try to find any valid image in the array
+    print("🔍 Searching for any valid image in images360...");
+    for (int i = 0; i < images360.length; i++) {
+      if (images360[i] != null && images360[i] != "null") {
+        print("✅ Found valid image at index $i: ${images360[i]}");
+        return images360[i];
+      }
+    }
+    
+    print("❌ No valid images found in images360 array");
+    return null;
   }
 
   void _triggerNextCardButton(
@@ -849,45 +895,9 @@ class SwipeableCardState extends State<SwipeableCard>
 
       if (parsedData is List && parsedData.isNotEmpty) {
         List<CardData> newCards = parsedData.map<CardData>((product) {
-          return CardData(
-            id: product['id'] ?? '',
-            title: product['title'] ?? 'No Name',
-            brand: product['brand'] ?? '',
-            model: product['model'],
-            description: product['description'],
-            sku: product['sku'],
-            slug: product['slug'],
-            category: product['category'],
-            secondaryCategory: product['secondary_category'],
-            upcoming: product['upcoming'] ?? false,
-            updatedAt: product['updated_at'] != null
-                ? DateTime.tryParse(product['updated_at'])
-                : null,
-            link: product['link'],
-            colorway: product['colorway'] is List
-                ? List<String>.from(product['colorway'])
-                : [],
-            trait: product['trait'] ?? false,
-            releaseDate: product['release_date'] != null
-                ? DateTime.tryParse(product['release_date'])
-                : null,
-            retailPrice:
-                double.tryParse(product['retailprice'].toString()) ?? 0.0,
-            images: product['images'] is List
-                ? (product['images'] as List)
-                    .map((e) => e['image_url'].toString())
-                    .toList()
-                : ['assets/images/Shoes1.jpg'],
-            likedAt: DateTime.now(),
-            images360: product['images360'] is List
-                ? (product['images360'] as List)
-                    .map((e) => e['image_url'])
-                    .where((url) => url != null)
-                    .map((url) => url.toString())
-                    .toList()
-                : ['assets/images/Shoes1.jpg'],
-          );
+          return CardData.fromJson(product);
         }).toList();
+
         if (!mounted) return;
         setState(() {
           newCards.forEach(cardQueue.addCard);
@@ -1103,7 +1113,6 @@ class _FiltersState extends State<Filters> {
         hasPriceChanged ||
         hasSizesChanged ||
         hasColorsChanged) {
-      print("Filters changed - refreshing cards");
 
       // Update the previous values
       _previousGender = gender;

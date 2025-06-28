@@ -14,13 +14,17 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // Initialize filters provider
+  final filtersProvider = FiltersProvider();
+  await filtersProvider.loadFilters();
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => CardQueueModel()),
         ChangeNotifierProvider(create: (_) => PreviousProductModel()),
         ChangeNotifierProvider(create: (_) => SearchProvider()),
-        ChangeNotifierProvider(create: (_) => FiltersProvider()),
+        ChangeNotifierProvider.value(value: filtersProvider),
       ],
       child: const MainPage(),
     ),

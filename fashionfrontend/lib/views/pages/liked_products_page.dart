@@ -1,4 +1,4 @@
-import 'package:fashionfrontend/views/pages/product_detail.dart';
+import 'package:fashionfrontend/views/pages/product_info_page.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -70,22 +70,8 @@ class _LikedProductsPageState extends State<LikedProductsPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ProductDetailPage(
-                        product: {
-                          'title': product['title'],
-                          'brand': product['brand'],
-                          'colorway': product['colorway'],
-                          'gender': product['gender'],
-                          'silhouette': product['silhouette'],
-                          'releaseDate': product['releaseDate'],
-                          'retailprice': product['retailprice'],
-                          'estimatedMarketValue':
-                              product['estimatedMarketValue'],
-                          'story': product['story'],
-                          'urls': product['urls'],
-                          'images': product['images'],
-                          'likedAt': product['likedAt'],
-                        },
+                      builder: (context) => ProductInfoPage(
+                        product: product,
                       ),
                     ),
                   );

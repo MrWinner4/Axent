@@ -1,5 +1,5 @@
 import 'package:fashionfrontend/providers/search_provider.dart';
-import 'package:fashionfrontend/views/pages/product_detail.dart';
+import 'package:fashionfrontend/views/pages/product_info_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fashionfrontend/app_colors.dart';
@@ -42,9 +42,9 @@ class SearchResultsPage extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ProductDetailPage(product: 
-                            {//DO later
-                        },),
+                            builder: (context) => ProductInfoPage(
+                              product: product,
+                            ),
                           ),
                         );
                       },

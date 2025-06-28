@@ -199,7 +199,7 @@ class _Image360ViewerState extends State<Image360Viewer>
       height: widget.height,
       width: widget.width,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(

@@ -19,31 +19,34 @@ class CardData {
   final bool trait;
   final DateTime? releaseDate;
   final double retailPrice;
+  final double? lowestAsk;
+  final Map<String, double> sizeLowestAsks;
   final List<String> images;
   final List<String> images360;
   final DateTime likedAt;
 
-  CardData({
-    required this.id,
-    required this.title,
-    required this.brand,
-    this.model,
-    this.description,
-    this.sku,
-    this.slug,
-    this.category,
-    this.secondaryCategory,
-    required this.upcoming,
-    this.updatedAt,
-    this.link,
-    required this.colorway,
-    required this.trait,
-    this.releaseDate,
-    required this.retailPrice,
-    required this.images,
-    required this.likedAt,
-    required this.images360
-  });
+  CardData(
+      {required this.id,
+      required this.title,
+      required this.brand,
+      this.model,
+      this.description,
+      this.sku,
+      this.slug,
+      this.category,
+      this.secondaryCategory,
+      required this.upcoming,
+      this.updatedAt,
+      this.link,
+      required this.colorway,
+      required this.trait,
+      this.releaseDate,
+      required this.retailPrice,
+      this.lowestAsk,
+      required this.sizeLowestAsks,
+      required this.images,
+      required this.likedAt,
+      required this.images360});
 
   factory CardData.fromJson(Map<String, dynamic> json) {
     double parsePrice(dynamic value) {
@@ -51,8 +54,47 @@ class CardData {
       try {
         return double.parse(value.toString().replaceAll(',', ''));
       } catch (e) {
-        print('Error parsing price: $e');
         return 0.0;
+      }
+    }
+
+    // Try to get lowest ask from direct field first, then from variants, then from size_lowest_asks
+    double? lowestAskValue;
+    if (json['lowest_ask'] != null) {
+      lowestAskValue = parsePrice(json['lowest_ask']);
+    } else if (json['variants'] is List &&
+        (json['variants'] as List).isNotEmpty) {
+      // Try to get lowest ask from variants
+      List<dynamic> variants = json['variants'] as List;
+      List<double> lowestAsks = [];
+      for (var variant in variants) {
+        if (variant['lowest_ask'] != null) {
+          double ask = parsePrice(variant['lowest_ask']);
+          if (ask > 0) {
+            lowestAsks.add(ask);
+          }
+        }
+      }
+      if (lowestAsks.isNotEmpty) {
+        lowestAsks.sort();
+        lowestAskValue = lowestAsks.first;
+      }
+    } else if (json['size_lowest_asks'] is Map) {
+      // Try to get lowest ask from size_lowest_asks
+      Map<String, dynamic> sizeAsks =
+          json['size_lowest_asks'] as Map<String, dynamic>;
+      List<double> lowestAsks = [];
+      for (var ask in sizeAsks.values) {
+        if (ask != null) {
+          double askValue = parsePrice(ask);
+          if (askValue > 0) {
+            lowestAsks.add(askValue);
+          }
+        }
+      }
+      if (lowestAsks.isNotEmpty) {
+        lowestAsks.sort();
+        lowestAskValue = lowestAsks.first;
       }
     }
 
@@ -71,25 +113,57 @@ class CardData {
           ? DateTime.tryParse(json['updated_at'])
           : null,
       link: json['link'],
-      colorway: json['colorway'] is List
-          ? List<String>.from(json['colorway'])
-          : [],
+      colorway:
+          json['colorway'] is List ? List<String>.from(json['colorway']) : [],
       trait: json['trait'] ?? false,
       releaseDate: json['release_date'] != null
           ? DateTime.tryParse(json['release_date'])
           : null,
       retailPrice: parsePrice(json['retailprice']),
+      lowestAsk: lowestAskValue,
+      sizeLowestAsks: json['size_lowest_asks'] is Map
+          ? Map<String, double>.from(json['size_lowest_asks'])
+          : {},
       images: json['images'] is List
           ? (json['images'] as List)
               .map((e) => e['image_url'].toString())
               .toList()
           : ['assets/images/Shoes1.jpg'],
       likedAt: DateTime.now(),
-      images360: json['360images'] is List
-          ? (json['images360'] as List)
-            .map((e) => e['image360_url'].toString())
-            .toList()
-          : ['assets/images/Shoes1.jpg']
+      images360: () {
+        if (json['images360'] == null) {
+          return ['assets/images/Shoes1.jpg'];
+        }
+
+        if (json['images360'] is List) {
+          List<dynamic> images360List = json['images360'] as List;
+
+          if (images360List.isEmpty) {
+            return ['assets/images/Shoes1.jpg'];
+          }
+
+          // Try different possible structures
+          List<String> result = [];
+          for (var item in images360List) {
+            if (item is String) {
+              result.add(item);
+            } else if (item is Map) {
+              // Try different possible key names
+              String? url = item['image360_url'] ??
+                  item['image_url'] ??
+                  item['url'] ??
+                  item['src'];
+              if (url != null) {
+                result.add(url.toString());
+              }
+            }
+          }
+
+          return result.isNotEmpty ? result : ['assets/images/Shoes1.jpg'];
+        }
+
+        return ['assets/images/Shoes1.jpg'];
+      }(),
     );
   }
 
@@ -101,7 +175,7 @@ class CardQueueModel with ChangeNotifier {
 
   Queue<CardData> get queue => _queue;
 
-  void addCardFirst(CardData data){
+  void addCardFirst(CardData data) {
     _queue.addFirst(data);
   }
 
@@ -117,6 +191,7 @@ class CardQueueModel with ChangeNotifier {
       notifyListeners();
     }
   }
+
   void removeLastCard() {
     // ignore: unnecessary_null_comparison
     if (_queue.last != null) {
