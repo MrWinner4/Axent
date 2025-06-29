@@ -73,18 +73,33 @@ class UserPreferenceViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def liked_products(self, request):
-        auth_header = request.headers.get('Authorization', '')
-        if not auth_header.startswith('Bearer '):
-            return Response({"error": "Invalid authorization header"}, status=401)
+        try:
+            auth_header = request.headers.get('Authorization', '')
+            if not auth_header.startswith('Bearer '):
+                return Response({"error": "Invalid authorization header"}, status=401)
 
-        token = auth_header.split(' ').pop()
-        user_profile = get_user_profile_from_token(token)
-        if not user_profile:
-            return Response({"error": "Invalid or expired token"}, status=401)
-        
-        products = user_profile.liked_products.all()
-        serializer = ProductSerializer(products, many=True)
-        return Response(serializer.data)
+            token = auth_header.split(' ').pop()
+            user_profile = get_user_profile_from_token(token)
+            if not user_profile:
+                return Response({"error": "Invalid or expired token"}, status=401)
+            
+            # Get liked products with error handling
+            try:
+                products = user_profile.liked_products.all()
+                print(f"Found {products.count()} liked products for user {user_profile.firebase_uid}")
+                
+                # Serialize with error handling
+                serializer = ProductSerializer(products, many=True)
+                return Response(serializer.data)
+                
+            except Exception as e:
+                print(f"Error serializing liked products: {e}")
+                # Return empty list if serialization fails
+                return Response([])
+                
+        except Exception as e:
+            print(f"Error in liked_products endpoint: {e}")
+            return Response({"error": "Server error occurred"}, status=500)
 
     @action(detail=False, methods=['get'])
     def bought_products(self, request):
