@@ -166,9 +166,19 @@ class _LikedProductsPageState extends State<LikedProductsPage> {
             'Authorization': 'Bearer $idToken',
           },
         ),
+        queryParameters: {'page': 1, 'page_size': 1000}, // Large page size to get all products
       );
 
-      _productsNotifier.value = response.data;
+      // Handle the new paginated response format
+      List<dynamic> products;
+      if (response.data is Map<String, dynamic> && response.data['products'] != null) {
+        products = response.data['products'] as List<dynamic>;
+      } else {
+        // Fallback for old format
+        products = response.data as List<dynamic>;
+      }
+
+      _productsNotifier.value = products;
       setState(() {
         _isLoading = false;
       });

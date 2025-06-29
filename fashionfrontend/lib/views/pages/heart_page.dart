@@ -31,13 +31,38 @@ class HeartPageService {
     return userId;
   }
 
-  static Future<List<dynamic>> fetchLikedProducts() async {
+  static Future<List<dynamic>> fetchLikedProducts({int page = 1, int pageSize = 20}) async {
     final idToken = await _getIdToken();
     final response = await _dio.get(
       '${ApiConfig.likedProductsBaseUrl}/liked_products/',
       options: Options(headers: {'Authorization': 'Bearer $idToken'}),
+      queryParameters: {'page': page, 'page_size': pageSize},
     );
-    return response.data;
+    
+    // Handle the new paginated response format
+    if (response.data is Map<String, dynamic> && response.data['products'] != null) {
+      return response.data['products'] as List<dynamic>;
+    }
+    
+    // Fallback for old format
+    return response.data as List<dynamic>;
+  }
+
+  static Future<List<dynamic>> fetchAllLikedProducts() async {
+    final idToken = await _getIdToken();
+    final response = await _dio.get(
+      '${ApiConfig.likedProductsBaseUrl}/liked_products/',
+      options: Options(headers: {'Authorization': 'Bearer $idToken'}),
+      queryParameters: {'page': 1, 'page_size': 1000}, // Large page size to get all products
+    );
+    
+    // Handle the new paginated response format
+    if (response.data is Map<String, dynamic> && response.data['products'] != null) {
+      return response.data['products'] as List<dynamic>;
+    }
+    
+    // Fallback for old format
+    return response.data as List<dynamic>;
   }
 
   static Future<List<Wardrobe>> fetchWardrobes() async {
@@ -153,7 +178,7 @@ class HeartPageState extends State<HeartPage> with AutomaticKeepAliveClientMixin
   Future<void> _fetchLikedProducts() async {
     try {
       setState(() => _isLoading = true);
-      final products = await HeartPageService.fetchLikedProducts();
+      final products = await HeartPageService.fetchAllLikedProducts();
       if (mounted) {
         _productsNotifier.value = products;
         setState(() => _isLoading = false);

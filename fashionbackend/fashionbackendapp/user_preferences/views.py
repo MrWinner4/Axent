@@ -83,19 +83,47 @@ class UserPreferenceViewSet(viewsets.ViewSet):
             if not user_profile:
                 return Response({"error": "Invalid or expired token"}, status=401)
             
-            # Get liked products with error handling
+            # Get liked products with optimized queries and pagination
             try:
-                products = user_profile.liked_products.all()
-                print(f"Found {products.count()} liked products for user {user_profile.firebase_uid}")
+                page = int(request.GET.get('page', 1))
+                page_size = int(request.GET.get('page_size', 20))  # Limit to 20 products per page
+                
+                # Use only() to limit fields and reduce memory usage
+                products = user_profile.liked_products.select_related().prefetch_related(
+                    'images',
+                    'images360',
+                    'variants'
+                ).only(
+                    'id', 'title', 'brand', 'model', 'description', 'sku', 'slug',
+                    'category', 'secondary_category', 'upcoming', 'updated_at',
+                    'link', 'colorway', 'trait', 'release_date', 'retailprice'
+                ).all()
+                
+                total_count = products.count()
+                print(f"Found {total_count} liked products for user {user_profile.firebase_uid}")
+                
+                # Apply pagination
+                start = (page - 1) * page_size
+                end = start + page_size
+                paginated_products = products[start:end]
                 
                 # Serialize with error handling
-                serializer = ProductSerializer(products, many=True)
-                return Response(serializer.data)
+                serializer = ProductSerializer(paginated_products, many=True)
+                
+                return Response({
+                    'products': serializer.data,
+                    'pagination': {
+                        'page': page,
+                        'page_size': page_size,
+                        'total_count': total_count,
+                        'total_pages': (total_count + page_size - 1) // page_size
+                    }
+                })
                 
             except Exception as e:
                 print(f"Error serializing liked products: {e}")
                 # Return empty list if serialization fails
-                return Response([])
+                return Response({'products': [], 'pagination': {'page': 1, 'page_size': 20, 'total_count': 0, 'total_pages': 0}})
                 
         except Exception as e:
             print(f"Error in liked_products endpoint: {e}")
@@ -221,3 +249,8 @@ def product_detail(request, product_id):
         return Response(serializer.data)
     except Product.DoesNotExist:
         return Response({"error": "Product not found"}, status=404)
+
+@api_view(['GET'])
+def health_check(request):
+    """Simple health check endpoint"""
+    return Response({"status": "healthy", "message": "Backend is running"})
