@@ -121,9 +121,25 @@ class CardData {
           : null,
       retailPrice: parsePrice(json['retailprice']),
       lowestAsk: lowestAskValue,
-      sizeLowestAsks: json['size_lowest_asks'] is Map
-          ? Map<String, double>.from(json['size_lowest_asks'])
-          : {},
+      sizeLowestAsks: () {
+        // Debug logging for size_lowest_asks
+        print('=== DEBUG: size_lowest_asks from backend ===');
+        print('Raw size_lowest_asks: ${json['size_lowest_asks']}');
+        print('Type: ${json['size_lowest_asks']?.runtimeType}');
+        
+        if (json['size_lowest_asks'] is Map) {
+          Map<String, dynamic> sizeAsks = json['size_lowest_asks'] as Map<String, dynamic>;
+          print('Size lowest asks map: $sizeAsks');
+          print('Number of sizes: ${sizeAsks.length}');
+          
+          Map<String, double> result = Map<String, double>.from(sizeAsks);
+          print('Parsed result: $result');
+          return result;
+        } else {
+          print('size_lowest_asks is not a Map, returning empty map');
+          return <String, double>{};
+        }
+      }(),
       images: json['images'] is List
           ? (json['images'] as List)
               .map((e) => e['image_url'].toString())

@@ -78,7 +78,7 @@ class UserPreferenceViewSet(viewsets.ViewSet):
             return Response({"error": "Invalid authorization header"}, status=401)
 
         token = auth_header.split(' ').pop()
-        user_profile = self.get_user_from_token(token)
+        user_profile = get_user_profile_from_token(token)
         if not user_profile:
             return Response({"error": "Invalid or expired token"}, status=401)
         
@@ -109,10 +109,18 @@ class UserPreferenceViewSet(viewsets.ViewSet):
             return Response({"error": "Invalid authorization header"}, status=401)
 
         token = auth_header.split(' ').pop()
-
         user_profile = get_user_profile_from_token(token)
+        
+        if not user_profile:
+            return Response({"error": "Invalid or expired token"}, status=401)
 
-        user_profile.bought_products.add(*request.data.get('product_ids', []))
+        try:
+            product_ids = request.data.get('product_ids', [])
+            user_profile.bought_products.add(*product_ids)
+            return Response({"message": "Bought products updated successfully"})
+        except Exception as e:
+            print(f"Error updating bought products: {e}")
+            return Response({"error": "Failed to update bought products"}, status=500)
 
     @action(detail=False, methods=['post'])
     def create_user(self, request):

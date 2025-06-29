@@ -88,7 +88,7 @@ class SwipeableCardState extends State<SwipeableCard>
     if (!isValidImage(url)) {
       return const Icon(Icons.error);
     }
-    
+
     return Container(
       margin: const EdgeInsets.all(4),
       child: _isAssetImage(url!)
@@ -112,9 +112,9 @@ class SwipeableCardState extends State<SwipeableCard>
   }
 
   bool _isAssetImage(String url) {
-    return url.startsWith('assets/') || 
-           url.startsWith('asset:') || 
-           !url.startsWith('http') && !url.startsWith('https');
+    return url.startsWith('assets/') ||
+        url.startsWith('asset:') ||
+        !url.startsWith('http') && !url.startsWith('https');
   }
 
   @override
@@ -126,12 +126,12 @@ class SwipeableCardState extends State<SwipeableCard>
     // Store references safely
     _cardQueue = Provider.of<CardQueueModel>(context, listen: false);
     _filtersProvider = Provider.of<FiltersProvider>(context, listen: false);
-    
+
     // ADD THIS: Initialize data after providers are available
     if (_cardQueue.isEmpty) {
       getProductData(_cardQueue);
     }
-    
+
     // ADD THIS: Update widgets if needed
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _cardQueue.isNotEmpty) {
@@ -164,7 +164,7 @@ class SwipeableCardState extends State<SwipeableCard>
 
     greenOpacity = sittingOpacity;
     redOpacity = sittingOpacity;
-    
+
     // MOVE THIS TO didChangeDependencies
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -270,7 +270,9 @@ class SwipeableCardState extends State<SwipeableCard>
                         icon: const Icon(Icons.close_outlined),
                         iconSize: 32,
                         color: AppColors.error,
-                        onPressed: (isButtonAnimating || cardQueue.isEmpty || cardQueue.firstCard == null)
+                        onPressed: (isButtonAnimating ||
+                                cardQueue.isEmpty ||
+                                cardQueue.firstCard == null)
                             ? null
                             : () {
                                 _triggerNextCardButton(
@@ -297,18 +299,19 @@ class SwipeableCardState extends State<SwipeableCard>
                         icon: const Icon(Icons.bolt),
                         iconSize: 32,
                         color: AppColors.primary,
-                        onPressed: (cardQueue.isEmpty || cardQueue.firstCard == null)
-                            ? null
-                            : () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ProductInfoPage(
-                                      product: cardQueue.firstCard!,
-                                    ),
-                                  ),
-                                );
-                              },
+                        onPressed:
+                            (cardQueue.isEmpty || cardQueue.firstCard == null)
+                                ? null
+                                : () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ProductInfoPage(
+                                          product: cardQueue.firstCard!,
+                                        ),
+                                      ),
+                                    );
+                                  },
                       ),
                     ),
                     Container(
@@ -330,7 +333,9 @@ class SwipeableCardState extends State<SwipeableCard>
                         icon: const Icon(Icons.thumb_up),
                         iconSize: 28,
                         color: AppColors.tertiary,
-                        onPressed: (isButtonAnimating || cardQueue.isEmpty || cardQueue.firstCard == null)
+                        onPressed: (isButtonAnimating ||
+                                cardQueue.isEmpty ||
+                                cardQueue.firstCard == null)
                             ? null
                             : () {
                                 _triggerNextCardButton(
@@ -477,7 +482,8 @@ class SwipeableCardState extends State<SwipeableCard>
                                   duration: const Duration(milliseconds: 300),
                                   curve: Curves.easeOut,
                                   turns: rotationAngle / (2 * 3.14),
-                                  child: _currentCardWidget ?? const SizedBox.shrink()),
+                                  child: _currentCardWidget ??
+                                      const SizedBox.shrink()),
                             ),
                           ),
                         Positioned(
@@ -607,8 +613,7 @@ class SwipeableCardState extends State<SwipeableCard>
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary
-                    .withAlpha(64), // about 25 % opacity
+                color: AppColors.primary.withAlpha(64), // about 25 % opacity
                 blurRadius: 20,
                 blurStyle: BlurStyle.outer,
               )
@@ -620,23 +625,23 @@ class SwipeableCardState extends State<SwipeableCard>
             children: [
               data.images360.isNotEmpty && data.images360[0] != "null"
                   ? SizedBox(
-                      height: cardHeight * .8,
+                      height: cardHeight * .75,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           Expanded(
-                            child: buildImage(_getSafeImageIndex(data.images360, 3)),
+                            child: buildImage(
+                                _getSafeImageIndex(data.images360, 3)),
                           ),
                           Expanded(
-                            child: buildImage(_getSafeImageIndex(data.images360, 23)),
+                            child: buildImage(
+                                _getSafeImageIndex(data.images360, 23)),
                           ),
                         ],
                       ),
                     )
                   : (() {
-                     
-                      
                       return data.images.isNotEmpty
                           ? Row(
                               children: [
@@ -665,22 +670,20 @@ class SwipeableCardState extends State<SwipeableCard>
                             Text(
                               data.model!,
                               style: TextStyle(
-                                fontSize: cardHeight * .07,
-                                fontWeight: FontWeight.w800,
-                                height: 1,
-                                overflow: TextOverflow.ellipsis,
-                                color: AppColors.onSurface
-                              ),
+                                  fontSize: cardHeight * .07,
+                                  fontWeight: FontWeight.w800,
+                                  height: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  color: AppColors.onSurface),
                               maxLines:
                                   1, // limit so it doesn't take over the screen
                             ),
                             Text(
-                              '\$${data.retailPrice.toStringAsFixed(2)}',
+                              getDisplayPrice(data),
                               style: TextStyle(
-                                fontSize: cardHeight * .04,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.onSurface
-                              ),
+                                  fontSize: cardHeight * .05,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.onSurface),
                             ),
                           ],
                         ),
@@ -697,35 +700,30 @@ class SwipeableCardState extends State<SwipeableCard>
   }
 
   String? _getSafeImageIndex(List<String?> images360, int baseIndex) {
-    print("🔍 _getSafeImageIndex called with baseIndex: $baseIndex, images360 length: ${images360.length}");
-    
     if (images360.isEmpty) {
-      print("❌ images360 is empty");
       return null;
     }
-    
+
     final range = 3;
     final offset = randnum.nextInt(range) - ((range / 2).toInt());
     final targetIndex = baseIndex + offset;
-    
-    print("🎯 Target index: $targetIndex (base: $baseIndex + offset: $offset)");
-    
+
     // First try the calculated target index
-    if (targetIndex >= 0 && targetIndex < images360.length && images360[targetIndex] != null && images360[targetIndex] != "null") {
-      print("✅ Found image at target index $targetIndex: ${images360[targetIndex]}");
+    if (targetIndex >= 0 &&
+        targetIndex < images360.length &&
+        images360[targetIndex] != null &&
+        images360[targetIndex] != "null") {
       return images360[targetIndex];
     }
-    
+
     // Fallback: try to find any valid image in the array
-    print("🔍 Searching for any valid image in images360...");
+
     for (int i = 0; i < images360.length; i++) {
       if (images360[i] != null && images360[i] != "null") {
-        print("✅ Found valid image at index $i: ${images360[i]}");
         return images360[i];
       }
     }
-    
-    print("❌ No valid images found in images360 array");
+
     return null;
   }
 
@@ -998,6 +996,53 @@ class SwipeableCardState extends State<SwipeableCard>
       print('Unexpected error: $e');
     }
   }
+
+  // Smart pricing helper functions (similar to product_info_page.dart)
+  double? getRelevantLowestAsk(CardData data) {
+    final filtersProvider =
+        Provider.of<FiltersProvider>(context, listen: false);
+    final userPreferredSizes = filtersProvider.selectedSizes;
+
+    // If user has preferred sizes and product has size-specific pricing
+    if (userPreferredSizes.isNotEmpty && data.sizeLowestAsks.isNotEmpty) {
+      // Find the lowest ask among user's preferred sizes (ignore 0 values)
+      double? lowestAskForUserSizes;
+
+      for (double userSize in userPreferredSizes) {
+        // Convert user size to string format (e.g., 10.0 -> "10.0")
+        String sizeKey = userSize.toString();
+
+        // Check if this size exists in the product's size pricing
+        if (data.sizeLowestAsks.containsKey(sizeKey)) {
+          double sizePrice = data.sizeLowestAsks[sizeKey]!;
+          // Only consider prices > 0 (ignore unavailable sizes)
+          if (sizePrice > 0 &&
+              (lowestAskForUserSizes == null ||
+                  sizePrice < lowestAskForUserSizes)) {
+            lowestAskForUserSizes = sizePrice;
+          }
+        }
+      }
+
+      // Return the lowest ask for user's preferred sizes if found
+      if (lowestAskForUserSizes != null) {
+        return lowestAskForUserSizes;
+      }
+    }
+
+    // Fallback to overall lowest ask if no size-specific match
+    return data.lowestAsk;
+  }
+
+  String getDisplayPrice(CardData data) {
+    final relevantLowestAsk = getRelevantLowestAsk(data);
+
+    if (relevantLowestAsk != null) {
+      return '\$${relevantLowestAsk.toStringAsFixed(2)}';
+    } else {
+      return '\$${data.retailPrice.toStringAsFixed(2)}';
+    }
+  }
 }
 
 Future<Map<String, String>> getAuthHeaders() async {
@@ -1113,7 +1158,6 @@ class _FiltersState extends State<Filters> {
         hasPriceChanged ||
         hasSizesChanged ||
         hasColorsChanged) {
-
       // Update the previous values
       _previousGender = gender;
       _previousRangeValues = _currentRangeValues;
@@ -1206,9 +1250,7 @@ class _FiltersState extends State<Filters> {
         label: Text(
           size == size.toInt() ? size.toInt().toString() : size.toString(),
           style: TextStyle(
-            color: isSelected
-                ? AppColors.onPrimary
-                : AppColors.onSurface,
+            color: isSelected ? AppColors.onPrimary : AppColors.onSurface,
           ),
         ),
         selected: isSelected,
@@ -1218,9 +1260,7 @@ class _FiltersState extends State<Filters> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
-            color: isSelected
-                ? Colors.transparent
-                : AppColors.outline,
+            color: isSelected ? Colors.transparent : AppColors.outline,
           ),
         ),
         showCheckmark: false,
@@ -1354,14 +1394,14 @@ class _FiltersState extends State<Filters> {
                                       genderMap, filtersProvider);
                                 });
                               },
-                              selectedColor: AppColors.primaryContainer, // light filled background
+                              selectedColor: AppColors
+                                  .primaryContainer, // light filled background
                               backgroundColor: AppColors.surface,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 side: isSelected
                                     ? BorderSide(
-                                        color: AppColors
-                                            .primaryContainer,
+                                        color: AppColors.primaryContainer,
                                         width: 1.5,
                                         strokeAlign:
                                             BorderSide.strokeAlignInside)
