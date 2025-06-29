@@ -157,13 +157,6 @@ DATABASES = {
     )
 }
 
-# Database optimization settings
-DATABASES['default']['OPTIONS'] = {
-    'connect_timeout': 10,
-    'read_timeout': 30,
-    'write_timeout': 30,
-}
-
 # Logging configuration
 LOGGING = {
     'version': 1,

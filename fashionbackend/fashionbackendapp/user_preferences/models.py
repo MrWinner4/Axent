@@ -5,8 +5,8 @@ from product_recommender.models import Product, ProductImage
 
 class UserProfile(models.Model):
     """Stores aggregated preferences for fast ML access"""
-    username = models.CharField(max_length=150, unique=True, default="")
-    email = models.EmailField(unique=True, default="")
+    username = models.CharField(max_length=150, default="")
+    email = models.EmailField(default="")
     firebase_uid = models.CharField(max_length=256, unique=True)
     liked_products = models.ManyToManyField(Product, related_name="liked_by", blank=True)
     bought_products = models.ManyToManyField(Product, related_name="bought_by", blank=True)

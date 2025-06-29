@@ -16,7 +16,22 @@ def get_user_profile_from_token(token):
     try:
         decoded_token = auth.verify_id_token(token)
         firebase_uid = decoded_token['uid']
-        return UserProfile.objects.get(firebase_uid=firebase_uid)
+        
+        try:
+            user_profile = UserProfile.objects.get(firebase_uid=firebase_uid)
+            return user_profile
+        except UserProfile.DoesNotExist:
+            # Create a new user profile if it doesn't exist
+            email = decoded_token.get('email', '')
+            name = decoded_token.get('name', '') or email.split('@')[0] if email else 'User'
+            
+            user_profile = UserProfile.objects.create(
+                firebase_uid=firebase_uid,
+                username=name,
+                email=email,
+            )
+            return user_profile
+            
     except Exception as e:
         print(f"Error getting user from token: {e}")
         return None
@@ -100,7 +115,6 @@ class UserPreferenceViewSet(viewsets.ViewSet):
                 ).all()
                 
                 total_count = products.count()
-                print(f"Found {total_count} liked products for user {user_profile.firebase_uid}")
                 
                 # Apply pagination
                 start = (page - 1) * page_size
