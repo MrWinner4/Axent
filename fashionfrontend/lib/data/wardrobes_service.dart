@@ -104,7 +104,9 @@ class WardrobesService {
   static Future<void> addToWardrobe(String wardrobeId, String productId) async {
     try {
       final idToken = await _getIdToken();
-      await _dio.post(
+      print('Adding product $productId to wardrobe $wardrobeId');
+      
+      final response = await _dio.post(
         '$_baseUrl/$wardrobeId/add_item/',
         data: {'product_id': productId},
         options: Options(
@@ -113,9 +115,16 @@ class WardrobesService {
             'Content-Type': 'application/json',
           },
           followRedirects: true,
-          validateStatus: (status) => status! < 500,
+          validateStatus: (status) => status! < 600, // Allow 500 errors to be handled
         ),
       );
+      
+      print('Add to wardrobe response status: ${response.statusCode}');
+      print('Add to wardrobe response data: ${response.data}');
+      
+      if (response.statusCode! >= 400) {
+        throw Exception('Server error: ${response.statusCode} - ${response.data}');
+      }
     } catch (e) {
       print('Error adding product to wardrobe: $e');
       rethrow;
@@ -149,6 +158,8 @@ class WardrobesService {
     try {
       final idToken = await _getIdToken();
       
+      print('Fetching wardrobe details for: $wardrobeId');
+      
       // Fetch wardrobe details
       final wardrobeResponse = await _dio.get(
         '$_baseUrl/$wardrobeId/',
@@ -159,22 +170,28 @@ class WardrobesService {
         ),
       );
 
+      print('Wardrobe response: ${wardrobeResponse.data}');
+
       final productIds = wardrobeResponse.data['product_ids'] != null
           ? (wardrobeResponse.data['product_ids'] as List<dynamic>).cast<String>()
           : [];
+
+      print('Product IDs found: $productIds');
 
       // Fetch each product individually
       final products = await Future.wait(
         productIds.map((productId) async {
           try {
+            print('Fetching product: $productId');
             final productResponse = await _dio.get(
-              '$_baseUrl/products/$productId/',
+              'https://axentbackend.onrender.com/preferences/product_detail/$productId/',
               options: Options(
                 headers: {'Authorization': 'Bearer $idToken'},
                 followRedirects: true,
                 validateStatus: (status) => status! < 500,
               ),
             );
+            print('Product $productId response: ${productResponse.data}');
             return CardData.fromJson(productResponse.data);
           } catch (e) {
             print('Error fetching product $productId: $e');
@@ -183,7 +200,9 @@ class WardrobesService {
         }).toList(),
       );
 
-      return products.where((product) => product != null).cast<CardData>().toList();
+      final validProducts = products.where((product) => product != null).cast<CardData>().toList();
+      print('Valid products found: ${validProducts.length}');
+      return validProducts;
     } catch (e) {
       print('Error fetching wardrobe products: $e');
       return [];
