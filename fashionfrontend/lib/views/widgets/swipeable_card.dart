@@ -865,10 +865,15 @@ class SwipeableCardState extends State<SwipeableCard>
 
     if (previousSwipe != null) {
       final previousCard = previousSwipe['data'] as CardData;
-      final cardQueue = Provider.of<CardQueueModel>(context, listen: false);
-      //Animation Stuff
       final direction = previousSwipe['direction'] as int;
+      final cardQueue = Provider.of<CardQueueModel>(context, listen: false);
       final screenWidth = MediaQuery.of(context).size.width;
+
+      // If the card was liked (direction == 1), remove it from liked products
+      if (direction == 1) {
+        final likedProductsProvider = Provider.of<LikedProductsProvider>(context, listen: false);
+        likedProductsProvider.removeLikedProduct(previousCard.id);
+      }
 
       cardQueue.addCardFirst(previousCard);
 
