@@ -182,10 +182,17 @@ class SwipeableCardState extends State<SwipeableCard>
   }
 
   void updateCardWidgets(CardQueueModel cardQueue,
-      {bool forceRebuild = false}) {
+      {bool forceRebuild = false, bool isUndoOperation = false}) {
     // Only rebuild if forced/if card data has changed
 
-    if (_nextCardData?.id == cardQueue.firstCard?.id) {
+    if (isUndoOperation) {
+      // For undo operations, we know the first card is the undone card
+      // so we should rebuild the current card widget
+      _currentCardData = cardQueue.firstCard;
+      _currentCardWidget = _currentCardData != null
+          ? _buildCard(data: _currentCardData!)
+          : const Center(child: CircularProgressIndicator());
+    } else if (_nextCardData?.id == cardQueue.firstCard?.id) {
       // Promote next card to current
       _currentCardWidget = _nextCardWidget;
       _currentCardData = _nextCardData;
@@ -367,7 +374,9 @@ class SwipeableCardState extends State<SwipeableCard>
                                 cardQueue.firstCard == null)
                             ? null
                             : () {
+                              print("swiped: ${cardQueue.firstCard?.title}");
                                 _triggerNextCardButton(
+                                  
                                     cardQueue.firstCard!.id, cardQueue, 1);
                               },
                       ),
@@ -710,10 +719,10 @@ class SwipeableCardState extends State<SwipeableCard>
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Expanded(
-              child: buildImage(_getSafeImageIndex(data.images360, 3)),
+              child: buildImage(data.images360[3]),
             ),
             Expanded(
-              child: buildImage(_getSafeImageIndex(data.images360, 23)),
+              child: buildImage(data.images360[23]),
             ),
           ],
         ),
@@ -746,38 +755,12 @@ class SwipeableCardState extends State<SwipeableCard>
     );
   }
 
-  String? _getSafeImageIndex(List<String?> images360, int baseIndex) {
-    if (images360.isEmpty) {
-      return null;
-    }
-
-    final range = 3;
-    final offset = randnum.nextInt(range) - ((range / 2).toInt());
-    final targetIndex = baseIndex + offset;
-
-    // First try the calculated target index
-    if (targetIndex >= 0 &&
-        targetIndex < images360.length &&
-        images360[targetIndex] != null &&
-        images360[targetIndex] != "null" &&
-        images360[targetIndex]!.isNotEmpty) {
-      return images360[targetIndex];
-    }
-
-    // Fallback: try to find any valid image in the array
-    for (int i = 0; i < images360.length; i++) {
-      final image = images360[i];
-      if (image != null && image != "null" && image.isNotEmpty) {
-        return image;
-      }
-    }
-
-    return null;
-  }
-
   void _triggerNextCardButton(
       String currentCardID, CardQueueModel cardQueue, int preference) {
     if (isButtonAnimating) return;
+
+    // Use the card currently displayed in the UI
+    final CardData? swipedCard = _currentCardData;
 
     setState(() {
       isButtonAnimating = true;
@@ -790,60 +773,52 @@ class SwipeableCardState extends State<SwipeableCard>
     //Animate
     setState(() {
       _left = targetLeft;
-
       rotationAngle = preference.toDouble() * .5; //change if it looks off
     });
 
     //After animation trigger next card
-
     Future.delayed(const Duration(milliseconds: 300), () {
-      _triggerNextCard(currentCardID, cardQueue);
+      _triggerNextCard(currentCardID, cardQueue, swipedCard: swipedCard, preference: preference);
     });
   }
 
-  /// Called when the swipe passes the threshold.
-  /// This version first animates the current card off-screen,
-  /// then triggers the "pop-up" of the next card from its blurred position.
-  ///
-
-  void _triggerNextCard(String currentCardID, CardQueueModel cardQueue) {
+  void _triggerNextCard(String currentCardID, CardQueueModel cardQueue, {CardData? swipedCard, int? preference}) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final swipedCard = cardQueue.firstCard;
+    final CardData? cardToProcess = swipedCard ?? _currentCardData;
     final currentCardCenterX = _left + cardWidth / 2;
     final screenCenter = screenWidth / 2;
     // Determine which side to fly off (right if swiped right, left otherwise)
     final targetLeft = (currentCardCenterX > screenCenter)
         ? screenWidth + 175
         : -screenWidth - 175;
-    final int preference = (currentCardCenterX > screenCenter) ? 1 : -1;
-    // Animate the current card off-screen.
+    final int pref = preference ?? ((currentCardCenterX > screenCenter) ? 1 : -1);
     setState(() {
       _left = targetLeft;
     });
-    sendInteraction(currentCardID, preference);
-    // Wait for the off-screen animation to complete.
+    sendInteraction(currentCardID, pref);
     Future.delayed(const Duration(milliseconds: 300), () {
-      // Trigger the next card's pop‑up animation.
       setState(() {
         _popUp = true;
         redOpacity = sittingOpacity;
         greenOpacity = sittingOpacity;
-        if (cardQueue.isNotEmpty) {
-          cardQueue.removeFirstCard();
-          //Add previous swipe to previousProductModel
+        if (cardQueue.isNotEmpty && cardToProcess != null) {
           final previousShoeModel =
               Provider.of<PreviousProductModel>(context, listen: false);
-          previousShoeModel.addSwipe(swipedCard!, preference);
+          previousShoeModel.addSwipe(cardToProcess, pref);
+          // Add to liked products if the user liked the card
+          if (pref == 1) {
+            final likedProductsProvider = Provider.of<LikedProductsProvider>(context, listen: false);
+            likedProductsProvider.addLikedProductFromCardData(cardToProcess);
+          }
+          cardQueue.removeFirstCard();
         }
         updateCardWidgets(cardQueue);
         if (cardQueue.queueLength < CARDSTACKSIZE) {
           getProductData(cardQueue);
         }
       });
-      // After the pop‑up animation, update the index and reset positions instantly.
       Future.delayed(const Duration(milliseconds: 300), () {
         setState(() {
-          // **Update the card index here so that the next card becomes the current card.**
           _left = centerLeft;
           _top = centerTop;
           rotationAngle = 0.0;
@@ -897,8 +872,10 @@ class SwipeableCardState extends State<SwipeableCard>
 
       cardQueue.addCardFirst(previousCard);
 
+      // Update the card widgets immediately so the animation shows the correct card
+      updateCardWidgets(cardQueue, isUndoOperation: true);
+
       setState(() {
-        _currentCardWidget = _buildCard(data: previousCard);
         isUndoing = true;
       });
 
@@ -920,7 +897,6 @@ class SwipeableCardState extends State<SwipeableCard>
         if (status == AnimationStatus.completed) {
           setState(() {
             isUndoing = false;
-            updateCardWidgets(cardQueue);
           });
         }
       });
@@ -1028,38 +1004,6 @@ class SwipeableCardState extends State<SwipeableCard>
       if (response.statusCode != 200) {
         print('Server returned status: ${response.statusCode}');
         print('Response data: ${response.data}');
-      } else {
-        // Update liked products if the user liked the product
-        if (liked == 1) {
-          final likedProductsProvider = Provider.of<LikedProductsProvider>(context, listen: false);
-          // Get the current card data to add to liked products
-          final cardQueue = Provider.of<CardQueueModel>(context, listen: false);
-          final currentCard = cardQueue.firstCard;
-          if (currentCard != null) {
-            // Convert CardData to the format expected by the service
-            final productData = {
-              'id': currentCard.id,
-              'title': currentCard.title,
-              'brand': currentCard.brand,
-              'model': currentCard.model,
-              'images': currentCard.images,
-              'images360': currentCard.images360,
-              'lowest_ask': currentCard.lowestAsk,
-              'retail_price': currentCard.retailPrice,
-              'category': currentCard.category,
-              'secondary_category': currentCard.secondaryCategory,
-              'sku': currentCard.sku,
-              'colorway': currentCard.colorway,
-              'release_date': currentCard.releaseDate?.toIso8601String(),
-              'upcoming': currentCard.upcoming,
-              'trait': currentCard.trait,
-              'link': currentCard.link,
-              'updated_at': currentCard.updatedAt?.toIso8601String(),
-              'size_lowest_asks': currentCard.sizeLowestAsks,
-            };
-            likedProductsProvider.addLikedProduct(productData);
-          }
-        }
       }
     } on DioException catch (e) {
       if (e.response != null) {

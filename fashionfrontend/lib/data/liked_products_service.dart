@@ -71,6 +71,31 @@ class LikedProductsService extends ChangeNotifier {
     }
   }
 
+  // Add a CardData product to liked products (convenience method)
+  void addLikedProductFromCardData(CardData card) {
+    final productMap = {
+      'id': card.id,
+      'title': card.title,
+      'brand': card.brand,
+      'model': card.model,
+      'images': card.images,
+      'images360': card.images360,
+      'lowest_ask': card.lowestAsk,
+      'retail_price': card.retailPrice,
+      'category': card.category,
+      'secondary_category': card.secondaryCategory,
+      'sku': card.sku,
+      'colorway': card.colorway,
+      'release_date': card.releaseDate?.toIso8601String(),
+      'upcoming': card.upcoming,
+      'trait': card.trait,
+      'link': card.link,
+      'updated_at': card.updatedAt?.toIso8601String(),
+      'size_lowest_asks': card.sizeLowestAsks,
+    };
+    addLikedProduct(productMap);
+  }
+
   // Remove a product from liked products (optimistic update)
   void removeLikedProduct(String productId) {
     final index = _likedProducts.indexWhere(

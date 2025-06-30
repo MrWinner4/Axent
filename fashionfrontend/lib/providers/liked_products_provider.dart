@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fashionfrontend/data/liked_products_service.dart';
+import 'package:fashionfrontend/models/card_queue_model.dart';
 
 class LikedProductsProvider extends ChangeNotifier {
   final LikedProductsService _service = LikedProductsService();
@@ -26,6 +27,12 @@ class LikedProductsProvider extends ChangeNotifier {
   // Add a product to liked products
   void addLikedProduct(dynamic product) {
     _service.addLikedProduct(product);
+    notifyListeners();
+  }
+
+  // Add a CardData product to liked products (convenience method)
+  void addLikedProductFromCardData(CardData card) {
+    _service.addLikedProductFromCardData(card);
     notifyListeners();
   }
 
