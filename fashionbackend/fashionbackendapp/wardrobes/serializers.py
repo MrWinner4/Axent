@@ -9,7 +9,7 @@ class WardrobeItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WardrobeItem
-        fields = ('id', 'wardrobe', 'product', 'product_id', 'notes', 'added_at', 'image_url')
+        fields = ('id', 'wardrobe', 'product', 'product_id', 'created_at', 'updated_at')
         read_only_fields = ('id', 'wardrobe', 'added_at')
 
 class WardrobeSerializer(serializers.ModelSerializer):
