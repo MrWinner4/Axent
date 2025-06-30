@@ -110,7 +110,7 @@ class FiltersProvider extends ChangeNotifier {
     if (priceRange != null) {
       if (buffer.isNotEmpty) buffer.write(" AND ");
       buffer.write(
-          "'retailprice' >= ${priceRange!.start} AND 'retailprice' <= ${priceRange!.end}");
+          "'retailprice' >= ${priceRange!.start.round()} AND 'retailprice' <= ${priceRange!.end.round()}");
     }
 
     if (selectedSizes.isNotEmpty) {

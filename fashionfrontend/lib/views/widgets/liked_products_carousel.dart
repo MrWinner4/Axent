@@ -376,18 +376,21 @@ class _LikedProductsCarouselState extends State<LikedProductsCarousel> {
                 height: 90,
                 width: double.infinity,
                 color: Colors.white,
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.white,
-                      child: Image.asset(
-                        'assets/images/default_shoe.jpg',
-                        fit: BoxFit.cover,
-                      ),
-                    );
-                  },
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.white,
+                        child: Image.asset(
+                          'assets/images/default_shoe.jpg',
+                          fit: BoxFit.cover,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),

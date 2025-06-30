@@ -136,7 +136,15 @@ class CardData {
       }(),
       images: json['images'] is List
           ? (json['images'] as List)
-              .map((e) => e['image_url'].toString())
+              .map((e) {
+                if (e is String) {
+                  return e;
+                } else if (e is Map && e['image_url'] != null) {
+                  return e['image_url'].toString();
+                } else {
+                  return 'assets/images/Shoes1.jpg';
+                }
+              })
               .toList()
           : ['assets/images/Shoes1.jpg'],
       likedAt: DateTime.now(),
