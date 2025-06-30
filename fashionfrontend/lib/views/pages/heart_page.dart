@@ -2,11 +2,18 @@ import 'dart:async';
 import 'package:fashionfrontend/models/card_queue_model.dart';
 import 'package:fashionfrontend/models/wardrobe_model.dart';
 import 'package:fashionfrontend/views/pages/liked_products_page.dart';
+import 'package:fashionfrontend/views/widgets/liked_products_carousel.dart';
+import 'package:fashionfrontend/providers/liked_products_provider.dart';
+import 'package:fashionfrontend/providers/wardrobes_provider.dart';
+import 'package:fashionfrontend/data/liked_products_service.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import 'trends_page.dart';
 import 'package:fashionfrontend/app_colors.dart';
+import 'package:fashionfrontend/views/pages/wardrobes_page.dart';
+import 'package:fashionfrontend/views/pages/wardrobe_detail_page.dart' as detail;
 
 // API Configuration
 class ApiConfig {
@@ -70,8 +77,12 @@ class HeartPageService {
     final userId = await _getUserId();
     
     final response = await _dio.get(
-      '${ApiConfig.wardrobesBaseUrl}/user/',
-      options: Options(headers: {'Authorization': 'Bearer $idToken'}),
+      '${ApiConfig.wardrobesBaseUrl}/user',
+      options: Options(
+        headers: {'Authorization': 'Bearer $idToken'},
+        followRedirects: true,
+        validateStatus: (status) => status! < 500,
+      ),
       queryParameters: {'firebase_uid': userId},
     );
 
@@ -90,13 +101,15 @@ class HeartPageService {
     final userId = await _getUserId();
     
     await _dio.post(
-      '${ApiConfig.wardrobesBaseUrl}/',
+      ApiConfig.wardrobesBaseUrl,
       data: {'name': name, 'user': userId},
       options: Options(
         headers: {
           'Authorization': 'Bearer $idToken',
           'Content-Type': 'application/json',
         },
+        followRedirects: true,
+        validateStatus: (status) => status! < 500,
       ),
     );
   }
@@ -104,21 +117,27 @@ class HeartPageService {
   static Future<void> deleteWardrobe(String wardrobeId) async {
     final idToken = await _getIdToken();
     await _dio.delete(
-      '${ApiConfig.wardrobesBaseUrl}/$wardrobeId/',
-      options: Options(headers: {'Authorization': 'Bearer $idToken'}),
+      '${ApiConfig.wardrobesBaseUrl}/$wardrobeId',
+      options: Options(
+        headers: {'Authorization': 'Bearer $idToken'},
+        followRedirects: true,
+        validateStatus: (status) => status! < 500,
+      ),
     );
   }
 
   static Future<void> addToWardrobe(String wardrobeId, String productId) async {
     final idToken = await _getIdToken();
     await _dio.post(
-      '${ApiConfig.wardrobesBaseUrl}/$wardrobeId/add_item/',
+      '${ApiConfig.wardrobesBaseUrl}/$wardrobeId/add_item',
       data: {'product_id': productId},
       options: Options(
         headers: {
           'Authorization': 'Bearer $idToken',
           'Content-Type': 'application/json',
         },
+        followRedirects: true,
+        validateStatus: (status) => status! < 500,
       ),
     );
   }
@@ -126,13 +145,15 @@ class HeartPageService {
   static Future<void> removeFromWardrobe(String wardrobeId, String productId) async {
     final idToken = await _getIdToken();
     await _dio.post(
-      '${ApiConfig.wardrobesBaseUrl}/$wardrobeId/remove_item/',
+      '${ApiConfig.wardrobesBaseUrl}/$wardrobeId/remove_item',
       data: {'product_id': productId},
       options: Options(
         headers: {
           'Authorization': 'Bearer $idToken',
           'Content-Type': 'application/json',
         },
+        followRedirects: true,
+        validateStatus: (status) => status! < 500,
       ),
     );
   }
@@ -147,105 +168,43 @@ class HeartPage extends StatefulWidget {
 }
 
 class HeartPageState extends State<HeartPage> with AutomaticKeepAliveClientMixin {
-  final ValueNotifier<List<dynamic>> _productsNotifier = ValueNotifier([]);
-  final ValueNotifier<List<Wardrobe>> _wardrobesNotifier = ValueNotifier([]);
-  bool _isLoading = true;
-  bool _isWardrobesLoading = true;
-
   @override
   bool get wantKeepAlive => true;
+
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _initializeServices();
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
-    _productsNotifier.dispose();
-    _wardrobesNotifier.dispose();
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadData() async {
-    await Future.wait([
-      _fetchLikedProducts(),
-      _fetchWardrobes(),
-    ]);
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text;
+    });
   }
 
-  Future<void> _fetchLikedProducts() async {
-    try {
-      setState(() => _isLoading = true);
-      final products = await HeartPageService.fetchAllLikedProducts();
-      if (mounted) {
-        _productsNotifier.value = products;
-        setState(() => _isLoading = false);
-      }
-    } catch (e) {
-      print('Error fetching liked products: $e');
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  void refreshLikedProducts() {
-    setState(() => _isLoading = true);
-    _fetchLikedProducts();
-  }
-
-  Future<void> _fetchWardrobes() async {
-    try {
-      setState(() => _isWardrobesLoading = true);
-      final wardrobes = await HeartPageService.fetchWardrobes();
-      if (mounted) {
-        _wardrobesNotifier.value = wardrobes;
-        setState(() => _isWardrobesLoading = false);
-      }
-    } catch (e) {
-      print('Error fetching wardrobes: $e');
-      if (mounted) {
-        setState(() => _isWardrobesLoading = false);
-        _showErrorSnackBar('Failed to load wardrobes: ${e.toString()}');
-      }
-    }
-  }
-
-  Future<void> _createWardrobe() async {
-    try {
-      final name = await _showCreateWardrobeDialog();
-      if (name == null || name.isEmpty) return;
-
-      await _showLoadingDialog('Creating wardrobe...');
-      await HeartPageService.createWardrobe(name);
-      
-      if (mounted) {
-        Navigator.of(context).pop(); // Close loading dialog
-        _showSuccessSnackBar('Wardrobe created successfully: $name');
-        _fetchWardrobes();
-      }
-    } catch (e) {
-      if (mounted) {
-        Navigator.of(context).pop(); // Close loading dialog
-        _showErrorSnackBar('Failed to create wardrobe: ${e.toString()}');
-      }
-    }
-  }
-
-  Future<void> _deleteWardrobe(String wardrobeId) async {
-    try {
-      await HeartPageService.deleteWardrobe(wardrobeId);
-      if (mounted) {
-        _fetchWardrobes();
-      }
-    } catch (e) {
-      print('Error deleting wardrobe: $e');
-      if (mounted) {
-        _showErrorSnackBar('Failed to delete wardrobe: ${e.toString()}');
-      }
-    }
+  Future<void> _initializeServices() async {
+    // Set up the API fetch function for the service
+    LikedProductsService.setAPIFetchFunction(HeartPageService.fetchAllLikedProducts);
+    
+    // Initialize the liked products service
+    final likedProductsProvider = Provider.of<LikedProductsProvider>(context, listen: false);
+    await likedProductsProvider.initialize();
+    
+    // Initialize the wardrobes provider
+    final wardrobesProvider = Provider.of<WardrobesProvider>(context, listen: false);
+    await wardrobesProvider.initialize();
   }
 
   void _showErrorSnackBar(String message) {
@@ -257,22 +216,6 @@ class HeartPageState extends State<HeartPage> with AutomaticKeepAliveClientMixin
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: AppColors.tertiary),
-    );
-  }
-
-  Future<void> _showLoadingDialog(String message) {
-    return showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        content: Row(
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(width: 20),
-            Text(message),
-          ],
-        ),
-      ),
     );
   }
 
@@ -303,86 +246,312 @@ class HeartPageState extends State<HeartPage> with AutomaticKeepAliveClientMixin
   }
 
   Widget _buildWardrobesTab() {
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const _PageTitle(),
-                  const SizedBox(height: 40),
-                  _buildLikedProductsSection(),
-                  const SizedBox(height: 40),
-                  _buildWardrobesList(),
-                  const SizedBox(height: 40),
-                ],
-              ),
-            ),
+    return Consumer<WardrobesProvider>(
+      builder: (context, wardrobesProvider, child) {
+        print('Building wardrobes tab. Loading: ${wardrobesProvider.isLoading}, Count: ${wardrobesProvider.wardrobes.length}');
+        
+        if (wardrobesProvider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        print('Showing simplified wardrobes view with ${wardrobesProvider.wardrobes.length} wardrobes');
+        return _buildSimplifiedWardrobesView(wardrobesProvider);
+      },
+    );
+  }
+
+  Widget _buildSimplifiedWardrobesView(WardrobesProvider wardrobesProvider) {
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const _PageTitle(),
+              const SizedBox(height: 40),
+              _buildLikedProductsSection(),
+              const SizedBox(height: 40),
+              _buildWardrobesSearchSection(),
+              const SizedBox(height: 40),
+            ],
           ),
         ),
-        Positioned(
-          right: 20,
-          bottom: 20,
-          child: FloatingActionButton(
-            onPressed: _createWardrobe,
-            child: const Icon(Icons.add),
-          ),
-        ),
-      ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _createWardrobe(),
+        child: const Icon(Icons.add),
+      ),
     );
   }
 
   Widget _buildLikedProductsSection() {
-    return ValueListenableBuilder<List<dynamic>>(
-      valueListenable: _productsNotifier,
-      builder: (context, products, _) {
-        if (_isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (products.isEmpty) {
-          return const Center(child: Text("No liked products."));
-        }
-        
-        final recentProducts = products.length >= 3
-            ? products.sublist(products.length - 3)
-            : products;
-            
-        return LikedProductsSection(
-          products: recentProducts,
+    return Consumer<LikedProductsProvider>(
+      builder: (context, provider, child) {
+        return LikedProductsCarousel(
+          likedProducts: provider.likedProducts,
+          onRefresh: () => provider.refreshLikedProducts(),
+          isLoading: provider.isLoading,
         );
       },
     );
   }
 
-  Widget _buildWardrobesList() {
-    return ValueListenableBuilder<List<Wardrobe>>(
-      valueListenable: _wardrobesNotifier,
-      builder: (context, wardrobes, _) {
-        if (_isWardrobesLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (wardrobes.isEmpty) {
-          return const Center(child: Text("No wardrobes."));
-        }
+  Widget _buildWardrobesSearchSection() {
+    return Consumer<WardrobesProvider>(
+      builder: (context, wardrobesProvider, child) {
+        final filteredWardrobes = _searchQuery.isEmpty 
+            ? wardrobesProvider.wardrobes 
+            : wardrobesProvider.wardrobes.where((wardrobe) {
+                return wardrobe.name.toLowerCase().contains(_searchQuery.toLowerCase());
+              }).toList();
 
-        return ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: wardrobes.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 32),
-          itemBuilder: (context, index) {
-            final wardrobe = wardrobes[index];
-            return WardrobeCard(
-              wardrobe: wardrobe,
-              onDelete: () => _deleteWardrobe(wardrobe.id),
-            );
-          },
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Your Wardrobes',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: AppColors.onSurface,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildSearchBar(),
+            const SizedBox(height: 16),
+            _buildWardrobesList(filteredWardrobes),
+          ],
         );
       },
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.grey.withValues(alpha: 0.1),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Search your wardrobes...',
+          hintStyle: TextStyle(
+            color: Colors.grey.withValues(alpha: 0.6),
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+          ),
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.search_rounded,
+              color: Colors.grey.withValues(alpha: 0.6),
+              size: 20,
+            ),
+          ),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? Container(
+                  margin: const EdgeInsets.all(12),
+                  child: GestureDetector(
+                    onTap: () {
+                      _searchController.clear();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.close_rounded,
+                        color: Colors.grey.withValues(alpha: 0.6),
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+        style: TextStyle(
+          color: AppColors.onSurface,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWardrobesList(List<Wardrobe> wardrobes) {
+    if (wardrobes.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                ),
+              ),
+              child: Icon(
+                Icons.folder_open_rounded,
+                size: 56,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'No wardrobes yet',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Create your first wardrobe to get started',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.onSurface.withValues(alpha: 0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: wardrobes.map((wardrobe) => _buildWardrobeCard(wardrobe)).toList(),
+    );
+  }
+
+  Widget _buildWardrobeCard(Wardrobe wardrobe) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: ListTile(
+          contentPadding: const EdgeInsets.all(16),
+          leading: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.folder_rounded,
+              color: AppColors.primary,
+              size: 24,
+            ),
+          ),
+          title: Text(
+            wardrobe.name,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppColors.onSurface,
+            ),
+          ),
+          subtitle: Text(
+            '${wardrobe.productIds?.length ?? 0} items',
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+          trailing: Icon(
+            Icons.arrow_forward_ios_rounded,
+            color: AppColors.onSurface.withValues(alpha: 0.4),
+            size: 16,
+          ),
+          onTap: () {
+            // Navigate to wardrobe details
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => detail.WardrobeDetailsPage(wardrobe: wardrobe),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _createWardrobe() async {
+    final name = await _showCreateWardrobeDialog();
+    if (name != null && name.isNotEmpty) {
+      print('Creating wardrobe with name: $name');
+      final wardrobesProvider = Provider.of<WardrobesProvider>(context, listen: false);
+      final success = await wardrobesProvider.createWardrobe(name);
+      print('Wardrobe creation result: $success');
+      if (success) {
+        _showSuccessSnackBar('Wardrobe created successfully: $name');
+        print('Success message shown');
+      } else {
+        _showErrorSnackBar('Failed to create wardrobe');
+        print('Error message shown');
+      }
+    } else {
+      print('Wardrobe creation cancelled or empty name');
+    }
+  }
+
+  Future<String?> _showCreateWardrobeDialog() async {
+    final TextEditingController controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Create New Wardrobe'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Wardrobe Name',
+            hintText: 'Enter wardrobe name...',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('Create'),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -400,163 +569,6 @@ class _PageTitle extends StatelessWidget {
         fontFamily: 'Inter',
         fontSize: 32,
         fontWeight: FontWeight.bold,
-      ),
-    );
-  }
-}
-
-class LikedProductsSection extends StatelessWidget {
-  final List<dynamic> products;
-  
-  const LikedProductsSection({super.key, required this.products});
-
-  @override
-  Widget build(BuildContext context) {
-    if (products.isEmpty) return const SizedBox.shrink();
-
-    final reversedProducts = List.from(products.reversed);
-
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => const LikedProductsPage(),
-        ),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.onSurface.withAlpha(64),
-              offset: const Offset(0, 0),
-              blurRadius: 20,
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            _buildSectionHeader(),
-            const SizedBox(height: 16),
-            _buildProductStack(reversedProducts),
-            const SizedBox(height: 8),
-            _buildProductCount(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        RichText(
-          text: TextSpan(
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 20,
-              fontWeight: FontWeight.w500,
-              color: AppColors.onSurface,
-            ),
-            children: [
-              const TextSpan(text: '❤ ', style: TextStyle(color: AppColors.error)),
-              const TextSpan(text: 'Liked Products'),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProductStack(List<dynamic> products) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: List.generate(
-        products.length.clamp(0, 3),
-        (index) => _ProductStackItem(product: products[index] as Map<String, dynamic>),
-      ),
-    );
-  }
-
-  Widget _buildProductCount() {
-    return const Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        Text("102 saved shoes", style: TextStyle(color: AppColors.secondary)),
-      ],
-    );
-  }
-}
-
-class _ProductStackItem extends StatelessWidget {
-  final Map<String, dynamic> product;
-  
-  const _ProductStackItem({required this.product});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 100,
-      height: 100,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Background layers for stack effect
-          for (int i = 2; i >= 0; i--)
-            Positioned(
-              top: 28 - (i * 4),
-              left: 24 - (i * 4),
-              child: Container(
-                width: 70,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.onSurface.withAlpha(64),
-                      blurRadius: 10,
-                      offset: const Offset(4, 4),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          // Main product image
-          Container(
-            width: 70,
-            height: 60,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.surface, width: 4.0),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.onSurface.withAlpha(64),
-                  blurRadius: 10,
-                  offset: const Offset(4, 4),
-                ),
-              ],
-            ),
-            child: Image.network(
-              product['images']?.first['image_url'] ?? 'assets/images/default_shoe.jpg',
-              height: 100,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Image.asset(
-                  'assets/images/default_shoe.jpg',
-                  height: 100,
-                  fit: BoxFit.cover,
-                );
-              },
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -699,227 +711,10 @@ class _WardrobeCardState extends State<WardrobeCard>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => WardrobeDetailsPage(wardrobe: widget.wardrobe),
+        builder: (context) => detail.WardrobeDetailsPage(wardrobe: widget.wardrobe),
       ),
     );
   }
-}
-
-// Wardrobe Details Page
-class WardrobeDetailsPage extends StatelessWidget {
-  final Wardrobe wardrobe;
-
-  const WardrobeDetailsPage({super.key, required this.wardrobe});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: AppBar(
-        title: Text(wardrobe.name),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () {
-              // TODO: Navigate to edit wardrobe page
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () {
-              // TODO: Show delete confirmation dialog
-            },
-          ),
-        ],
-      ),
-      body: WardrobeDetailsContent(wardrobe: wardrobe),
-    );
-  }
-}
-
-class WardrobeDetailsContent extends StatefulWidget {
-  final Wardrobe wardrobe;
-
-  const WardrobeDetailsContent({super.key, required this.wardrobe});
-
-  @override
-  State<WardrobeDetailsContent> createState() => _WardrobeDetailsContentState();
-}
-
-class _WardrobeDetailsContentState extends State<WardrobeDetailsContent> {
-  List<CardData> _products = [];
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchWardrobeProducts();
-  }
-
-  Future<void> _fetchWardrobeProducts() async {
-    try {
-      setState(() => _isLoading = true);
-
-      final idToken = await HeartPageService._getIdToken();
-      
-      // Fetch wardrobe details
-      final wardrobeResponse = await HeartPageService._dio.get(
-        '${ApiConfig.wardrobesBaseUrl}/${widget.wardrobe.id}',
-        options: Options(headers: {'Authorization': 'Bearer $idToken'}),
-      );
-
-      final productIds = wardrobeResponse.data['product_ids'] != null
-          ? (wardrobeResponse.data['product_ids'] as List<dynamic>).cast<String>()
-          : [];
-
-      // Fetch each product individually
-      final products = await Future.wait(
-        productIds.map((productId) async {
-          final productResponse = await HeartPageService._dio.get(
-            '${ApiConfig.wardrobesBaseUrl}/products/$productId',
-            options: Options(headers: {'Authorization': 'Bearer $idToken'}),
-          );
-          return CardData.fromJson(productResponse.data);
-        }).toList(),
-      );
-
-      setState(() {
-        _products = products;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load wardrobe products: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: _fetchWardrobeProducts,
-      child: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.wardrobe.name,
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Created: ${widget.wardrobe.createdAt}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildProductGrid(),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProductGrid() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_products.isEmpty) {
-      return const Center(child: Text('No products in this wardrobe'));
-    }
-
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.75,
-      ),
-      itemCount: _products.length,
-      itemBuilder: (context, index) {
-        final product = _products[index];
-        return Card(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Image.network(
-                  product.images[0],
-                  fit: BoxFit.cover,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.title,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    Text(
-                      '\$${product.retailPrice.toStringAsFixed(2)}',
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () {
-                  // TODO: Show remove product confirmation dialog
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-// Helper functions
-Future<String?> _showCreateWardrobeDialog() {
-  return showDialog<String>(
-    context: navigatorKey.currentContext!,
-    barrierDismissible: false,
-    builder: (BuildContext dialogContext) {
-      final controller = TextEditingController();
-
-      return AlertDialog(
-        title: const Text('Create New Wardrobe'),
-        content: TextField(
-          autofocus: true,
-          controller: controller,
-          decoration: const InputDecoration(hintText: 'Enter wardrobe name'),
-          onSubmitted: (value) => Navigator.of(dialogContext).pop(controller.text),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(null),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-            child: const Text('Create'),
-          ),
-        ],
-      );
-    },
-  );
 }
 
 // Global navigator key for dialogs

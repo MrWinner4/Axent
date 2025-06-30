@@ -5,9 +5,10 @@ import 'dart:ui';
 import 'dart:convert';
 import 'package:fashionfrontend/models/card_queue_model.dart';
 import 'package:fashionfrontend/providers/filters_provider.dart';
-import 'package:fashionfrontend/views/pages/heart_page.dart';
+import 'package:fashionfrontend/providers/liked_products_provider.dart';
 import 'package:fashionfrontend/views/pages/home_page.dart';
 import 'package:fashionfrontend/views/pages/product_info_page.dart';
+import 'package:fashionfrontend/views/widgets/add_to_wardrobe_widget.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -330,6 +331,34 @@ class SwipeableCardState extends State<SwipeableCard>
                             BorderRadius.all(Radius.elliptical(60, 60)),
                       ),
                       child: IconButton(
+                        icon: const Icon(Icons.folder_outlined),
+                        iconSize: 28,
+                        color: AppColors.secondary,
+                        onPressed: (isButtonAnimating ||
+                                cardQueue.isEmpty ||
+                                cardQueue.firstCard == null)
+                            ? null
+                            : () {
+                                _showAddToWardrobeDialog(cardQueue.firstCard!);
+                              },
+                      ),
+                    ),
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.onSurface.withAlpha(64),
+                            offset: Offset(2, 2),
+                            blurRadius: 10,
+                          ),
+                        ],
+                        color: AppColors.surface,
+                        borderRadius:
+                            BorderRadius.all(Radius.elliptical(60, 60)),
+                      ),
+                      child: IconButton(
                         icon: const Icon(Icons.thumb_up),
                         iconSize: 28,
                         color: AppColors.tertiary,
@@ -623,38 +652,7 @@ class SwipeableCardState extends State<SwipeableCard>
           child: Column(
             mainAxisSize: MainAxisSize.max,
             children: [
-              data.images360.isNotEmpty && data.images360[0] != "null"
-                  ? SizedBox(
-                      height: cardHeight * .75,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Expanded(
-                            child: buildImage(
-                                _getSafeImageIndex(data.images360, 3)),
-                          ),
-                          Expanded(
-                            child: buildImage(
-                                _getSafeImageIndex(data.images360, 23)),
-                          ),
-                        ],
-                      ),
-                    )
-                  : (() {
-                      return data.images.isNotEmpty
-                          ? Row(
-                              children: [
-                                Expanded(
-                                  child: buildImage(data.images.first),
-                                ),
-                              ],
-                            )
-                          : const Center(
-                              child: Icon(Icons.error, size: 50),
-                            );
-                    })(),
-              // Image, Defines bounds and stuff
+              _buildImageSection(data),
               // Product Info
               Expanded(
                 // or Flexible
@@ -668,7 +666,7 @@ class SwipeableCardState extends State<SwipeableCard>
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             Text(
-                              data.model!,
+                              data.model ?? data.title,
                               style: TextStyle(
                                   fontSize: cardHeight * .07,
                                   fontWeight: FontWeight.w800,
@@ -699,6 +697,55 @@ class SwipeableCardState extends State<SwipeableCard>
     );
   }
 
+  Widget _buildImageSection(CardData data) {
+    // Check if we have valid 360 images
+    final hasValid360Images = data.images360.isNotEmpty && 
+        data.images360.any((img) => img != null && img != "null" && img.isNotEmpty);
+    
+    if (hasValid360Images) {
+      return SizedBox(
+        height: cardHeight * .75,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Expanded(
+              child: buildImage(_getSafeImageIndex(data.images360, 3)),
+            ),
+            Expanded(
+              child: buildImage(_getSafeImageIndex(data.images360, 23)),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    // Fallback to regular images
+    if (data.images.isNotEmpty) {
+      final firstImage = data.images.first;
+      if (isValidImage(firstImage)) {
+        return SizedBox(
+          height: cardHeight * .75,
+          child: Row(
+            children: [
+              Expanded(
+                child: buildImage(firstImage),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+    
+    // Fallback to error icon
+    return SizedBox(
+      height: cardHeight * .75,
+      child: const Center(
+        child: Icon(Icons.error, size: 50),
+      ),
+    );
+  }
+
   String? _getSafeImageIndex(List<String?> images360, int baseIndex) {
     if (images360.isEmpty) {
       return null;
@@ -712,15 +759,16 @@ class SwipeableCardState extends State<SwipeableCard>
     if (targetIndex >= 0 &&
         targetIndex < images360.length &&
         images360[targetIndex] != null &&
-        images360[targetIndex] != "null") {
+        images360[targetIndex] != "null" &&
+        images360[targetIndex]!.isNotEmpty) {
       return images360[targetIndex];
     }
 
     // Fallback: try to find any valid image in the array
-
     for (int i = 0; i < images360.length; i++) {
-      if (images360[i] != null && images360[i] != "null") {
-        return images360[i];
+      final image = images360[i];
+      if (image != null && image != "null" && image.isNotEmpty) {
+        return image;
       }
     }
 
@@ -981,9 +1029,36 @@ class SwipeableCardState extends State<SwipeableCard>
         print('Server returned status: ${response.statusCode}');
         print('Response data: ${response.data}');
       } else {
-        final likedPage = context.findAncestorStateOfType<HeartPageState>();
-        if (likedPage != null) {
-          likedPage.refreshLikedProducts();
+        // Update liked products if the user liked the product
+        if (liked == 1) {
+          final likedProductsProvider = Provider.of<LikedProductsProvider>(context, listen: false);
+          // Get the current card data to add to liked products
+          final cardQueue = Provider.of<CardQueueModel>(context, listen: false);
+          final currentCard = cardQueue.firstCard;
+          if (currentCard != null) {
+            // Convert CardData to the format expected by the service
+            final productData = {
+              'id': currentCard.id,
+              'title': currentCard.title,
+              'brand': currentCard.brand,
+              'model': currentCard.model,
+              'images': currentCard.images,
+              'images360': currentCard.images360,
+              'lowest_ask': currentCard.lowestAsk,
+              'retail_price': currentCard.retailPrice,
+              'category': currentCard.category,
+              'secondary_category': currentCard.secondaryCategory,
+              'sku': currentCard.sku,
+              'colorway': currentCard.colorway,
+              'release_date': currentCard.releaseDate?.toIso8601String(),
+              'upcoming': currentCard.upcoming,
+              'trait': currentCard.trait,
+              'link': currentCard.link,
+              'updated_at': currentCard.updatedAt?.toIso8601String(),
+              'size_lowest_asks': currentCard.sizeLowestAsks,
+            };
+            likedProductsProvider.addLikedProduct(productData);
+          }
         }
       }
     } on DioException catch (e) {
@@ -1042,6 +1117,18 @@ class SwipeableCardState extends State<SwipeableCard>
     } else {
       return '\$${data.retailPrice.toStringAsFixed(2)}';
     }
+  }
+
+  void _showAddToWardrobeDialog(CardData cardData) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Material(
+          type: MaterialType.transparency,
+          child: AddToWardrobeWidget(product: cardData),
+        );
+      },
+    );
   }
 }
 
