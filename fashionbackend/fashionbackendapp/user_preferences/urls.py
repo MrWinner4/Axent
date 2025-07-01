@@ -12,7 +12,7 @@ urlpatterns = [
     path('liked_products/', views.UserPreferenceViewSet.as_view({'get': 'liked_products'}), name='liked-products'),
     
     # Product details
-    path('product_detail/<int:product_id>/', views.product_detail, name='product_detail'),
+    path('product_detail/<uuid:product_id>/', views.product_detail, name='product_detail'),
 
     #Update Bought Products
     path('update_bought_products/', views.UserPreferenceViewSet.as_view({'post': 'update_bought_products'}), name='update_bought_products'),
