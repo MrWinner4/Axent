@@ -20,7 +20,7 @@ class Wardrobe(models.Model):
 
 class WardrobeItem(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    wardrobe = models.ForeignKey(Wardrobe, on_delete=models.CASCADE)
+    wardrobe = models.ForeignKey(Wardrobe, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

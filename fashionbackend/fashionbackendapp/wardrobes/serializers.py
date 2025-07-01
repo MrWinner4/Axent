@@ -44,4 +44,5 @@ class WardrobeSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "user", "created_at", "updated_at")
 
     def get_product_ids(self, obj):
+        # Use the related_name 'items' to access WardrobeItems
         return [str(item.product.id) for item in obj.items.all()]

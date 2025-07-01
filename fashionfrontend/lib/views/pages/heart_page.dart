@@ -78,7 +78,7 @@ class HeartPageService {
     
     final response = await _dio.get(
       '${ApiConfig.wardrobesBaseUrl}/user',
-      options: Options(
+        options: Options(
         headers: {'Authorization': 'Bearer $idToken'},
         followRedirects: true,
         validateStatus: (status) => status! < 500,
@@ -88,10 +88,10 @@ class HeartPageService {
 
     if (response.data == null) return [];
     
-    try {
-      final List<dynamic> data = response.data as List<dynamic>;
+        try {
+          final List<dynamic> data = response.data as List<dynamic>;
       return data.map((json) => Wardrobe.fromJson(json)).toList();
-    } catch (e) {
+        } catch (e) {
       return [];
     }
   }
@@ -103,11 +103,11 @@ class HeartPageService {
     await _dio.post(
       ApiConfig.wardrobesBaseUrl,
       data: {'name': name, 'user': userId},
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $idToken',
-          'Content-Type': 'application/json',
-        },
+          options: Options(
+            headers: {
+              'Authorization': 'Bearer $idToken',
+              'Content-Type': 'application/json',
+            },
         followRedirects: true,
         validateStatus: (status) => status! < 500,
       ),
@@ -131,9 +131,9 @@ class HeartPageService {
     await _dio.post(
       '${ApiConfig.wardrobesBaseUrl}/$wardrobeId/add_item',
       data: {'product_id': productId},
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $idToken',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $idToken',
           'Content-Type': 'application/json',
         },
         followRedirects: true,
@@ -146,12 +146,12 @@ class HeartPageService {
     final idToken = await _getIdToken();
     await _dio.post(
       '${ApiConfig.wardrobesBaseUrl}/$wardrobeId/remove_item',
-      data: {'product_id': productId},
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $idToken',
-          'Content-Type': 'application/json',
-        },
+        data: {'product_id': productId},
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $idToken',
+            'Content-Type': 'application/json',
+          },
         followRedirects: true,
         validateStatus: (status) => status! < 500,
       ),
@@ -208,7 +208,7 @@ class HeartPageState extends State<HeartPage> with AutomaticKeepAliveClientMixin
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: AppColors.error),
     );
   }
@@ -264,12 +264,12 @@ class HeartPageState extends State<HeartPage> with AutomaticKeepAliveClientMixin
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: SingleChildScrollView(
-        child: Padding(
+                    child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
               const _PageTitle(),
               const SizedBox(height: 40),
               _buildLikedProductsSection(),
@@ -403,7 +403,7 @@ class HeartPageState extends State<HeartPage> with AutomaticKeepAliveClientMixin
   }
 
   Widget _buildWardrobesList(List<Wardrobe> wardrobes) {
-    if (wardrobes.isEmpty) {
+                              if (wardrobes.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(32),
         child: Column(
@@ -501,9 +501,9 @@ class HeartPageState extends State<HeartPage> with AutomaticKeepAliveClientMixin
               MaterialPageRoute(
                 builder: (context) => detail.WardrobeDetailsPage(wardrobe: wardrobe),
               ),
-            );
-          },
-        ),
+                              );
+                            },
+                          ),
       ),
     );
   }
@@ -549,9 +549,9 @@ class HeartPageState extends State<HeartPage> with AutomaticKeepAliveClientMixin
           TextButton(
             onPressed: () => Navigator.of(context).pop(controller.text),
             child: const Text('Create'),
-          ),
-        ],
-      ),
+                ),
+              ],
+            ),
     );
   }
 }
@@ -630,72 +630,72 @@ class _WardrobeCardState extends State<WardrobeCard>
 
   Widget _buildWardrobeContent() {
     return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _isSwiping ? 0.0 : 1.0,
-          child: SizedBox(
-            height: 100 * _heightAnimation.value,
-            child: GestureDetector(
+          animation: _animationController,
+          builder: (context, child) {
+            return Opacity(
+              opacity: _isSwiping ? 0.0 : 1.0,
+              child: SizedBox(
+                height: 100 * _heightAnimation.value,
+                child: GestureDetector(
               onTap: () => _navigateToWardrobeDetails(),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.onSurface.withAlpha(64),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.onSurface.withAlpha(64),
                       offset: const Offset(0, 0),
-                      blurRadius: 10,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            widget.wardrobe.name,
-                            style: const TextStyle(
-                              fontSize: 25,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.onSurface,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          blurRadius: 10,
                         ),
                       ],
                     ),
-                  ],
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                widget.wardrobe.name,
+                            style: const TextStyle(
+                                  fontSize: 25,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.onSurface,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-        );
-      },
+            );
+          },
     );
   }
 
   Widget _buildDismissibleOverlay() {
     return Positioned.fill(
-      child: Dismissible(
-        key: Key('${widget.wardrobe.id}_overlay'),
-        direction: DismissDirection.endToStart,
-        background: Container(),
-        child: Container(),
-        secondaryBackground: Container(
-          decoration: BoxDecoration(
-            color: AppColors.error,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 20),
+            child: Dismissible(
+          key: Key('${widget.wardrobe.id}_overlay'),
+          direction: DismissDirection.endToStart,
+          background: Container(),
+          child: Container(),
+          secondaryBackground: Container(
+            decoration: BoxDecoration(
+              color: AppColors.error,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
           child: const Icon(Icons.delete, color: AppColors.surface),
         ),
         movementDuration: const Duration(milliseconds: 300),
@@ -708,8 +708,8 @@ class _WardrobeCardState extends State<WardrobeCard>
   }
 
   void _navigateToWardrobeDetails() {
-    Navigator.push(
-      context,
+        Navigator.push(
+          context,
       MaterialPageRoute(
         builder: (context) => detail.WardrobeDetailsPage(wardrobe: widget.wardrobe),
       ),
