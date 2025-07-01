@@ -12,6 +12,14 @@ class WardrobeItemSerializer(serializers.ModelSerializer):
         fields = ('id', 'wardrobe', 'product', 'product_id', 'created_at', 'updated_at')
         read_only_fields = ('id', 'wardrobe', 'added_at')
 
+    def create(self, validated_data):
+        product_id = validated_data.pop('product_id')
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            raise serializers.ValidationError(f"Product with id {product_id} does not exist")
+        
+
 class WardrobeSerializer(serializers.ModelSerializer):
     items = WardrobeItemSerializer(many=True, read_only=True)
 
