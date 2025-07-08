@@ -374,7 +374,6 @@ class SwipeableCardState extends State<SwipeableCard>
                                 cardQueue.firstCard == null)
                             ? null
                             : () {
-                              print("swiped: ${cardQueue.firstCard?.title}");
                                 _triggerNextCardButton(
                                   
                                     cardQueue.firstCard!.id, cardQueue, 1);
@@ -639,7 +638,6 @@ class SwipeableCardState extends State<SwipeableCard>
         child: const Center(child: CircularProgressIndicator()),
       );
     }
-    print("buildcard");
     return SizedBox(
       width: cardWidth,
       height: cardHeight,
@@ -708,8 +706,7 @@ class SwipeableCardState extends State<SwipeableCard>
 
   Widget _buildImageSection(CardData data) {
     // Check if we have valid 360 images
-    final hasValid360Images = data.images360.isNotEmpty && 
-        data.images360.any((img) => img != null && img != "null" && img.isNotEmpty);
+    final hasValid360Images = data.images360.length > 23;
     
     if (hasValid360Images) {
       return SizedBox(
@@ -730,7 +727,7 @@ class SwipeableCardState extends State<SwipeableCard>
     }
     
     // Fallback to regular images
-    if (data.images.isNotEmpty) {
+    else if (data.images.isNotEmpty) {
       final firstImage = data.images.first;
       if (isValidImage(firstImage)) {
         return SizedBox(
@@ -943,8 +940,6 @@ class SwipeableCardState extends State<SwipeableCard>
   Future<List<dynamic>> getProduct() async {
     // Use stored reference instead of Provider.of
     final String filters = _filtersProvider.getFiltersString();
-    print("filters");
-    print(filters);
 
     final String baseURL =
         ('https://axentbackend.onrender.com/products/recommend/');
@@ -1069,16 +1064,98 @@ class SwipeableCardState extends State<SwipeableCard>
   }
 
   void _showAddToWardrobeDialog(CardData cardData) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
-        return Material(
-          type: MaterialType.transparency,
-          child: AddToWardrobeWidget(product: cardData),
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, -5),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle bar
+                Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.onSurface.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                // Header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.folder_outlined,
+                          color: AppColors.primary,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Add to Wardrobe',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.onSurface,
+                              ),
+                            ),
+                            Text(
+                              cardData.title,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppColors.onSurface.withValues(alpha: 0.6),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Content
+                Flexible(
+                  child: AddToWardrobeWidget(product: cardData),
+                ),
+                // Bottom padding
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
         );
       },
     );
   }
+
+
 }
 
 Future<Map<String, String>> getAuthHeaders() async {
@@ -1127,6 +1204,8 @@ class _FiltersState extends State<Filters> {
   Set<double> _selectedSizes = {};
   Set<FilterColor> selectedColors = {};
   Set<FilterColor> _previousColors = {};
+  Set<String> _selectedBrands = {};
+  Set<String> _previousBrands = {};
   String? gender;
   String? _previousGender;
   RangeValues? _previousRangeValues;
@@ -1190,15 +1269,19 @@ class _FiltersState extends State<Filters> {
         !SetEquality().equals(_previousSizes, _selectedSizes);
     final hasColorsChanged =
         !SetEquality().equals(_previousColors, selectedColors);
+    final hasBrandsChanged =
+        !SetEquality().equals(_previousBrands, _selectedBrands);
     if (hasGenderChanged ||
         hasPriceChanged ||
         hasSizesChanged ||
-        hasColorsChanged) {
+        hasColorsChanged ||
+        hasBrandsChanged) {
       // Update the previous values
       _previousGender = gender;
       _previousRangeValues = _currentRangeValues;
       _previousSizes = Set.from(_selectedSizes);
       _previousColors = Set.from(selectedColors);
+      _previousBrands = Set.from(_selectedBrands);
 
       // Refresh cards
       widget.onFilterChanged();
@@ -1246,8 +1329,7 @@ class _FiltersState extends State<Filters> {
     provider.updateFilters(priceRange: newValues);
   }
 
-  Future<void> toggleColor(
-      FilterColor newColor, FiltersProvider provider) async {
+  Future<void> toggleColor(FilterColor newColor, FiltersProvider provider) async {
     final newColors = Set<FilterColor>.from(selectedColors);
     if (newColors.contains(newColor)) {
       newColors.remove(newColor);
@@ -1264,6 +1346,23 @@ class _FiltersState extends State<Filters> {
       selectedColors = newColors;
     });
     provider.updateFilters(selectedColors: newColors);
+  }
+
+  Future<void> toggleBrand(String brand, FiltersProvider provider) async {
+    final newBrands = Set<String>.from(_selectedBrands);
+    if (newBrands.contains(brand)) {
+      newBrands.remove(brand);
+    } else {
+      newBrands.add(brand);
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setStringList('selectedBrands', newBrands.toList());
+
+    setState(() {
+      _selectedBrands = newBrands;
+    });
+    provider.updateFilters(selectedBrands: newBrands);
   }
 
   List<Widget> generateSizeOptions(FiltersProvider provider) {
@@ -1323,6 +1422,7 @@ class _FiltersState extends State<Filters> {
     final maxPrice = prefs.getDouble('maxPrice') ?? 80.0;
     final savedSizes = prefs.getStringList('selectedSizes') ?? [];
     final savedColorLabels = prefs.getStringList('selectedColors') ?? [];
+    final savedBrands = prefs.getStringList('selectedBrands') ?? [];
 
     // Map the saved color labels back to FilterColor objects
     final savedColors = colorOptions
@@ -1334,12 +1434,14 @@ class _FiltersState extends State<Filters> {
       _currentRangeValues = RangeValues(minPrice, maxPrice);
       _selectedSizes = savedSizes.map((e) => double.parse(e)).toSet();
       selectedColors = savedColors;
+      _selectedBrands = savedBrands.toSet();
 
       // Initialize previous values
       _previousGender = gender;
       _previousRangeValues = _currentRangeValues;
       _previousSizes = Set.from(_selectedSizes);
       _previousColors = Set.from(selectedColors);
+      _previousBrands = Set.from(_selectedBrands);
     });
 
     if (!preferencesReady.isCompleted) {
@@ -1569,6 +1671,47 @@ class _FiltersState extends State<Filters> {
                               ),
                             );
                           },
+                        ),
+                        SizedBox(height: 32),
+                        Text(
+                          'Brand',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.onSurface,
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: FiltersProvider.brandOptions.map((brand) {
+                            final isSelected = _selectedBrands.contains(brand);
+                            return FilterChip(
+                              key: ValueKey(brand),
+                              label: Text(
+                                brand,
+                                style: TextStyle(
+                                  color: isSelected ? AppColors.onPrimary : AppColors.onSurface,
+                                ),
+                              ),
+                              selected: isSelected,
+                              onSelected: (_) {
+                                setState(() {
+                                  toggleBrand(brand, filtersProvider);
+                                });
+                              },
+                              backgroundColor: AppColors.surface,
+                              selectedColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: BorderSide(
+                                  color: isSelected ? Colors.transparent : AppColors.outline,
+                                ),
+                              ),
+                              showCheckmark: false,
+                            );
+                          }).toList(),
                         )
                       ],
                     ),

@@ -23,8 +23,9 @@ void main() async {
   // Initialize liked products provider
   final likedProductsProvider = LikedProductsProvider();
 
-  // Initialize wardrobes provider
+  // Initialize wardrobes provider and load data
   final wardrobesProvider = WardrobesProvider();
+  await wardrobesProvider.initialize();
 
   runApp(
     MultiProvider(

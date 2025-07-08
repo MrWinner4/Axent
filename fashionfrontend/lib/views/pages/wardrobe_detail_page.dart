@@ -5,6 +5,8 @@ import 'package:fashionfrontend/models/card_queue_model.dart';
 import 'package:fashionfrontend/models/wardrobe_model.dart';
 import 'package:fashionfrontend/views/pages/product_info_page.dart';
 import 'package:fashionfrontend/data/wardrobes_service.dart';
+import 'package:provider/provider.dart';
+import 'package:fashionfrontend/providers/wardrobes_provider.dart';
 
 class WardrobeDetailsPage extends StatefulWidget {
   final Wardrobe wardrobe;
@@ -923,9 +925,16 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
   Future<void> _removeFromWardrobe(String productId) async {
     try {
       await WardrobesService.removeFromWardrobe(widget.wardrobe.id, productId);
+      
+      // Update local products list
       setState(() {
         _products.removeWhere((product) => product.id == productId);
       });
+      
+      // Update provider's wardrobe data to reflect the change
+      final wardrobesProvider = Provider.of<WardrobesProvider>(context, listen: false);
+      await wardrobesProvider.removeFromWardrobe(widget.wardrobe.id, productId);
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

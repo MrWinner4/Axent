@@ -10,6 +10,11 @@ class WardrobesService {
 
   static final Dio _dio = Dio();
   static const String _baseUrl = 'https://axentbackend.onrender.com/wardrobes';
+  
+  // Simple cache for wardrobe products
+  static final Map<String, List<CardData>> _productCache = {};
+  static final Map<String, DateTime> _cacheTimestamps = {};
+  static const Duration _cacheExpiry = Duration(minutes: 5);
 
   static Future<String> _getIdToken() async {
     return (await FirebaseAuth.instance.currentUser!.getIdToken())!;
@@ -42,7 +47,6 @@ class WardrobesService {
       );
 
       print('Wardrobes response status: ${response.statusCode}');
-      print('Wardrobes response data: ${response.data}');
 
       if (response.data == null) return [];
       
@@ -55,7 +59,7 @@ class WardrobesService {
   }
 
   // Create a new wardrobe
-  static Future<void> createWardrobe(String name) async {
+  static Future<Map<String, dynamic>> createWardrobe(String name) async {
     try {
       final idToken = await _getIdToken();
       final userId = await _getUserId();
@@ -76,6 +80,8 @@ class WardrobesService {
       
       print('Create wardrobe response status: ${response.statusCode}');
       print('Create wardrobe response data: ${response.data}');
+      
+      return response.data as Map<String, dynamic>;
     } catch (e) {
       print('Error creating wardrobe: $e');
       rethrow;
@@ -100,6 +106,18 @@ class WardrobesService {
     }
   }
 
+  // Clear cache for a specific wardrobe
+  static void clearWardrobeCache(String wardrobeId) {
+    _productCache.remove(wardrobeId);
+    _cacheTimestamps.remove(wardrobeId);
+  }
+
+  // Clear all cache
+  static void clearAllCache() {
+    _productCache.clear();
+    _cacheTimestamps.clear();
+  }
+
   // Add a product to a wardrobe
   static Future<void> addToWardrobe(String wardrobeId, String productId) async {
     try {
@@ -120,11 +138,13 @@ class WardrobesService {
       );
       
       print('Add to wardrobe response status: ${response.statusCode}');
-      print('Add to wardrobe response data: ${response.data}');
       
       if (response.statusCode! >= 400) {
         throw Exception('Server error: ${response.statusCode} - ${response.data}');
       }
+      
+      // Clear cache for this wardrobe
+      clearWardrobeCache(wardrobeId);
     } catch (e) {
       print('Error adding product to wardrobe: $e');
       rethrow;
@@ -147,6 +167,9 @@ class WardrobesService {
           validateStatus: (status) => status! < 500,
         ),
       );
+      
+      // Clear cache for this wardrobe
+      clearWardrobeCache(wardrobeId);
     } catch (e) {
       print('Error removing product from wardrobe: $e');
       rethrow;
@@ -156,6 +179,16 @@ class WardrobesService {
   // Get products in a wardrobe
   static Future<List<CardData>> getWardrobeProducts(String wardrobeId) async {
     try {
+      // Check cache first
+      final now = DateTime.now();
+      final cacheTime = _cacheTimestamps[wardrobeId];
+      if (cacheTime != null && now.difference(cacheTime) < _cacheExpiry) {
+        final cachedProducts = _productCache[wardrobeId];
+        if (cachedProducts != null) {
+          return cachedProducts;
+        }
+      }
+      
       final idToken = await _getIdToken();
       
       print('Fetching wardrobe details for: $wardrobeId');
@@ -170,39 +203,26 @@ class WardrobesService {
         ),
       );
 
-      print('Wardrobe response: ${wardrobeResponse.data}');
+      // Extract products directly from the items array in the wardrobe response
+      final items = wardrobeResponse.data['items'] as List<dynamic>? ?? [];
+      final products = <CardData>[];
+      
+      for (final item in items) {
+        try {
+          final productData = item['product'] as Map<String, dynamic>;
+          final cardData = CardData.fromJson(productData);
+          products.add(cardData);
+        } catch (e) {
+          print('Error parsing product from wardrobe item: $e');
+        }
+      }
 
-      final productIds = wardrobeResponse.data['product_ids'] != null
-          ? (wardrobeResponse.data['product_ids'] as List<dynamic>).cast<String>()
-          : [];
+      // Cache the results
+      _productCache[wardrobeId] = products;
+      _cacheTimestamps[wardrobeId] = now;
 
-      print('Product IDs found: $productIds');
-
-      // Fetch each product individually
-      final products = await Future.wait(
-        productIds.map((productId) async {
-          try {
-            print('Fetching product: $productId');
-            final productResponse = await _dio.get(
-              'https://axentbackend.onrender.com/preferences/product_detail/$productId/',
-              options: Options(
-                headers: {'Authorization': 'Bearer $idToken'},
-                followRedirects: true,
-                validateStatus: (status) => status! < 500,
-              ),
-            );
-            print('Product $productId response: ${productResponse.data}');
-            return CardData.fromJson(productResponse.data);
-          } catch (e) {
-            print('Error fetching product $productId: $e');
-            return null;
-          }
-        }).toList(),
-      );
-
-      final validProducts = products.where((product) => product != null).cast<CardData>().toList();
-      print('Valid products found: ${validProducts.length}');
-      return validProducts;
+      print('Valid products found: ${products.length}');
+      return products;
     } catch (e) {
       print('Error fetching wardrobe products: $e');
       return [];
@@ -219,9 +239,22 @@ class WardrobesService {
     }
   }
 
-  // Get all wardrobes containing a specific product
-  static Future<List<Wardrobe>> getWardrobesContainingProduct(String productId) async {
+  // Get all wardrobes containing a specific product (optimized)
+  static Future<List<Wardrobe>> getWardrobesContainingProduct(String productId, {List<Wardrobe>? localWardrobes}) async {
     try {
+      // If we have local wardrobe data with product IDs, use that first
+      if (localWardrobes != null) {
+        final containingWardrobes = localWardrobes.where((wardrobe) {
+          return wardrobe.productIds.contains(productId);
+        }).toList();
+        
+        // If we found wardrobes locally, return them
+        if (containingWardrobes.isNotEmpty) {
+          return containingWardrobes;
+        }
+      }
+      
+      // Fallback to API calls only if needed
       final allWardrobes = await fetchWardrobes();
       final containingWardrobes = <Wardrobe>[];
       

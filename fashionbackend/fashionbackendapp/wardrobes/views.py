@@ -26,7 +26,11 @@ class WardrobeViewSet(viewsets.ModelViewSet):
         if not user_profile:
             return Wardrobe.objects.none()
         
-        return Wardrobe.objects.filter(user=user_profile)
+        return Wardrobe.objects.filter(user=user_profile).prefetch_related(
+            'items__product__images',
+            'items__product__images360',
+            'items__product__variants'
+        )
 
     def list(self, request, *args, **kwargs):
         # Handle authentication
@@ -40,8 +44,12 @@ class WardrobeViewSet(viewsets.ModelViewSet):
         if not user_profile:
             return Response({"error": "Invalid or expired token"}, status=401)
         
-        # Now filter the queryset for this user
-        queryset = Wardrobe.objects.filter(user=user_profile)
+        # Now filter the queryset for this user with optimizations
+        queryset = Wardrobe.objects.filter(user=user_profile).prefetch_related(
+            'items__product__images',
+            'items__product__images360',
+            'items__product__variants'
+        )
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -92,7 +100,11 @@ class WardrobeViewSet(viewsets.ModelViewSet):
             return Response({"error": "User not found"}, status=404)
         
         # Filter wardrobes for this user
-        queryset = Wardrobe.objects.filter(user=user_profile)
+        queryset = Wardrobe.objects.filter(user=user_profile).prefetch_related(
+            'items__product__images',
+            'items__product__images360',
+            'items__product__variants'
+        )
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 

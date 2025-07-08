@@ -22,17 +22,12 @@ class WardrobesProvider extends ChangeNotifier {
       _setLoading(true);
       _error = null;
       
-      print('Fetching wardrobes from API...');
       final wardrobes = await WardrobesService.fetchWardrobes();
-      print('API returned ${wardrobes.length} wardrobes');
-      print('Wardrobe names: ${wardrobes.map((w) => w.name).toList()}');
       
       _wardrobes = wardrobes;
-      print('Updated local wardrobes list. Count: ${_wardrobes.length}');
       
       _setLoading(false);
     } catch (e) {
-      print('Error refreshing wardrobes: $e');
       _error = e.toString();
       _setLoading(false);
     }
@@ -44,20 +39,21 @@ class WardrobesProvider extends ChangeNotifier {
       _setLoading(true);
       _error = null;
       
-      print('Creating wardrobe: $name');
-      await WardrobesService.createWardrobe(name);
-      print('Wardrobe created successfully, refreshing list...');
+      final response = await WardrobesService.createWardrobe(name);
       
-      // Refresh to get the new wardrobe
-      await refreshWardrobes();
-      
-      print('Refresh completed. Current wardrobes count: ${_wardrobes.length}');
-      print('Wardrobes: ${_wardrobes.map((w) => w.name).toList()}');
+      // Add to local state instead of refreshing from server
+      final newWardrobe = Wardrobe(
+        id: response['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        name: name,
+        productIds: [],
+        createdAt: DateTime.now(),
+      );
+      _wardrobes.add(newWardrobe);
+      notifyListeners();
       
       _setLoading(false);
       return true;
     } catch (e) {
-      print('Error creating wardrobe: $e');
       _error = e.toString();
       _setLoading(false);
       return false;
@@ -183,6 +179,16 @@ class WardrobesProvider extends ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  // Refresh cache for a specific wardrobe
+  void refreshWardrobeCache(String wardrobeId) {
+    WardrobesService.clearWardrobeCache(wardrobeId);
+  }
+
+  // Clear all cache
+  void clearAllCache() {
+    WardrobesService.clearAllCache();
   }
 
   // Set loading state

@@ -31,39 +31,6 @@ class _AddToWardrobeWidgetState extends State<AddToWardrobeWidget> {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.folder_rounded,
-                    color: AppColors.primary,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Add to Wardrobe',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.onSurface,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(
-                      Icons.close_rounded,
-                      color: AppColors.onSurface.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
             // Wardrobes List
             Container(
@@ -100,7 +67,11 @@ class _AddToWardrobeWidgetState extends State<AddToWardrobeWidget> {
                   ),
                 ),
               ),
-              child: SizedBox(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: _isLoading ? null : () => _createNewWardrobe(context, wardrobesProvider),
@@ -117,7 +88,7 @@ class _AddToWardrobeWidgetState extends State<AddToWardrobeWidget> {
                   label: Text(_isLoading ? 'Creating...' : 'Create New Wardrobe'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                    foregroundColor: AppColors.primary,
+                    foregroundColor: AppColors.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

@@ -8,6 +8,7 @@ class FiltersProvider extends ChangeNotifier {
   RangeValues? priceRange;
   Set<double> selectedSizes = {};
   Set<FilterColor> selectedColors = {};
+  Set<String> selectedBrands = {};
 
   static final List<FilterColor> colorOptions = [
     FilterColor(color: Colors.red, label: 'Red'),
@@ -59,6 +60,26 @@ class FiltersProvider extends ChangeNotifier {
     ),
   ];
 
+  // Popular brand options
+  static const List<String> brandOptions = [
+    'Nike',
+    'Adidas',
+    'Jordan',
+    'Yeezy',
+    'New Balance',
+    'ASICS',
+    'Converse',
+    'Vans',
+    'Puma',
+    'Reebok',
+    'Under Armour',
+    'Saucony',
+    'Brooks',
+    'Hoka',
+    'On Running',
+    'Salomon',
+  ];
+
   Future<void> loadFilters() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -73,10 +94,12 @@ class FiltersProvider extends ChangeNotifier {
         savedSizes.map((s) => double.tryParse(s)).whereType<double>().toSet();
 
     final savedColors = prefs.getStringList('selectedColors') ?? [];
-
     selectedColors = colorOptions
         .where((c) => savedColors.contains(c.label.toLowerCase()))
         .toSet();
+
+    final savedBrands = prefs.getStringList('selectedBrands') ?? [];
+    selectedBrands = savedBrands.toSet();
 
     notifyListeners();
   }
@@ -86,11 +109,13 @@ class FiltersProvider extends ChangeNotifier {
     RangeValues? priceRange,
     Set<double>? selectedSizes,
     Set<FilterColor>? selectedColors,
+    Set<String>? selectedBrands,
   }) {
     this.gender = gender ?? this.gender;
     this.priceRange = priceRange ?? this.priceRange;
     this.selectedSizes = selectedSizes ?? this.selectedSizes;
     this.selectedColors = selectedColors ?? this.selectedColors;
+    this.selectedBrands = selectedBrands ?? this.selectedBrands;
     notifyListeners();
   }
 
@@ -128,6 +153,14 @@ class FiltersProvider extends ChangeNotifier {
       buffer.write(selectedColors
           .map((c) => '"${c.label.toLowerCase()}" in \'normalized_colorway\'')
           .join(" OR "));
+    }
+
+    if (selectedBrands.isNotEmpty) {
+      if (buffer.isNotEmpty) buffer.write(" AND ");
+      final brandConditions = selectedBrands
+          .map((brand) => '"$brand" in \'brand\'')
+          .join(" OR ");
+      buffer.write("($brandConditions)");
     }
 
     return buffer.toString();
