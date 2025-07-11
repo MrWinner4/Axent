@@ -254,15 +254,15 @@ class HeartPageState extends State<HeartPage>
               fontFamily: 'Inter',
             ),
             tabs: [
-              Tab(text: 'Trends'),
               Tab(text: 'Wardrobes'),
+              Tab(text: 'Trends'),
             ],
           ),
         ),
         body: TabBarView(
           children: [
-            const TrendsPage(),
             _buildWardrobesTab(),
+            const TrendsPage(),
           ],
         ),
       ),

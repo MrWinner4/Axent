@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fashionfrontend/app_colors.dart';
+import 'package:fashionfrontend/data/recombee_service.dart';
+import 'package:fashionfrontend/models/card_queue_model.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -14,7 +17,7 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   late final TextEditingController _textController;
   late final FocusNode _focusNode;
-  List<String> _suggestions = [];
+  List<CardData> _searchResults = [];
   bool _loading = false;
   String _lastQuery = '';
   final String baseURL = 'https://axentbackend.onrender.com/';
@@ -38,42 +41,31 @@ class _SearchPageState extends State<SearchPage> {
     super.dispose();
   }
 
-  Future<void> _fetchSuggestions(String query) async {
+  Future<void> _fetchSearchResults(String query, String userId) async {
     if (query.isEmpty || query == _lastQuery) return;
     setState(() {
       _loading = true;
       _lastQuery = query;
     });
     try {
-      final results = await fetchSuggestions(query);
+      final results = await RecombeeService.searchProducts(query, userId: userId);
       if (mounted && query == _lastQuery) {
         setState(() {
-          _suggestions = results;
+          _searchResults = results;
           _loading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _suggestions = [];
+        _searchResults = [];
         _loading = false;
       });
     }
   }
 
-  Future<List<String>> fetchSuggestions(String query) async {
-    final Dio dio = Dio();
-    final url = Uri.parse('$baseURL/products/search?q=$query');
-    final response = await dio.getUri(url);
-    if (response.statusCode == 200) {
-      final List data = jsonDecode(response.data);
-      return data.map<String>((item) => item['title'] as String).toList();
-    } else {
-      throw Exception('Failed to load suggestions');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -102,20 +94,22 @@ class _SearchPageState extends State<SearchPage> {
                     onPressed: () {
                       _textController.clear();
                       setState(() {
-                        _suggestions = [];
+                        _searchResults = [];
                       });
                     },
                   )
                 : null,
           ),
           onChanged: (query) {
-            _fetchSuggestions(query);
+            if(userId != null) {
+              _fetchSearchResults(query, userId);
+            }
           },
         ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : _suggestions.isEmpty
+          : _searchResults.isEmpty
               ? Center(
                   child: Text(
                     'Start typing to search...',
@@ -126,19 +120,32 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                 )
               : ListView.builder(
-                  itemCount: _suggestions.length,
+                  itemCount: _searchResults.length,
                   itemBuilder: (context, index) {
-                    final suggestion = _suggestions[index];
+                    final product = _searchResults[index];
                     return ListTile(
-                      title: Text(suggestion),
+                      leading: product.images.isNotEmpty
+                          ? Image.network(
+                              product.images.first,
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(Icons.image);
+                              },
+                            )
+                          : const Icon(Icons.image),
+                      title: Text(product.title),
+                      subtitle: Text(product.brand),
+                      trailing: Text(product.formattedPrice),
                       onTap: () {
-                        // Handle suggestion selection
-                        _textController.text = suggestion;
+                        // Handle product selection
+                        _textController.text = product.title;
                         // Close keyboard
                         SystemChannels.textInput.invokeMethod('TextInput.hide');
                         _focusNode.unfocus();
-                        // Navigate back with selected item
-                        Navigator.pop(context, suggestion);
+                        // Navigate back with selected product
+                        Navigator.pop(context, product);
                       },
                     );
                   },

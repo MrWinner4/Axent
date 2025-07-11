@@ -24,7 +24,7 @@ class TrendsPage extends StatelessWidget {
           // Add your trends content here
           const Expanded(
             child: Center(
-              child: Text('Trends content will go here'),
+              child: Text('Trending items coming soon...'),
             ),
           ),
         ],
