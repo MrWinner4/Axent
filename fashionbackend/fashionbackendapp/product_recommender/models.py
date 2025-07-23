@@ -12,6 +12,7 @@ class Product(models.Model):
     title = models.CharField(max_length=100, default="")
     brand = models.CharField(max_length=100, default="")
     model = models.CharField(max_length=100, null=True, blank=True)
+    imageURL = models.URLField( max_length=500, default="")
     description = models.TextField(null=True, blank=True)
     sku = models.CharField(max_length=100, null=True, blank=True)
     slug = models.SlugField(unique=True, null=True, blank=True, max_length=300, help_text="Unique slug for the product")

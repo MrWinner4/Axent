@@ -262,14 +262,13 @@ def product_detail(request, product_id):
         
         # Get user from token for AddDetailView
         auth_header = request.headers.get('Authorization', '')
-        if auth_header.startswith('Bearer '):
-            token = auth_header.split(' ').pop()
-            try:
-                user_profile = get_user_profile_from_token(token)
-                if user_profile:
-                    client.send(AddDetailView(user_profile.firebase_uid, str(product_id)))
-            except Exception as e:
-                print(f"Error recording detail view: {e}")
+        if not auth_header.startswith('Bearer '):
+            return Response({"error": "Invalid authorization header"}, status=401)
+
+        token = auth_header.split(' ').pop()
+        user_profile = get_user_profile_from_token(token)
+        if not user_profile:
+            return Response({"error": "Invalid or expired token"}, status=401)
         
         return Response(serializer.data)
     except Product.DoesNotExist:

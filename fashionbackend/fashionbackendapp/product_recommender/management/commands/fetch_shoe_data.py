@@ -95,6 +95,11 @@ class Command(BaseCommand):
                         existing.title = title
                         existing.brand = product_data.get("brand", "")
                         existing.model = product_data.get("model", "")
+                        gallery_360 = product_data.get("gallery_360", [])
+                        if gallery_360:
+                            existing.image = gallery_360[0]
+                        else:
+                            existing.imageURL = product_data.get("image", "")
                         existing.description = product_data.get("description", "")
                         existing.sku = product_data.get("sku")
                         existing.slug = product_data.get("slug")
@@ -114,6 +119,7 @@ class Command(BaseCommand):
                             id=product_id,
                             title=title,
                             brand=product_data.get("brand", ""),
+                            imageURL=product_data.get("gallery_360", [product_data.get("image", "")])[0] if product_data.get("gallery_360") else product_data.get("image", ""),
                             model=product_data.get("model", ""),
                             description=product_data.get("description", ""),
                             sku=product_data.get("sku"),
@@ -206,6 +212,7 @@ class Command(BaseCommand):
                             "title": product.title,
                             "brand": product.brand,
                             "model":  product.model,
+                            "image": product.imageURL,
                             "description": product.description,
                             "sku": product.sku,
                             "slug": product.slug,

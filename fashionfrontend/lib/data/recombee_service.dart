@@ -18,6 +18,7 @@ class RecombeeService {
     Map<String, dynamic>? filters,
   }) async {
     try {
+      var includedProperties = ["brand", "title", "retailprice", "image"];
 
       final response = await _dio.get(
         buildRecombeeUrl(query, userId, RESULTCOUNT),
@@ -34,19 +35,32 @@ class RecombeeService {
       if (response.statusCode == 200) {
         final List<dynamic> results = response.data['recomms'] ?? [];
         print('🔍 Found ${results.length} results');
+        
+        // Debug: Show detailed info about each result
+        for (int i = 0; i < results.length; i++) {
+          final item = results[i];
+          final properties = item['values'] ?? {};
+          print('🔍 Result $i:');
+          print('  - ID: ${item['id']}');
+          print('  - Title: ${properties['title']}');
+          print('  - Brand: ${properties['brand']}');
+          print('  - Price: ${properties['retailprice']}');
+          print('  - Image URL: ${properties['image']}');
+          print('  ---');
+        }
         return results.map<CardData>((item) {
           final properties = item['values'] ?? {};
           return CardData(
             id: item['id'] ?? '',
             title: properties['title'] ?? '',
             brand: properties['brand'] ?? '',
-            description: properties['description'],
+            description: '',
             upcoming: false,
             colorway: [],
             trait: false,
-            retailPrice: (properties['price'] ?? 0).toDouble(),
+            retailPrice: (properties['retailprice'] ?? 0).toDouble(),
             sizeLowestAsks: {},
-            images: properties['image_url'] != null ? [properties['image_url']] : ['assets/images/Shoes1.jpg'],
+            images: properties['image'] != null ? [properties['image']] : ['assets/images/Shoes1.jpg'],
             likedAt: DateTime.now(),
             images360: ['assets/images/Shoes1.jpg'],
           );

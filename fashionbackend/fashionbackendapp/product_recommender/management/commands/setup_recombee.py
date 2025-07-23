@@ -31,4 +31,6 @@ class Command(BaseCommand):
         client.send(AddItemProperty('isMen', 'boolean'))
         client.send(AddItemProperty('isWomen', 'boolean'))
         client.send(AddItemProperty('isYouth', 'boolean'))
-        client.send(AddItemProperty('isKids', 'boolean'))"""
+        client.send(AddItemProperty('isKids', 'boolean'))
+        client.send(DeleteItemProperty('Image'))
+        client.send(AddItemProperty('image', 'string'))"""

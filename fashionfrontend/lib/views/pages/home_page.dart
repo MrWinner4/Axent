@@ -1,5 +1,4 @@
 import 'package:fashionfrontend/providers/search_provider.dart';
-import 'package:fashionfrontend/views/pages/search_results.dart';
 import 'package:fashionfrontend/views/widgets/second_header.dart';
 import 'package:fashionfrontend/views/widgets/swipeable_card.dart';
 import 'package:flutter/material.dart';
@@ -34,9 +33,6 @@ class HomePage extends StatelessWidget {
           Expanded(
             child: Consumer<SearchProvider>(
               builder: (context, searchProvider, child) {
-                if (searchProvider.searchQuery.isNotEmpty) {
-                  return SearchResultsPage();
-                }
                 return Container(
                   color: AppColors.surface,
                   child: SwipeableCard(

@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fashionfrontend/app_colors.dart';
 import 'package:fashionfrontend/data/recombee_service.dart';
+import 'package:fashionfrontend/data/product_service.dart';
 import 'package:fashionfrontend/models/card_queue_model.dart';
+import 'package:fashionfrontend/views/pages/product_info_page.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -111,42 +113,156 @@ class _SearchPageState extends State<SearchPage> {
           ? const Center(child: CircularProgressIndicator())
           : _searchResults.isEmpty
               ? Center(
-                  child: Text(
-                    'Start typing to search...',
-                    style: TextStyle(
-                      color: AppColors.onSurface,
-                      fontSize: 16,
-                    ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No results found.',
+                        style: TextStyle(
+                          color: AppColors.onSurface,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Try a different keyword or check your spelling.',
+                        style: TextStyle(
+                          color: AppColors.onSurface.withOpacity(0.7),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
                 )
-              : ListView.builder(
+              : ListView.separated(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   itemCount: _searchResults.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final product = _searchResults[index];
-                    return ListTile(
-                      leading: product.images.isNotEmpty
-                          ? Image.network(
-                              product.images.first,
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(Icons.image);
-                              },
-                            )
-                          : const Icon(Icons.image),
-                      title: Text(product.title),
-                      subtitle: Text(product.brand),
-                      trailing: Text(product.formattedPrice),
-                      onTap: () {
-                        // Handle product selection
-                        _textController.text = product.title;
-                        // Close keyboard
-                        SystemChannels.textInput.invokeMethod('TextInput.hide');
-                        _focusNode.unfocus();
-                        // Navigate back with selected product
-                        Navigator.pop(context, product);
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () async {
+                        // Show loading indicator
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                        
+                        try {
+                          // Fetch full product details from Django backend
+                          final fullProduct = await ProductService.getProductById(product.id);
+                          
+                          // Hide loading indicator
+                          Navigator.pop(context);
+                          
+                          if (fullProduct != null) {
+                            // Navigate to product detail page
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ProductInfoPage(product: fullProduct),
+                              ),
+                            );
+                          } else {
+                            // Show error if product not found
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Product details not found'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          // Hide loading indicator
+                          Navigator.pop(context);
+                          
+                          // Show error
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error loading product: ${e.toString()}'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
                       },
+                      child: Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: product.images.isNotEmpty
+                                    ? Image.network(
+                                        product.images.first,
+                                        width: 72,
+                                        height: 72,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) =>
+                                            Container(
+                                              width: 72,
+                                              height: 72,
+                                              color: Colors.grey[200],
+                                              child: const Icon(Icons.image, size: 32),
+                                            ),
+                                      )
+                                    : Container(
+                                        width: 72,
+                                        height: 72,
+                                        color: Colors.grey[200],
+                                        child: const Icon(Icons.image, size: 32),
+                                      ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      product.title,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      product.brand,
+                                      style: TextStyle(
+                                        color: AppColors.onSurface.withOpacity(0.7),
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      product.formattedPrice,
+                                      style: TextStyle(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Optional: Add a favorite/like button here
+                            ],
+                          ),
+                        ),
+                      ),
                     );
                   },
                 ),

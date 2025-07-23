@@ -13,7 +13,7 @@ String buildRecombeeUrl(String query, String userId, int count) {
   // Build the path with query params (no protocol/host)
   final path = '/$databaseId/search/users/$userId/items/';
   final queryString =
-      'searchQuery=${Uri.encodeComponent(query)}&frontend_timestamp=$timestamp&count=$count';
+      'searchQuery=${Uri.encodeComponent(query)}&frontend_timestamp=$timestamp&count=$count&returnProperties=true&includedProperties=brand,title,retailprice,image';
   final pathToSign = '$path?$queryString';
 
   // Step 2: HMAC-SHA1 signature
