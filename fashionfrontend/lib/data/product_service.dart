@@ -15,22 +15,16 @@ class ProductService {
     try {
       print('🔍 Fetching product details for ID: $productId');
       
-      // Get Firebase auth token for authentication
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        print('❌ No authenticated user found');
-        return null;
-      }
       
-      final token = await user.getIdToken();
-      print('🔐 Using Firebase token for authentication');
+      final idToken = await FirebaseAuth.instance.currentUser!.getIdToken();
+      print('🔐 Using Firebase idToken for authentication');
       
       final response = await _dio.get(
         '$_baseUrl/preferences/product_detail/$productId/',
         options: Options(
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
+            'Authorization': 'Bearer $idToken',
           },
           validateStatus: (status) => status! < 500,
         ),

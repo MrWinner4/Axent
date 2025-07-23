@@ -254,25 +254,24 @@ class UserPreferenceViewSet(viewsets.ViewSet):
 
 
 
-@api_view(['GET'])
-def product_detail(request, product_id):
-    try:
-        product = Product.objects.get(id=product_id)
-        serializer = ProductSerializer(product)
-        
-        # Get user from token for AddDetailView
-        auth_header = request.headers.get('Authorization', '')
-        if not auth_header.startswith('Bearer '):
-            return Response({"error": "Invalid authorization header"}, status=401)
+    def product_detail(self, request, product_id=None):
+        try:
+            product = Product.objects.get(id=product_id)
+            serializer = ProductSerializer(product)
+            
+            # Get user from token for AddDetailView
+            auth_header = request.headers.get('Authorization', '')
+            if not auth_header.startswith('Bearer '):
+                return Response({"error": "Invalid authorization header"}, status=401)
 
-        token = auth_header.split(' ').pop()
-        user_profile = get_user_profile_from_token(token)
-        if not user_profile:
-            return Response({"error": "Invalid or expired token"}, status=401)
-        
-        return Response(serializer.data)
-    except Product.DoesNotExist:
-        return Response({"error": "Product not found"}, status=404)
+            token = auth_header.split(' ').pop()
+            user_profile = get_user_profile_from_token(token)
+            if not user_profile:
+                return Response({"error": "Invalid or expired token"}, status=401)
+            
+            return Response(serializer.data)
+        except Product.DoesNotExist:
+            return Response({"error": "Product not found"}, status=404)
 
 @api_view(['GET'])
 def health_check(request):
