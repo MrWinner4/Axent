@@ -228,8 +228,8 @@ class UserPreferenceViewSet(viewsets.ViewSet):
             print(f"Error creating user: {e}")
             return Response({'error': 'Server error'}, status=500)
 
-    @action(detail=False, methods=['get'])
-    def get_detail_view(self, request):
+    @action(detail=False, methods=['post'])
+    def post_detail_view(self, request):
         auth_header = request.headers.get('Authorization', '')
         if not auth_header.startswith('Bearer '):
             return Response({"error": "Invalid authorization header"}, status=401)

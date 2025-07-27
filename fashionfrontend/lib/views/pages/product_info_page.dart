@@ -6,6 +6,8 @@ import 'package:fashionfrontend/views/widgets/image_360_viewer.dart';
 import 'package:provider/provider.dart';
 import 'package:fashionfrontend/providers/filters_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ProductInfoPage extends StatefulWidget {
   final CardData product;
@@ -43,6 +45,9 @@ class _ProductInfoPageState extends State<ProductInfoPage> with TickerProviderSt
       parent: _tabAnimationController,
       curve: Curves.easeInOut,
     ));
+    
+    // Send detail view to Recombee when page loads
+    _sendDetailViewToRecombee();
   }
 
   @override
@@ -220,13 +225,29 @@ class _ProductInfoPageState extends State<ProductInfoPage> with TickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final screenHeight = screenSize.height;
+    final screenWidth = screenSize.width;
+    
+    // Calculate responsive dimensions
+    final heroHeight = screenHeight * 0.6; // 60% of screen height
+    final minHeroHeight = 400.0; // Minimum height
+    final maxHeroHeight = 600.0; // Maximum height
+    final finalHeroHeight = heroHeight.clamp(minHeroHeight, maxHeroHeight);
+    
+    // Calculate responsive margins and padding
+    final horizontalPadding = screenWidth * 0.06; // 6% of screen width
+    final minHorizontalPadding = 16.0;
+    final maxHorizontalPadding = 32.0;
+    final finalHorizontalPadding = horizontalPadding.clamp(minHorizontalPadding, maxHorizontalPadding);
+    
     return Scaffold(
       backgroundColor: Colors.white,
       body: CustomScrollView(
         slivers: [
           // Hero Image Section with 360 Viewer
           SliverAppBar(
-            expandedHeight: 450,
+            expandedHeight: finalHeroHeight,
             floating: false,
             pinned: true,
             backgroundColor: AppColors.surface,
@@ -1235,6 +1256,39 @@ class _ProductInfoPageState extends State<ProductInfoPage> with TickerProviderSt
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No product link available')),
       );
+    }
+  }
+
+  Future<void> _sendDetailViewToRecombee() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      final idToken = await user?.getIdToken();
+      
+      if (idToken == null) {
+        print("Error: Could not get Firebase ID token.");
+        return;
+      }
+
+      final response = await Dio().post(
+        'https://axentbackend.onrender.com/preferences/get_detail_view/',
+        data: {
+          'product_id': widget.product.id,
+        },
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $idToken',
+          },
+        ),
+      );
+      
+      if (response.statusCode == 200) {
+        print('Detail view sent to Recombee successfully');
+      } else {
+        print('Failed to send detail view: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error sending detail view to Recombee: $e');
     }
   }
 } 

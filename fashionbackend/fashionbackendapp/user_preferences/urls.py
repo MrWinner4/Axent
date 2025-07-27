@@ -19,4 +19,7 @@ urlpatterns = [
     
     # User creation
     path('create_user/', views.UserPreferenceViewSet.as_view({'post': 'create_user'}), name='create_user'),
+
+    #Post Detail View
+    path('post_detail_view/', views.UserPreferenceViewSet.as_view({'post': 'post_detail_view'}), name='post_detail_view'),
 ]

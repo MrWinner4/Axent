@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
+import 'package:dio/dio.dart';
 
 String buildRecombeeUrl(String query, String userId, int count) {
   final databaseId = 'axent-dev';
