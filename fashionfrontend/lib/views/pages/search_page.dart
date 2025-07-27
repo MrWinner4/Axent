@@ -1,5 +1,4 @@
-import 'dart:convert';
-import 'package:dio/dio.dart';
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,6 +23,9 @@ class _SearchPageState extends State<SearchPage> {
   String _lastQuery = '';
   final String baseURL = 'https://axentbackend.onrender.com/';
 
+  Timer? debounce;
+
+
   @override
   void initState() {
     super.initState();
@@ -38,6 +40,7 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   void dispose() {
+    debounce?.cancel();
     _textController.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -104,7 +107,10 @@ class _SearchPageState extends State<SearchPage> {
           ),
           onChanged: (query) {
             if(userId != null) {
+              if (debounce?.isActive ?? false) debounce!.cancel();
+              debounce = Timer(const Duration(milliseconds: 300), () {
               _fetchSearchResults(query, userId);
+              });
             }
           },
         ),

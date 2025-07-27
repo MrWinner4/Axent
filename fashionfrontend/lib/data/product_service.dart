@@ -31,7 +31,6 @@ class ProductService {
       );
 
       print('🔍 Product API response status: ${response.statusCode}');
-      print('🔍 Product API response data: ${response.data}');
 
       if (response.statusCode == 200) {
         final data = response.data;
@@ -45,7 +44,7 @@ class ProductService {
           upcoming: data['upcoming'] ?? false,
           colorway: List<String>.from(data['colorway'] ?? []),
           trait: data['trait'] ?? false,
-          retailPrice: (data['retailprice'] ?? 0).toDouble(),
+          retailPrice: double.parse((data['retailprice'] ?? 0)),
           sizeLowestAsks: Map<String, double>.from(data['size_lowest_asks'] ?? {}),
           images: data['images'] != null 
               ? List<String>.from(data['images'].map((img) => img['image_url'] ?? ''))

@@ -122,47 +122,47 @@ class FiltersProvider extends ChangeNotifier {
   String getFiltersString() {
     final buffer = StringBuffer();
 
-    if (gender != null && gender!.isNotEmpty) {
-      if (gender!.toLowerCase() == "men") {
-        buffer.write("'isMen' == true");
-      } else if (gender!.toLowerCase() == "women") {
-        buffer.write("'isWomen' == true");
-      } else if (gender!.toLowerCase() == "youth") {
-        buffer.write("'isYouth' == true OR 'isKids' == true");
-      }
-    }
+    /*   if (gender != null && gender!.isNotEmpty) {
+        if (gender!.toLowerCase() == "men") {
+          buffer.write("'isMen' == true");
+        } else if (gender!.toLowerCase() == "women") {
+          buffer.write("'isWomen' == true");
+        } else if (gender!.toLowerCase() == "youth") {
+          buffer.write("'isYouth' == true OR 'isKids' == true");
+        }
+      } */
 
-    if (priceRange != null) {
+    /* if (priceRange != null) {
       if (buffer.isNotEmpty) buffer.write(" AND ");
       buffer.write(
           "'retailprice' >= ${priceRange!.start.round()} AND 'retailprice' <= ${priceRange!.end.round()}");
-    }
+    } */
 
-    if (selectedSizes.isNotEmpty) {
-      if (buffer.isNotEmpty) buffer.write(" AND ");
+      /* if (selectedSizes.isNotEmpty) {
+        if (buffer.isNotEmpty) buffer.write(" AND ");
 
-      final sizeConditions = selectedSizes
-          .map((s) => '"${s.toStringAsFixed(1)}" in \'sizes_available\'')
-          .join(" OR ");
+        final sizeConditions = selectedSizes
+            .map((s) => '"${s.toStringAsFixed(1)}" in \'sizes_available\'')
+            .join(" OR ");
 
-      buffer.write("($sizeConditions)");
-    }
+        buffer.write("($sizeConditions)");
+      } */
 
-    if (selectedColors.isNotEmpty) {
+    /* if (selectedColors.isNotEmpty) {
       if (buffer.isNotEmpty) buffer.write(" AND ");
       buffer.write(selectedColors
           .map((c) => '"${c.label.toLowerCase()}" in \'normalized_colorway\'')
           .join(" OR "));
-    }
+    } */
 
-    if (selectedBrands.isNotEmpty) {
+    /* if (selectedBrands.isNotEmpty) {
       if (buffer.isNotEmpty) buffer.write(" AND ");
       final brandConditions = selectedBrands
           .map((brand) => '"$brand" in \'brand\'')
           .join(" OR ");
       buffer.write("($brandConditions)");
-    }
-
+    } */
+    print(buffer.toString());
     return buffer.toString();
   }
 }

@@ -352,6 +352,7 @@ class _LikedProductsCarouselState extends State<LikedProductsCarousel> {
         );
       },
       child: Container(
+        padding: EdgeInsets.all(4),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),

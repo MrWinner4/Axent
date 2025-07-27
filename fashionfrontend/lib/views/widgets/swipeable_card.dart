@@ -346,6 +346,7 @@ class SwipeableCardState extends State<SwipeableCard>
                                 cardQueue.firstCard == null)
                             ? null
                             : () {
+                              
                                 _showAddToWardrobeDialog(cardQueue.firstCard!);
                               },
                       ),

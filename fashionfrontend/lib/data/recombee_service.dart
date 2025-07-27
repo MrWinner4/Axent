@@ -30,24 +30,9 @@ class RecombeeService {
       );
 
       print('🔍 Recombee response status: ${response.statusCode}');
-      print('🔍 Recombee response data: ${response.data}');
       
       if (response.statusCode == 200) {
         final List<dynamic> results = response.data['recomms'] ?? [];
-        print('🔍 Found ${results.length} results');
-        
-        // Debug: Show detailed info about each result
-        for (int i = 0; i < results.length; i++) {
-          final item = results[i];
-          final properties = item['values'] ?? {};
-          print('🔍 Result $i:');
-          print('  - ID: ${item['id']}');
-          print('  - Title: ${properties['title']}');
-          print('  - Brand: ${properties['brand']}');
-          print('  - Price: ${properties['retailprice']}');
-          print('  - Image URL: ${properties['image']}');
-          print('  ---');
-        }
         return results.map<CardData>((item) {
           final properties = item['values'] ?? {};
           return CardData(

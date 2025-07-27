@@ -28,7 +28,7 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
   bool _isLoading = true;
   bool _isSearchFocused = false;
   List<CardData> _products = [];
-  
+
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
@@ -44,14 +44,15 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
       filtered = filtered.where((product) {
         final query = _searchQuery.toLowerCase();
         return product.title.toLowerCase().contains(query) ||
-               product.brand.toLowerCase().contains(query) ||
-               (product.model?.toLowerCase().contains(query) ?? false);
+            product.brand.toLowerCase().contains(query) ||
+            (product.model?.toLowerCase().contains(query) ?? false);
       }).toList();
     }
 
     // Apply brand filter
     if (_selectedBrand != 'All') {
-      filtered = filtered.where((product) => product.brand == _selectedBrand).toList();
+      filtered =
+          filtered.where((product) => product.brand == _selectedBrand).toList();
     }
 
     // Apply sorting
@@ -85,7 +86,8 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
   }
 
   List<String> get _availableBrands {
-    final brands = _allProducts.map((product) => product.brand).toSet().toList();
+    final brands =
+        _allProducts.map((product) => product.brand).toSet().toList();
     brands.sort();
     return ['All', ...brands];
   }
@@ -95,7 +97,7 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
     super.initState();
     _searchController.addListener(_onSearchChanged);
     _searchFocusNode.addListener(_onSearchFocusChanged);
-    
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -104,18 +106,19 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeOut),
     );
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
-    
+    ).animate(
+        CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
+
     _fadeController.forward();
     _slideController.forward();
-    
+
     _fetchWardrobeProducts();
   }
 
@@ -146,7 +149,8 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
   Future<void> _fetchWardrobeProducts() async {
     try {
       setState(() => _isLoading = true);
-      final products = await WardrobesService.getWardrobeProducts(widget.wardrobe.id);
+      final products =
+          await WardrobesService.getWardrobeProducts(widget.wardrobe.id);
       setState(() {
         _products = products;
         _isLoading = false;
@@ -199,7 +203,8 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
           borderRadius: BorderRadius.circular(16),
         ),
         child: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: AppColors.onSurface, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new,
+              color: AppColors.onSurface, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -211,8 +216,8 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
             borderRadius: BorderRadius.circular(16),
           ),
           child: IconButton(
-            icon: Icon(Icons.refresh_rounded, color: AppColors.onSurface, size: 20),
-            onPressed: _refreshData,
+            icon: Icon(Icons.delete, color: AppColors.onSurface, size: 20),
+            onPressed: _deleteWardrobe,
           ),
         ),
       ],
@@ -232,7 +237,8 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -256,9 +262,11 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primary.withValues(alpha: 0.1),
+                                    color: AppColors.primary
+                                        .withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Text(
@@ -281,7 +289,8 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
                                   'Wardrobe Collection',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: AppColors.onSurface.withValues(alpha: 0.6),
+                                    color: AppColors.onSurface
+                                        .withValues(alpha: 0.6),
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -310,16 +319,17 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
             // Enhanced Search Bar
             _buildEnhancedSearchBar(),
             const SizedBox(height: 20),
-            
+
             // Modern Filters
             _buildModernFilters(),
-            
+
             // Results count with animation
             if (_searchQuery.isNotEmpty || _selectedBrand != 'All') ...[
               const SizedBox(height: 16),
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(25),
@@ -363,14 +373,14 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: _isSearchFocused 
+          color: _isSearchFocused
               ? AppColors.primary.withValues(alpha: 0.3)
               : Colors.grey.withValues(alpha: 0.1),
           width: _isSearchFocused ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: _isSearchFocused 
+            color: _isSearchFocused
                 ? AppColors.primary.withValues(alpha: 0.1)
                 : Colors.black.withValues(alpha: 0.05),
             blurRadius: _isSearchFocused ? 20 : 10,
@@ -392,14 +402,16 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
             margin: const EdgeInsets.all(12),
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: _isSearchFocused 
+              color: _isSearchFocused
                   ? AppColors.primary.withValues(alpha: 0.1)
                   : Colors.grey.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               Icons.search_rounded,
-              color: _isSearchFocused ? AppColors.primary : Colors.grey.withValues(alpha: 0.6),
+              color: _isSearchFocused
+                  ? AppColors.primary
+                  : Colors.grey.withValues(alpha: 0.6),
               size: 20,
             ),
           ),
@@ -427,7 +439,8 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
                 )
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
         style: TextStyle(
           color: AppColors.onSurface,
@@ -456,7 +469,7 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
           ),
         ),
         const SizedBox(width: 12),
-        
+
         // Sort Filter
         Expanded(
           child: _buildModernFilterDropdown(
@@ -533,7 +546,8 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
                   );
                 }).toList(),
                 onChanged: onChanged,
-                icon: Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primary, size: 16),
+                icon: Icon(Icons.keyboard_arrow_down_rounded,
+                    color: AppColors.primary, size: 16),
                 dropdownColor: Colors.white,
                 style: TextStyle(
                   fontSize: 13,
@@ -575,14 +589,16 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
                   ),
                 ),
                 child: Icon(
-                  _searchQuery.isNotEmpty ? Icons.search_off_rounded : Icons.folder_open_rounded,
+                  _searchQuery.isNotEmpty
+                      ? Icons.search_off_rounded
+                      : Icons.folder_open_rounded,
                   size: 56,
                   color: AppColors.primary,
                 ),
               ),
               const SizedBox(height: 24),
               Text(
-                _searchQuery.isNotEmpty 
+                _searchQuery.isNotEmpty
                     ? 'No products found'
                     : 'This wardrobe is empty',
                 style: TextStyle(
@@ -629,10 +645,10 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
   }
 
   Widget _buildEnhancedProductCard(CardData product, int index) {
-    final imageUrl = product.images.isNotEmpty 
-        ? product.images.first 
+    final imageUrl = product.images.isNotEmpty
+        ? product.images.first
         : 'assets/images/default_shoe.jpg';
-    
+
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -669,10 +685,12 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
                     height: 180,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(20)),
                     ),
                     child: ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(20)),
                       child: Stack(
                         children: [
                           Image.network(
@@ -707,13 +725,14 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
                       ),
                     ),
                   ),
-                  
+
                   // Floating Brand Badge
                   Positioned(
                     top: 10,
                     left: 10,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withValues(alpha: 0.95),
                         borderRadius: BorderRadius.circular(12),
@@ -736,14 +755,15 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
                       ),
                     ),
                   ),
-                  
+
                   // Floating Price Badge
                   if (product.lowestAsk != null)
                     Positioned(
                       top: 10,
                       right: 10,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(12),
@@ -776,7 +796,7 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
                         ),
                       ),
                     ),
-                  
+
                   // Floating Remove Button
                   Positioned(
                     bottom: 10,
@@ -806,7 +826,7 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
                   ),
                 ],
               ),
-              
+
               // Enhanced Product Info
               Expanded(
                 child: Padding(
@@ -829,9 +849,10 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
                         ),
                       ),
                       const SizedBox(height: 6),
-                      
+
                       // Model (if different from title)
-                      if (product.model != null && product.model != product.title)
+                      if (product.model != null &&
+                          product.model != product.title)
                         Flexible(
                           child: Text(
                             product.model!,
@@ -844,13 +865,14 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      
+
                       const Spacer(),
-                      
+
                       // Price (if not shown in badge)
                       if (product.lowestAsk == null)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.grey.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
@@ -900,7 +922,8 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               'Cancel',
-              style: TextStyle(color: AppColors.onSurface.withValues(alpha: 0.6)),
+              style:
+                  TextStyle(color: AppColors.onSurface.withValues(alpha: 0.6)),
             ),
           ),
           ElevatedButton(
@@ -922,19 +945,52 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
     );
   }
 
+  Future<void> _deleteWardrobe() async {
+    try {
+      await WardrobesService.deleteWardrobe(widget.wardrobe.id);
+
+      // Update provider to reflect that this wardrobe is gone
+      final wardrobesProvider =
+          Provider.of<WardrobesProvider>(context, listen: false);
+      await wardrobesProvider.deleteWardrobe(widget.wardrobe.id);
+      if (mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Wardrobe deleted'),
+            backgroundColor: AppColors.tertiary,
+          ),
+        );
+
+        // Optionally, navigate away from the current screen
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete wardrobe: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _removeFromWardrobe(String productId) async {
     try {
       await WardrobesService.removeFromWardrobe(widget.wardrobe.id, productId);
-      
+
       // Update local products list
       setState(() {
         _products.removeWhere((product) => product.id == productId);
       });
-      
+
       // Update provider's wardrobe data to reflect the change
-      final wardrobesProvider = Provider.of<WardrobesProvider>(context, listen: false);
+      final wardrobesProvider =
+          Provider.of<WardrobesProvider>(context, listen: false);
       await wardrobesProvider.removeFromWardrobe(widget.wardrobe.id, productId);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -954,4 +1010,4 @@ class _WardrobeDetailsPageState extends State<WardrobeDetailsPage>
       }
     }
   }
-} 
+}
