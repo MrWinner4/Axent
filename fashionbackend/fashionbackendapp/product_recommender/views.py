@@ -46,6 +46,8 @@ class ProductViewSet(viewsets.ViewSet):
     @action(detail=False, methods=[''])
     def recommend(self, request):
         """Get product recommendations for a user"""
+        print("=== RECOMMENDATION DEBUG START ===")
+        
         auth_header = request.headers.get('Authorization', '')
         if not auth_header.startswith('Bearer '):
             return Response({"error": "Invalid authorization header"}, status=401)
@@ -54,49 +56,79 @@ class ProductViewSet(viewsets.ViewSet):
         user_profile = get_user_from_token(token)
         if not user_profile:
             return Response({"error": "Invalid or expired token"}, status=401)
+        
+        print(f"User profile found: {user_profile.firebase_uid}")
 
         try:
             filters = request.query_params.get('filters')
-            print(filters)
+            print(f"Raw filters: {filters}")
             if not isinstance(filters, str):
                 filters = ''
         except KeyError:
             return Response({"error": "Filters not provided"}, status=400)
         
-            
-        
         try:
             if filters != '':
+                print(f"Calling Recombee with filters: {filters}")
                 recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, RECOMMENDATION_AMOUNT, filter=filters))
             else:  
+                print("Calling Recombee without filters")
                 recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, RECOMMENDATION_AMOUNT))
-            print(recommendations)
+            
+            print(f"Recombee response: {recommendations}")
+            
             product_ids = [rec['id'] for rec in recommendations['recomms']]
+            print(f"Extracted product IDs: {product_ids}")
+            
             if not product_ids:
                 print("⚠️ No valid product variants matched filter criteria or Recombee returned unknown IDs.")
                 return Response([], status=200)
+            
             sizes = extract_sizes(filters)
+            print(f"Extracted sizes: {sizes}")
+            
             if sizes:
                 price_range = extract_price_range(filters)
+                print(f"Extracted price range: {price_range}")
+                
                 valid_product_ids = []
                 for product_id in product_ids:
+                    print(f"Checking product_id: {product_id}")
                     for size in sizes:
                         try:
                             product = ProductVariant.objects.get(product_id=product_id, size=size)
+                            print(f"Found variant for product {product_id}, size {size}, price: {product.previous_lowest_ask}")
+                            
                             if (price_range['min'] is not None and
-                            price_range['max'] is not None and
-                            product.previous_lowest_ask is not None and
-                            price_range['min'] <= product.previous_lowest_ask <= price_range['max']):
+                                price_range['max'] is not None and
+                                product.previous_lowest_ask is not None and
+                                price_range['min'] <= product.previous_lowest_ask <= price_range['max']):
                                 valid_product_ids.append(product_id)
+                                print(f"✅ Product {product_id} passed price filter")
+                            else:
+                                print(f"❌ Product {product_id} failed price filter")
                         except ProductVariant.DoesNotExist:
+                            print(f"❌ No variant found for product {product_id}, size {size}")
                             continue
+                
                 product_ids = valid_product_ids
+                print(f"Final valid product IDs: {product_ids}")
+            else:
+                print("No size filtering applied")
+            
             products = Product.objects.filter(id__in=product_ids)
+            print(f"Found {products.count()} products in database")
+            
             serializer = ProductSerializer(products, many=True)
-            print(serializer.data)
+            print(f"Serialized data: {serializer.data}")
+            
+            print("=== RECOMMENDATION DEBUG END ===")
             return Response(serializer.data)
+            
         except Exception as e:
             print(f"Error getting recommendations: {e}")
+            import traceback
+            traceback.print_exc()
             return Response([], status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
