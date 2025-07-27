@@ -5,6 +5,8 @@ import 'package:fashionfrontend/models/card_queue_model.dart';
 import 'package:fashionfrontend/views/widgets/image_360_viewer.dart';
 import 'package:provider/provider.dart';
 import 'package:fashionfrontend/providers/filters_provider.dart';
+import 'package:fashionfrontend/providers/wardrobes_provider.dart'; // Add this import
+import 'package:fashionfrontend/views/widgets/add_to_wardrobe_widget.dart'; // Add this import
 import 'package:url_launcher/url_launcher.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -289,7 +291,7 @@ class _ProductInfoPageState extends State<ProductInfoPage> with TickerProviderSt
                     isSaved ? Icons.favorite : Icons.favorite_border,
                     color: isSaved ? AppColors.error : AppColors.onSurface,
                   ),
-                  onPressed: () => setState(() => isSaved = !isSaved),
+                  onPressed: () => _showAddToWardrobeDialog(widget.product), // Updated this line
                 ),
               ),
             ],
@@ -1242,7 +1244,7 @@ class _ProductInfoPageState extends State<ProductInfoPage> with TickerProviderSt
     var dio = Dio();
     try {
       Response response = await dio.post(
-        'https://axentbackend.onrender.com/user_preferences/buy_product/',
+        'https://axentbackend.onrender.com/preferences/buy_product/',
         data: {
           'product_id': productId,
         },
@@ -1315,5 +1317,98 @@ class _ProductInfoPageState extends State<ProductInfoPage> with TickerProviderSt
     } catch (e) {
       print('Error sending detail view to Recombee: $e');
     }
+  }
+
+  // Add this function after the existing methods
+  void _showAddToWardrobeDialog(CardData cardData) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, -5),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle bar
+                Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.onSurface.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                // Header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.folder_outlined,
+                          color: AppColors.primary,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Add to Wardrobe',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.onSurface,
+                              ),
+                            ),
+                            Text(
+                              cardData.title,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppColors.onSurface.withValues(alpha: 0.6),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Content
+                Flexible(
+                  child: AddToWardrobeWidget(product: cardData),
+                ),
+                // Bottom padding
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 } 
