@@ -90,6 +90,7 @@ class ProductViewSet(viewsets.ViewSet):
                 product_ids = valid_product_ids
             products = Product.objects.filter(id__in=product_ids)
             serializer = ProductSerializer(products, many=True)
+            print(serializer.data)
             return Response(serializer.data)
         except Exception as e:
             print(f"Error getting recommendations: {e}")
