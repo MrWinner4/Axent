@@ -7,7 +7,7 @@ from rest_framework.decorators import action
 from rest_framework import status
 from firebase_admin import auth
 from user_preferences.models import UserProfile
-from ..user_preferences.recombee import client
+from user_preferences.recombee import client
 from recombee_api_client.api_requests import AddBookmark, DeleteBookmark
 
 
