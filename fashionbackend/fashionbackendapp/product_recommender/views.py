@@ -82,8 +82,11 @@ class ProductViewSet(viewsets.ViewSet):
                 for id in product_ids:
                     for size in sizes:
                         try:
-                            product = ProductVariant.objects.get(id=id, size=size)
-                            if price_range['min'] <= product.previous_lowest_ask <= price_range['max']:
+                            product = ProductVariant.objects.get(product_id=id, size=size)
+                            if (price_range['min'] is not None and
+                            price_range['max'] is not None and
+                            product.previous_lowest_ask is not None and
+                            price_range['min'] <= product.previous_lowest_ask <= price_range['max']):
                                 valid_product_ids.append(id)
                         except ProductVariant.DoesNotExist:
                             continue
