@@ -22,4 +22,7 @@ urlpatterns = [
 
     #Post Detail View
     path('post_detail_view/', views.UserPreferenceViewSet.as_view({'post': 'post_detail_view'}), name='post_detail_view'),
+
+    #Buy Product
+    path('buy_product/', views.UserPreferenceViewSet.as_view({'post': 'buy_product'}), name='buy_product'),
 ]

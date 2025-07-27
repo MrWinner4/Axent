@@ -1236,6 +1236,31 @@ class _ProductInfoPageState extends State<ProductInfoPage> with TickerProviderSt
   }
 
   void _launchProductUrl() async {
+    final productId = widget.product.id;
+    final user = FirebaseAuth.instance.currentUser;
+    final idToken = await user?.getIdToken();
+    var dio = Dio();
+    try {
+      Response response = await dio.post(
+        'https://axentbackend.onrender.com/user_preferences/buy_product/',
+        data: {
+          'product_id': productId,
+        },
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $idToken',
+          },
+        ),
+      );
+      if (response.statusCode == 200) {
+        print('Purchase recorded successfully');
+      } else {
+        print('Failed to record purchase: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error sending detail view to Recombee: $e');
+    }
     final url = widget.product.link;
     if (url != null && url.isNotEmpty) {
       try {
@@ -1270,7 +1295,7 @@ class _ProductInfoPageState extends State<ProductInfoPage> with TickerProviderSt
       }
 
       final response = await Dio().post(
-        'https://axentbackend.onrender.com/preferences/get_detail_view/',
+        'https://axentbackend.onrender.com/preferences/post_detail_view/',
         data: {
           'product_id': widget.product.id,
         },
