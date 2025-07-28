@@ -917,9 +917,6 @@ class SwipeableCardState extends State<SwipeableCard>
 
       // Parse JSON if needed
       final parsedData = data is String ? jsonDecode(data as String) : data;
-
-      print(parsedData);
-
       
       if (parsedData is List && parsedData.isNotEmpty) {
         List<CardData> newCards = parsedData.map<CardData>((product) {

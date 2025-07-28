@@ -131,7 +131,7 @@ class WardrobeViewSet(viewsets.ModelViewSet):
         serializer = WardrobeItemSerializer(data=data)
         if serializer.is_valid():
             serializer.save(wardrobe=wardrobe)
-            client.send(AddBookmark(user_profile.firebase_uid, serializer.data['product_id']))
+            client.send(AddBookmark(user_profile.firebase_uid, data['product_id']))
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
