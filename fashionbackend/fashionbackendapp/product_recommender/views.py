@@ -6,12 +6,12 @@ from .serializer import ProductSerializer, ProductImageSerializer
 from firebase_admin import auth as firebase_auth
 from user_preferences.models import UserProfile
 from user_preferences.recombee import client
-from recombee_api_client.api_requests import RecommendItemsToUser
+from recombee_api_client.api_requests import RecommendItemsToUser, RecommendNextItems
 
 # In user_preferences/utils.py or at the top of views.py
 from firebase_admin import auth as firebase_auth
 
-RECOMMENDATION_AMOUNT = 5
+RECOMMENDATION_AMOUNT = 3
 
 def get_user_from_token(token):
     try:
@@ -62,14 +62,20 @@ class ProductViewSet(viewsets.ViewSet):
                 filters = ''
         except KeyError:
             return Response({"error": "Filters not provided"}, status=400)
-        
             
         
+        recommId = request.query_params.get('recommId')
+        
         try:
-            if filters != '':
+            if filters != '' and recommId == '': #Filters, no ID
                 recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, RECOMMENDATION_AMOUNT, filter=filters))
-            else:  
+            elif filters != '' and recommId != '': #Filters, ID
+                recommendations = client.send(RecommendNextItems(recommId, RECOMMENDATION_AMOUNT))
+            elif filters == '' and recommId == '': #No Filters, no ID
                 recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, RECOMMENDATION_AMOUNT))
+            elif filters == '' and recommId != '': #No Filters, ID
+                recommendations = client.send(RecommendNextItems(recommId, RECOMMENDATION_AMOUNT))
+
             print(recommendations)
             product_ids = [rec['id'] for rec in recommendations['recomms']]
             if not product_ids:
@@ -94,7 +100,12 @@ class ProductViewSet(viewsets.ViewSet):
             products = Product.objects.filter(id__in=product_ids)
             serializer = ProductSerializer(products, many=True)
             print(serializer.data)
-            return Response(serializer.data)
+            # Include recommId in response if it exists
+            response_data = {
+                'products': serializer.data,
+                'recommId': recommendations.get('recommId') if 'recommId' in recommendations else None
+            }
+            return Response(response_data)
         except Exception as e:
             print(f"Error getting recommendations: {e}")
             return Response([], status=status.HTTP_500_INTERNAL_SERVER_ERROR)

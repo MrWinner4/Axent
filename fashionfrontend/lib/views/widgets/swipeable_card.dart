@@ -346,7 +346,6 @@ class SwipeableCardState extends State<SwipeableCard>
                                 cardQueue.firstCard == null)
                             ? null
                             : () {
-                              
                                 _showAddToWardrobeDialog(cardQueue.firstCard!);
                               },
                       ),
@@ -376,7 +375,6 @@ class SwipeableCardState extends State<SwipeableCard>
                             ? null
                             : () {
                                 _triggerNextCardButton(
-                                  
                                     cardQueue.firstCard!.id, cardQueue, 1);
                               },
                       ),
@@ -708,7 +706,7 @@ class SwipeableCardState extends State<SwipeableCard>
   Widget _buildImageSection(CardData data) {
     // Check if we have valid 360 images
     final hasValid360Images = data.images360.length > 23;
-    
+
     if (hasValid360Images) {
       return SizedBox(
         height: cardHeight * .75,
@@ -726,7 +724,7 @@ class SwipeableCardState extends State<SwipeableCard>
         ),
       );
     }
-    
+
     // Fallback to regular images
     else if (data.images.isNotEmpty) {
       final firstImage = data.images.first;
@@ -743,7 +741,7 @@ class SwipeableCardState extends State<SwipeableCard>
         );
       }
     }
-    
+
     // Fallback to error icon
     return SizedBox(
       height: cardHeight * .75,
@@ -776,11 +774,13 @@ class SwipeableCardState extends State<SwipeableCard>
 
     //After animation trigger next card
     Future.delayed(const Duration(milliseconds: 300), () {
-      _triggerNextCard(currentCardID, cardQueue, swipedCard: swipedCard, preference: preference);
+      _triggerNextCard(currentCardID, cardQueue,
+          swipedCard: swipedCard, preference: preference);
     });
   }
 
-  void _triggerNextCard(String currentCardID, CardQueueModel cardQueue, {CardData? swipedCard, int? preference}) {
+  void _triggerNextCard(String currentCardID, CardQueueModel cardQueue,
+      {CardData? swipedCard, int? preference}) {
     final screenWidth = MediaQuery.of(context).size.width;
     final CardData? cardToProcess = swipedCard ?? _currentCardData;
     final currentCardCenterX = _left + cardWidth / 2;
@@ -789,7 +789,8 @@ class SwipeableCardState extends State<SwipeableCard>
     final targetLeft = (currentCardCenterX > screenCenter)
         ? screenWidth + 175
         : -screenWidth - 175;
-    final int pref = preference ?? ((currentCardCenterX > screenCenter) ? 1 : -1);
+    final int pref =
+        preference ?? ((currentCardCenterX > screenCenter) ? 1 : -1);
     setState(() {
       _left = targetLeft;
     });
@@ -805,7 +806,8 @@ class SwipeableCardState extends State<SwipeableCard>
           previousShoeModel.addSwipe(cardToProcess, pref);
           // Add to liked products if the user liked the card
           if (pref == 1) {
-            final likedProductsProvider = Provider.of<LikedProductsProvider>(context, listen: false);
+            final likedProductsProvider =
+                Provider.of<LikedProductsProvider>(context, listen: false);
             likedProductsProvider.addLikedProductFromCardData(cardToProcess);
           }
           cardQueue.removeFirstCard();
@@ -869,7 +871,8 @@ class SwipeableCardState extends State<SwipeableCard>
 
       // If the card was liked (direction == 1), remove it from liked products
       if (direction == 1) {
-        final likedProductsProvider = Provider.of<LikedProductsProvider>(context, listen: false);
+        final likedProductsProvider =
+            Provider.of<LikedProductsProvider>(context, listen: false);
         likedProductsProvider.removeLikedProduct(previousCard.id);
       }
 
@@ -917,10 +920,35 @@ class SwipeableCardState extends State<SwipeableCard>
 
       // Parse JSON if needed
       final parsedData = data is String ? jsonDecode(data as String) : data;
-      
-      if (parsedData is List && parsedData.isNotEmpty) {
-        List<CardData> newCards = parsedData.map<CardData>((product) {
-          return CardData.fromJson(product);
+
+      // Handle new response structure with products and recommId
+      List<dynamic> productsList;
+      String? recommId;
+
+      if (parsedData is Map<String, dynamic>) {
+        // New structure: {products: [...], recommId: "..."}
+        productsList = parsedData['products'] ?? [];
+        recommId = parsedData['recommId'];
+
+        // Store the recommId in the card queue for future requests
+        if (recommId != null) {}
+      } else if (parsedData is List) {
+        // Fallback for old structure (direct list of products)
+        productsList = parsedData;
+      } else {
+        print('Unexpected response format: $parsedData');
+        return;
+      }
+
+      if (productsList.isNotEmpty) {
+        List<CardData> newCards = productsList.map<CardData>((product) {
+          // Inject the recommId into each product before creating CardData
+          Map<String, dynamic> productWithRecommId =
+              Map<String, dynamic>.from(product);
+          if (recommId != null) {
+            productWithRecommId['recommID'] = recommId;
+          }
+          return CardData.fromJson(productWithRecommId);
         }).toList();
 
         if (!mounted) return;
@@ -941,11 +969,13 @@ class SwipeableCardState extends State<SwipeableCard>
   Future<List<dynamic>> getProduct() async {
     // Use stored reference instead of Provider.of
     final String filters = _filtersProvider.getFiltersString();
+    final String recommId = _cardQueue.getLastCardId();
 
     final String baseURL =
         ('https://axentbackend.onrender.com/products/recommend/');
     final url = Uri.parse(baseURL).replace(queryParameters: {
       'filters': filters,
+      'recommId': recommId,
     });
     final Dio dio = Dio();
 
@@ -1098,7 +1128,8 @@ class SwipeableCardState extends State<SwipeableCard>
                 ),
                 // Header
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   child: Row(
                     children: [
                       Container(
@@ -1131,7 +1162,8 @@ class SwipeableCardState extends State<SwipeableCard>
                               cardData.title,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: AppColors.onSurface.withValues(alpha: 0.6),
+                                color:
+                                    AppColors.onSurface.withValues(alpha: 0.6),
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -1155,8 +1187,6 @@ class SwipeableCardState extends State<SwipeableCard>
       },
     );
   }
-
-
 }
 
 Future<Map<String, String>> getAuthHeaders() async {
@@ -1330,7 +1360,8 @@ class _FiltersState extends State<Filters> {
     provider.updateFilters(priceRange: newValues);
   }
 
-  Future<void> toggleColor(FilterColor newColor, FiltersProvider provider) async {
+  Future<void> toggleColor(
+      FilterColor newColor, FiltersProvider provider) async {
     final newColors = Set<FilterColor>.from(selectedColors);
     if (newColors.contains(newColor)) {
       newColors.remove(newColor);
@@ -1693,7 +1724,9 @@ class _FiltersState extends State<Filters> {
                               label: Text(
                                 brand,
                                 style: TextStyle(
-                                  color: isSelected ? AppColors.onPrimary : AppColors.onSurface,
+                                  color: isSelected
+                                      ? AppColors.onPrimary
+                                      : AppColors.onSurface,
                                 ),
                               ),
                               selected: isSelected,
@@ -1707,7 +1740,9 @@ class _FiltersState extends State<Filters> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 side: BorderSide(
-                                  color: isSelected ? Colors.transparent : AppColors.outline,
+                                  color: isSelected
+                                      ? Colors.transparent
+                                      : AppColors.outline,
                                 ),
                               ),
                               showCheckmark: false,

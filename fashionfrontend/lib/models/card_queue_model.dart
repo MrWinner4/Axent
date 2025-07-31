@@ -24,6 +24,7 @@ class CardData {
   final List<String> images;
   final List<String> images360;
   final DateTime likedAt;
+  final String? recommID;
 
   CardData(
       {required this.id,
@@ -46,7 +47,8 @@ class CardData {
       required this.sizeLowestAsks,
       required this.images,
       required this.likedAt,
-      required this.images360});
+      required this.images360,
+      this.recommID});
 
   factory CardData.fromJson(Map<String, dynamic> json) {
     double parsePrice(dynamic value) {
@@ -182,6 +184,7 @@ class CardData {
 
         return ['assets/images/Shoes1.jpg'];
       }(),
+      recommID: json['recommID'],
     );
   }
 
@@ -198,7 +201,6 @@ class CardQueueModel with ChangeNotifier {
   }
 
   void addCard(CardData data) {
-    // Always keep 3 cards in the queue
     _queue.addLast(data);
     notifyListeners();
   }
@@ -215,6 +217,15 @@ class CardQueueModel with ChangeNotifier {
     if (_queue.last != null) {
       _queue.removeLast();
       notifyListeners();
+    }
+  }
+
+  String getLastCardId() {
+    if (_queue.last.recommID != '' || _queue.last.recommID != null) {
+      return _queue.last.recommID!;
+    }
+    else {
+      return '';
     }
   }
 
