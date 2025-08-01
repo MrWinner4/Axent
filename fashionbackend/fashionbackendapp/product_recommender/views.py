@@ -68,12 +68,16 @@ class ProductViewSet(viewsets.ViewSet):
         
         try:
             if filters != '' and recommId == '': #Filters, no ID
+                print("New Recommendations")
                 recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, RECOMMENDATION_AMOUNT, filter=filters))
             elif filters != '' and recommId != '': #Filters, ID
+                print("Next Recommendations")
                 recommendations = client.send(RecommendNextItems(recommId, RECOMMENDATION_AMOUNT))
             elif filters == '' and recommId == '': #No Filters, no ID
+                print("New Recommendations")
                 recommendations = client.send(RecommendItemsToUser(user_profile.firebase_uid, RECOMMENDATION_AMOUNT))
             elif filters == '' and recommId != '': #No Filters, ID
+                print("Next Recommendations")
                 recommendations = client.send(RecommendNextItems(recommId, RECOMMENDATION_AMOUNT))
 
             print(recommendations)

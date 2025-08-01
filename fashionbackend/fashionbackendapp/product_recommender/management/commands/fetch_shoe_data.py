@@ -83,6 +83,7 @@ class Command(BaseCommand):
                     continue
 
                 try:
+                    self.stdout.write(f"Processing product {product_id} (type: {type(product_id)}): {product_data.get('title', 'Unknown')}")
                     product_sizes = []  # To track unique sizes across products
                     product_lowest_asks = []  # To track unique lowest asks across products
                     product_total_asks = []  # To track unique total asks across products
@@ -248,29 +249,54 @@ class Command(BaseCommand):
             if total_imported >= PRODUCT_TOTAL:
                 break
 
-            # Save all at once
-            Product.objects.bulk_create(products_to_create)
-            ProductImage.objects.bulk_create(product_images)
-            ProductImage360.objects.bulk_create(product_images_360)
-            ProductVariant.objects.bulk_create(variant_creates)
-            if products_to_update:
-                Product.objects.bulk_update(products_to_update, [
-                    "title", "brand", "model", "description", "slug", "category",
-                    "secondary_category", "upcoming", "updated_at", "link", "colorway", "normalized_colorway",
-                    "trait", "release_date", "retailprice"
-                ])
-            if variant_updates:
-                ProductVariant.objects.bulk_update(
-                    variant_updates,
-                    ["lowest_ask", "total_asks", "previous_lowest_ask", "subtotal", "updated_at"]
-                )
+            # Debug summary for this batch
+            self.stdout.write(f"📊 Batch summary: {len(products_to_create)} to create, {len(products_to_update)} to update, {len(recombee_list)} for Recombee")
+
+            # Save all at once with error handling
+            try:
+                if products_to_create:
+                    created_products = Product.objects.bulk_create(products_to_create)
+                    self.stdout.write(f"✅ Created {len(created_products)} new products")
+                
+                if product_images:
+                    created_images = ProductImage.objects.bulk_create(product_images)
+                    self.stdout.write(f"✅ Created {len(created_images)} product images")
+                
+                if product_images_360:
+                    created_images_360 = ProductImage360.objects.bulk_create(product_images_360)
+                    self.stdout.write(f"✅ Created {len(created_images_360)} 360 images")
+                
+                if variant_creates:
+                    created_variants = ProductVariant.objects.bulk_create(variant_creates)
+                    self.stdout.write(f"✅ Created {len(created_variants)} variants")
+                
+                if products_to_update:
+                    updated_count = Product.objects.bulk_update(products_to_update, [
+                        "title", "brand", "model", "description", "slug", "category",
+                        "secondary_category", "upcoming", "updated_at", "link", "colorway", "normalized_colorway",
+                        "trait", "release_date", "retailprice"
+                    ])
+                    self.stdout.write(f"✅ Updated {updated_count} products")
+                
+                if variant_updates:
+                    updated_variants_count = ProductVariant.objects.bulk_update(
+                        variant_updates,
+                        ["lowest_ask", "total_asks", "previous_lowest_ask", "subtotal", "updated_at"]
+                    )
+                    self.stdout.write(f"✅ Updated {updated_variants_count} variants")
+                    
+            except Exception as e:
+                self.stderr.write(f"❌ Database save error: {e}")
+                # Don't send to Recombee if database save failed
+                recombee_list.clear()
+                continue
 
             if recombee_list:
                 try:
                     client.send(Batch(recombee_list))
-                    self.stdout.write(self.style.SUCCESS(f"Recombee batch sent for {len(recombee_list)} items."))
+                    self.stdout.write(self.style.SUCCESS(f"✅ Recombee batch sent for {len(recombee_list)} items."))
                 except Exception as e:
-                    self.stderr.write(f"⚠️ Error sending Recombee batch: {e}")
+                    self.stderr.write(f"❌ Error sending Recombee batch: {e}")
                 recombee_list.clear()
         
             after_rank = data[-1].get("rank") + 1

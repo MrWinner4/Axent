@@ -916,10 +916,7 @@ class SwipeableCardState extends State<SwipeableCard>
 
   Future<void> getProductData(CardQueueModel cardQueue) async {
     try {
-      final data = await getProduct();
-
-      // Parse JSON if needed
-      final parsedData = data is String ? jsonDecode(data as String) : data;
+      final parsedData = await getProduct();
 
       // Handle new response structure with products and recommId
       List<dynamic> productsList;
@@ -928,13 +925,10 @@ class SwipeableCardState extends State<SwipeableCard>
       if (parsedData is Map<String, dynamic>) {
         // New structure: {products: [...], recommId: "..."}
         productsList = parsedData['products'] ?? [];
-        recommId = parsedData['recommId'];
+        recommId = parsedData['recommId']; 
 
         // Store the recommId in the card queue for future requests
         if (recommId != null) {}
-      } else if (parsedData is List) {
-        // Fallback for old structure (direct list of products)
-        productsList = parsedData;
       } else {
         print('Unexpected response format: $parsedData');
         return;
@@ -966,11 +960,10 @@ class SwipeableCardState extends State<SwipeableCard>
   }
 
   // Calls API
-  Future<List<dynamic>> getProduct() async {
+  Future<Map<String, dynamic>> getProduct() async {
     // Use stored reference instead of Provider.of
     final String filters = _filtersProvider.getFiltersString();
-    final String recommId = _cardQueue.getLastCardId();
-
+    final String recommId = _cardQueue.getLastCardId(); //Issue here
     final String baseURL =
         ('https://axentbackend.onrender.com/products/recommend/');
     final url = Uri.parse(baseURL).replace(queryParameters: {
@@ -989,8 +982,7 @@ class SwipeableCardState extends State<SwipeableCard>
 
         // If the data is a string, parse it as JSON
         final parsedData = data is String ? jsonDecode(data) : data;
-
-        return parsedData;
+        return parsedData as Map<String, dynamic>;
       } else {
         throw Exception(
             'Failed to load recommended shoe: ${response.statusMessage}');

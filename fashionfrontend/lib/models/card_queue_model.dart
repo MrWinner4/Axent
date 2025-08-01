@@ -221,11 +221,20 @@ class CardQueueModel with ChangeNotifier {
   }
 
   String getLastCardId() {
-    if (_queue.last.recommID != '' || _queue.last.recommID != null) {
-      return _queue.last.recommID!;
-    }
-    else {
-      return '';
+    try {
+      if (_queue.isEmpty) {
+        return "";
+      }
+      
+      final lastCard = _queue.last;
+      if (lastCard.recommID != null && lastCard.recommID!.isNotEmpty) {
+        return lastCard.recommID!;
+      } else {
+        return "";
+      }
+    } catch (e) {
+      print("getLastCardId: $e");
+      return "";
     }
   }
 
