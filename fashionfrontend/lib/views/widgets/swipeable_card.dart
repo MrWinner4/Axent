@@ -1000,7 +1000,7 @@ class SwipeableCardState extends State<SwipeableCard>
     final String baseURL =
         'https://axentbackend.onrender.com/preferences/handle_swipe/';
     final Dio dio = Dio();
-
+    final String recommId = _cardQueue.getCurrentCardId();
     // Get Firebase ID token
     final user = FirebaseAuth.instance.currentUser;
     final idToken = await user?.getIdToken();
@@ -1016,6 +1016,7 @@ class SwipeableCardState extends State<SwipeableCard>
         data: {
           'product_id': productID,
           'preference': liked.toString(),
+          'recomm_id': recommId,
         },
         options: Options(
           headers: {

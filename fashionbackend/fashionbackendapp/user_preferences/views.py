@@ -60,7 +60,7 @@ class UserPreferenceViewSet(viewsets.ViewSet):
         try:
             product_id = request.data.get('product_id')
             preference_value = int(request.data.get('preference', 0))
-            
+            recomm_id = request.data.get('recomm_id', '')
             product = get_object_or_404(Product, id=product_id)
             
             UserPreference.objects.update_or_create(
@@ -75,7 +75,10 @@ class UserPreferenceViewSet(viewsets.ViewSet):
             user_profile.save()
 
             try:
-                client.send(AddRating(user_profile.firebase_uid, product_id, preference_value))
+                if recomm_id != '':
+                    client.send(AddRating(user_profile.firebase_uid, product_id, preference_value, recomm_id=recomm_id))
+                else:
+                    client.send(AddRating(user_profile.firebase_uid, product_id, preference_value))
             except Exception as recombee_error:
                 print(f"Recombee error: {recombee_error}")
             

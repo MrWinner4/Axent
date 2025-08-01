@@ -103,7 +103,6 @@ class ProductViewSet(viewsets.ViewSet):
                 product_ids = valid_product_ids
             products = Product.objects.filter(id__in=product_ids)
             serializer = ProductSerializer(products, many=True)
-            print(serializer.data)
             # Include recommId in response if it exists
             response_data = {
                 'products': serializer.data,

@@ -220,6 +220,13 @@ class CardQueueModel with ChangeNotifier {
     }
   }
 
+  String getCurrentCardId() {
+    if (_queue.isEmpty) {
+      return "";
+    }
+    return _queue.first.recommID ?? "";
+  }
+
   String getLastCardId() {
     try {
       if (_queue.isEmpty) {
