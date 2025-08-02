@@ -129,7 +129,7 @@ class SwipeableCardState extends State<SwipeableCard>
     _filtersProvider = Provider.of<FiltersProvider>(context, listen: false);
 
     // ADD THIS: Initialize data after providers are available
-    if (_cardQueue.isEmpty) {
+    if (_cardQueue.isEmpty && !_cardQueue.isFetchingCards) {
       getProductData(_cardQueue);
     }
 
@@ -813,7 +813,7 @@ class SwipeableCardState extends State<SwipeableCard>
           cardQueue.removeFirstCard();
         }
         updateCardWidgets(cardQueue);
-        if (cardQueue.queueLength < CARDSTACKSIZE) {
+        if (cardQueue.queueLength < CARDSTACKSIZE && !cardQueue.isFetchingCards) {
           getProductData(cardQueue);
         }
       });
@@ -854,7 +854,9 @@ class SwipeableCardState extends State<SwipeableCard>
   void newCards() {
     final cardQueue = Provider.of<CardQueueModel>(context, listen: false);
     cardQueue.resetQueue();
-    getProductData(cardQueue);
+    if (!cardQueue.isFetchingCards) {
+      getProductData(cardQueue);
+    }
   }
 
   void undo() {
@@ -915,6 +917,15 @@ class SwipeableCardState extends State<SwipeableCard>
   }
 
   Future<void> getProductData(CardQueueModel cardQueue) async {
+    // Check if we're already fetching cards to prevent duplicate calls
+    if (cardQueue.isFetchingCards) {
+      print('Already fetching cards, skipping duplicate request');
+      return;
+    }
+
+    // Set fetching flag to true
+    cardQueue.setFetchingCards(true);
+
     try {
       final parsedData = await getProduct();
 
@@ -956,6 +967,11 @@ class SwipeableCardState extends State<SwipeableCard>
       }
     } catch (e) {
       print('Error fetching shoe data: $e');
+    } finally {
+      // Always set fetching flag to false when done (success or error)
+      if (mounted) {
+        cardQueue.setFetchingCards(false);
+      }
     }
   }
 

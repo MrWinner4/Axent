@@ -19,9 +19,9 @@ url = "https://api.kicks.dev/v3/stockx/products"
 
 headers = {"Authorization": API_KEY}
 
-LIMIT_PER_REQUEST = 100
+LIMIT_PER_REQUEST = 50
 
-PRODUCT_TOTAL = 1000
+PRODUCT_TOTAL = 10000
 
 REQUEST_DELAY = 1.1
 
@@ -29,15 +29,18 @@ class Command(BaseCommand):
     help = "Import sneakers from kicks.dev into database"
 
     def handle(self, *args, **options):
+        import time as time_module
+        start_time = time_module.time()
         self.stdout.write("Starting product data import...")
 
         after_rank = 0
         total_imported = 0
 
         while total_imported < PRODUCT_TOTAL:
+            self.stdout.write(f"After Rank: {after_rank}")
             params = {
-                "limit": LIMIT_PER_REQUEST,
-                "after_rank": after_rank,
+                "limit":LIMIT_PER_REQUEST,
+                "after_rank":after_rank,
                 "sort": "rank",
                 "display[variants]":"true",
                 "display[traits]":"true",
@@ -52,17 +55,17 @@ class Command(BaseCommand):
 
             data = response.json().get("data", [])
 
+
             if not data:
                 self.stdout.write("No more products to import.")
                 break
 
-           
-            
-
+            self.stdout.write(f"API returned {len(data)} products")
             incoming_ids = [item.get("id") for item in data if item.get("id")]
+            # Use select_related to reduce queries and prefetch_related for variants
             existing_products = Product.objects.filter(id__in=incoming_ids)
-            existing_ids = set(str(p.id) for p in existing_products)
             existing_map = {str(p.id): p for p in existing_products}
+            
             existing_variants_map = {
                 (v.product_id, v.size, v.isMen): v
                 for v in ProductVariant.objects.filter(product_id__in=[p.id for p in existing_products])
@@ -83,7 +86,6 @@ class Command(BaseCommand):
                     continue
 
                 try:
-                    self.stdout.write(f"Processing product {product_id} (type: {type(product_id)}): {product_data.get('title', 'Unknown')}")
                     product_sizes = []  # To track unique sizes across products
                     product_lowest_asks = []  # To track unique lowest asks across products
                     product_total_asks = []  # To track unique total asks across products
@@ -301,7 +303,6 @@ class Command(BaseCommand):
         
             after_rank = data[-1].get("rank") + 1
             self.stdout.write(f"Imported up to rank {after_rank - 1} ({total_imported} total)")
-            time.sleep(REQUEST_DELAY)
 
             product_images.clear()
             product_images_360.clear()
@@ -311,7 +312,10 @@ class Command(BaseCommand):
             products_to_update.clear()
 
 
-        self.stdout.write(self.style.SUCCESS(f"Finished importing {total_imported} products."))
+        end_time = time_module.time()
+        duration = end_time - start_time
+        rate = total_imported / duration if duration > 0 else 0
+        self.stdout.write(self.style.SUCCESS(f"Finished importing {total_imported} products in {duration:.2f} seconds ({rate:.2f} products/second)."))
 
 
 

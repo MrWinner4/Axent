@@ -193,8 +193,16 @@ class CardData {
 
 class CardQueueModel with ChangeNotifier {
   final Queue<CardData> _queue = Queue<CardData>();
+  bool _isFetchingCards = false;
 
   Queue<CardData> get queue => _queue;
+  
+  bool get isFetchingCards => _isFetchingCards;
+
+  void setFetchingCards(bool isFetching) {
+    _isFetchingCards = isFetching;
+    notifyListeners();
+  }
 
   void addCardFirst(CardData data) {
     _queue.addFirst(data);
