@@ -52,6 +52,33 @@ class UserPreferenceViewSet(viewsets.ViewSet):
 
 
     @action(detail=False, methods=['post'])
+    def update_email(self, request):
+        """Update the user's email in UserProfile."""
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return Response({"error": "Invalid authorization header"}, status=401)
+
+        token = auth_header.split(' ').pop()
+        user_profile = get_user_profile_from_token(token)
+        if not user_profile:
+            return Response({"error": "Invalid or expired token"}, status=401)
+
+        new_email = request.data.get('email', '').strip()
+        if not new_email:
+            return Response({"error": "No email provided"}, status=400)
+        # Basic email format validation
+        import re
+        if not re.match(r"^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,}$", new_email):
+            return Response({"error": "Invalid email format"}, status=400)
+
+        try:
+            user_profile.email = new_email
+            user_profile.save()
+            return Response({"message": "Email updated successfully"})
+        except Exception as e:
+            print(f"Error updating email: {e}")
+            return Response({"error": "Failed to update email"}, status=500)
+
     def handle_swipe(self, request):
         user_profile = self.get_user_from_request(request)
         if not user_profile:
