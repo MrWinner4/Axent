@@ -56,27 +56,17 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    'background_task',
+    'django_q',
 ]
 
 # In settings.py
 
 Q_CLUSTER = {
-    "name": "DjangoQ",
-    "workers": 1,
-    "timeout": 90,
+    "name": "AxentCluster",
     "retry": 120,
     "queue_limit": 50,
     "bulk": 10,
     "orm": "default",
-    "schedule": [
-        {
-            "func": "recommendation.tasks.scheduled_train",
-            "schedule_type": "I",
-            "minutes": 60,
-            "name": "Hourly ALS training",
-        }
-    ],
 }
 
 
