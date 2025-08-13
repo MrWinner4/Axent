@@ -5,7 +5,6 @@ from rest_framework.decorators import api_view, action
 from firebase_admin import auth
 from .models import Product, UserPreference, UserProfile
 from product_recommender.serializer import ProductSerializer
-from django_q.tasks import async_task
 from .recombee import client
 from recombee_api_client.api_requests import AddUser, AddRating, AddDetailView, AddPurchase
 import os
