@@ -56,19 +56,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    'django_q',
 ]
 
 # In settings.py
-
-Q_CLUSTER = {
-    "name": "AxentCluster",
-    "retry": 120,
-    "queue_limit": 50,
-    "bulk": 10,
-    "orm": "default",
-}
-
 
 
 #For rest framework pagination, not really sure what it does yet
