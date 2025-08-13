@@ -52,7 +52,7 @@ jsonschema-specifications==2025.4.1
 kombu==5.4.2
 macholib==1.16.3
 msgpack==1.1.0
-numpy==2.0.2
+numpy==1.26.4
 packaging==25.0
 pillow==11.2.1
 prompt_toolkit==3.0.51
