@@ -4,16 +4,17 @@ import 'package:fashionfrontend/app_colors.dart';
 import 'package:fashionfrontend/models/wardrobe_model.dart';
 import 'package:fashionfrontend/views/pages/wardrobe_detail_page.dart' as detail;
 import 'package:fashionfrontend/views/pages/heart_page.dart';
+import 'package:provider/provider.dart';
+import 'package:fashionfrontend/providers/wardrobes_provider.dart';
 
 class WardrobesPage extends StatefulWidget {
-  final List<Wardrobe> wardrobes;
+  // Remove wardrobes prop, use provider instead
   final VoidCallback? onRefresh;
   final Function(String) onDeleteWardrobe;
   final Function(String) onCreateWardrobe;
 
   const WardrobesPage({
     super.key,
-    required this.wardrobes,
     this.onRefresh,
     required this.onDeleteWardrobe,
     required this.onCreateWardrobe,
@@ -38,7 +39,8 @@ class _WardrobesPageState extends State<WardrobesPage>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  List<Wardrobe> get _allWardrobes => widget.wardrobes;
+  List<Wardrobe> get _allWardrobes => Provider.of<WardrobesProvider>(context).wardrobes;
+  bool get _providerLoading => Provider.of<WardrobesProvider>(context).isLoading;
 
   List<Wardrobe> get _filteredWardrobes {
     List<Wardrobe> filtered = _allWardrobes;
@@ -569,6 +571,24 @@ class _WardrobesPageState extends State<WardrobesPage>
   }
 
   Widget _buildWardrobesGrid() {
+    if (_providerLoading) {
+      // Show shimmer/placeholder while loading
+      return SliverToBoxAdapter(
+        child: Container(
+          padding: const EdgeInsets.all(48),
+          alignment: Alignment.center,
+          child: Column(
+            children: [
+              SizedBox(height: 32),
+              CircularProgressIndicator(color: AppColors.primary),
+              SizedBox(height: 24),
+              Text('Loading wardrobes...', style: TextStyle(fontSize: 18, color: AppColors.primary)),
+            ],
+          ),
+        ),
+      );
+    }
+
     if (_filteredWardrobes.isEmpty) {
       return SliverToBoxAdapter(
         child: Container(
@@ -869,4 +889,4 @@ class WardrobePatternPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-} 
+}

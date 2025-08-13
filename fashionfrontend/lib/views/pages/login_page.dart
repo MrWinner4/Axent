@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:fashionfrontend/app_colors.dart';
+import 'package:fashionfrontend/views/widgets/animated_page_route.dart';
 
 class LogInPage extends StatefulWidget {
   const LogInPage({super.key});
@@ -39,10 +40,8 @@ class _LogInPageState extends State<LogInPage> {
         password: _passwordController.text,
       );
 
-      Navigator.pushAndRemoveUntil(context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => AuthWrapper()
-        ),
+      Navigator.of(context).pushAndRemoveUntil(
+        FadeScalePageRoute(page: AuthWrapper()),
         (route) => false,
       );
     } on FirebaseAuthException catch (e) {

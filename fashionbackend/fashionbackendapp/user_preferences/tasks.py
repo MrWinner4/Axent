@@ -1,11 +1,6 @@
-# users/tasks.py
+from background_task import background
+import subprocess
 
-from .models import UserProfile
-
-def background_update_preferences(user_id):
-    try:
-        user = UserProfile.objects.get(id=user_id)
-        user.update_preferences()
-        print(f"Updated preferences for user {user.username}")
-    except UserProfile.DoesNotExist:
-        print(f"User with ID {user_id} not found")
+@background(schedule=60*60*24)  # every 24 hours
+def run_fetch_shoe_data():
+    subprocess.run(['python', 'manage.py', 'fetch_shoe_data'])

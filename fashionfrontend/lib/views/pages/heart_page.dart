@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'package:fashionfrontend/models/card_queue_model.dart';
 import 'package:fashionfrontend/models/wardrobe_model.dart';
-import 'package:fashionfrontend/views/pages/liked_products_page.dart';
 import 'package:fashionfrontend/views/widgets/liked_products_carousel.dart';
 import 'package:fashionfrontend/providers/liked_products_provider.dart';
 import 'package:fashionfrontend/providers/wardrobes_provider.dart';
@@ -12,7 +10,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'trends_page.dart';
 import 'package:fashionfrontend/app_colors.dart';
-import 'package:fashionfrontend/views/pages/wardrobes_page.dart';
 import 'package:fashionfrontend/views/pages/wardrobe_detail_page.dart'
     as detail;
 
@@ -513,7 +510,7 @@ class HeartPageState extends State<HeartPage>
             ),
           ),
           subtitle: Text(
-            '${wardrobe.productIds?.length ?? 0} items',
+            '${wardrobe.productIds.length} items',
             style: TextStyle(
               fontSize: 14,
               color: AppColors.onSurface.withValues(alpha: 0.6),

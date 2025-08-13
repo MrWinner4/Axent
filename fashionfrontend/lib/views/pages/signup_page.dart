@@ -5,6 +5,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:fashionfrontend/app_colors.dart';
+import 'package:fashionfrontend/views/widgets/animated_page_route.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -93,7 +94,6 @@ class _SignupPageState extends State<SignupPage> {
           await newUser?.reload(); // Force refresh
           final refreshedUser = FirebaseAuth.instance.currentUser;
 
-
           final idToken = await refreshedUser!.getIdToken();
           print(idToken);
           await Dio().post(
@@ -108,12 +108,15 @@ class _SignupPageState extends State<SignupPage> {
                   .text, // Only send name, email is extracted from token
             },
           );
-          Navigator.pushReplacement(
-            context,
-            PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) =>
-                    AuthWrapper()),
-          );
+          if (newUser != null && !newUser.emailVerified) {
+            newUser.sendEmailVerification();
+          }
+          // Only navigate if there is no error
+          if (_errorMessage == null) {
+            Navigator.of(context).pushReplacement(
+              FadeScalePageRoute(page: AuthWrapper()),
+            );
+          }
         } on FirebaseAuthException catch (e) {
           setState(() {
             _errorMessage = e.message;
@@ -128,8 +131,7 @@ class _SignupPageState extends State<SignupPage> {
             _isLoading = false;
           });
         }
-      }
-      else{
+      } else {
         _errorMessage = "Please fill out all fields.";
       }
     } else {
@@ -190,8 +192,7 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                     labelText: 'John Doe',
                     labelStyle: TextStyle(
-                      color:
-                          AppColors.primary.withAlpha(128),
+                      color: AppColors.primary.withAlpha(128),
                     ),
                     floatingLabelBehavior: FloatingLabelBehavior.never),
               ),
@@ -220,8 +221,7 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                     labelText: 'johndoe@example.com',
                     labelStyle: TextStyle(
-                      color:
-                          AppColors.primary.withAlpha(128),
+                      color: AppColors.primary.withAlpha(128),
                     ),
                     floatingLabelBehavior: FloatingLabelBehavior.never),
               ),
@@ -250,8 +250,7 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                     labelText: '••••••••••',
                     labelStyle: TextStyle(
-                      color:
-                          AppColors.primary.withAlpha(128),
+                      color: AppColors.primary.withAlpha(128),
                     ),
                     floatingLabelBehavior: FloatingLabelBehavior.never),
                 obscureText: true,
